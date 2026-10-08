@@ -291,9 +291,8 @@
   <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 
   <script>
-    // Realistic dataset compiled from peer-reviewed Himalayan leucogranite literature
-    // (e.g. Wu et al., 2015; Zeng et al., 2011; Liu et al., 2014; Chapman et al., 2017)
-    const himalayanSamples = [
+    // Fallback sample data shown only if the external CSV cannot be loaded.
+    const fallbackSamples = [
       { id: "GY-01", unit: "GHS", pluton: "Gyirong", lithology: "Tourmaline leucogranite", mineral: "Zircon", method: "SIMS", age: 20.8, err: 0.3, th_u: 0.04, elev: 4320, lat: 28.39, lng: 85.32, doi: "10.1016/j.lithos.2014.05.012" },
       { id: "GY-04", unit: "GHS", pluton: "Gyirong", lithology: "Two-mica granite", mineral: "Monazite", method: "SIMS", age: 17.5, err: 0.2, th_u: 0.31, elev: 4450, lat: 28.41, lng: 85.36, doi: "10.1016/j.lithos.2014.05.012" },
       { id: "MN-12", unit: "GHS", pluton: "Manaslu", lithology: "Two-mica granite", mineral: "Zircon", method: "ID-TIMS", age: 19.3, err: 0.2, th_u: 0.05, elev: 5100, lat: 28.58, lng: 84.56, doi: "10.1093/petrology/42.1.147" },
@@ -311,6 +310,65 @@
       { id: "IYS-D02", unit: "IYS", pluton: "Zedang Ophiolite", lithology: "Diorite", mineral: "Zircon", method: "LA-ICP-MS", age: 156.4, err: 1.8, th_u: 0.82, elev: 3560, lat: 29.24, lng: 91.78, doi: "10.1016/j.epsl.2013.11.034" },
       { id: "IYS-G04", unit: "IYS", pluton: "Quxu Batholith", lithology: "Two-mica granite", mineral: "Zircon", method: "LA-ICP-MS", age: 49.5, err: 0.6, th_u: 0.74, elev: 3680, lat: 29.35, lng: 90.72, doi: "10.1016/j.lithos.2012.08.012" }
     ];
+
+    let himalayanSamples = [];
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [], cell = '', quoted = false;
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i], next = text[i + 1];
+        if (char === '"' && quoted && next === '"') { cell += '"'; i++; }
+        else if (char === '"') quoted = !quoted;
+        else if (char === ',' && !quoted) { row.push(cell.trim()); cell = ''; }
+        else if ((char === '\n' || char === '\r') && !quoted) {
+          if (char === '\r' && next === '\n') i++;
+          row.push(cell.trim()); cell = '';
+          if (row.some(value => value !== '')) rows.push(row);
+          row = [];
+        } else cell += char;
+      }
+      if (cell || row.length) { row.push(cell.trim()); rows.push(row); }
+      const headers = rows.shift().map(header => header.replace(/^\uFEFF/, ''));
+      return rows.map(values => Object.fromEntries(headers.map((header, index) => [header, values[index] || ''])));
+    }
+
+    function toNumber(value) {
+      const number = parseFloat(String(value).replace(/[^0-9.+-]/g, ''));
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function csvRecordToSample(record) {
+      const coordinates = String(record['Coordinates'] || '').split(',').map(toNumber);
+      return {
+        id: record['Sample ID'] || 'Unknown',
+        unit: record['Tectonic Unit'] || 'Other',
+        pluton: record['Pluton / Location'] || 'Unknown',
+        lithology: record['Lithology'] || 'Unknown',
+        mineral: record['Mineral'] || 'Unknown',
+        method: record['Method'] || 'Unknown',
+        age: toNumber(record['U-Pb Age (Ma)']),
+        err: toNumber(record['±1σ (Ma)']),
+        th_u: toNumber(record['Th/U']),
+        elev: toNumber(record['Elev (m)']),
+        lat: coordinates[0] || 0,
+        lng: coordinates[1] || 0,
+        doi: String(record['Reference DOI'] || '').replace(/^https?:\\/\\/(dx\\.)?doi.org\\//, '')
+      };
+    }
+
+    async function loadSamples() {
+      try {
+        const response = await fetch('assets/data/himalayan-geochronology-geochemistry.csv', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`CSV request failed: ${response.status}`);
+        const records = parseCSV(await response.text());
+        himalayanSamples = records.map(csvRecordToSample).filter(sample => sample.id !== 'Unknown' && sample.lat && sample.lng);
+        if (!himalayanSamples.length) throw new Error('No valid rows found in CSV');
+      } catch (error) {
+        console.warn('Could not load external CSV; using fallback samples.', error);
+        himalayanSamples = fallbackSamples;
+      }
+    }
 
     let map, clusterGroup;
     let dataTable;
@@ -568,7 +626,8 @@
       });
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadSamples();
       initMap();
       initDataTable(himalayanSamples);
       renderMapMarkers(himalayanSamples);
