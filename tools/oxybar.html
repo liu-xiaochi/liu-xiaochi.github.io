@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OxyBar 岩浆氧逸度计 · 离线计算器</title>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#1c2430; --muted:#697586;
+  --line:#e2e6ec; --brand:#1f5f8b; --brand2:#2a7fb8;
+  --ok:#1f7a4d; --okbg:#e6f5ec; --warn:#8a5a00; --warnbg:#fdf3dc;
+  --mono:"Cascadia Mono","Consolas","SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:14px/1.65 "Microsoft YaHei UI","Microsoft YaHei","PingFang SC","Segoe UI",system-ui,sans-serif;
+}
+header{
+  background:linear-gradient(135deg,#123a56,#1f5f8b 55%,#2a7fb8);
+  color:#fff; padding:14px 22px 12px;
+}
+header h1{margin:0; font-size:18px; letter-spacing:.5px; font-weight:600}
+header .sub{margin-top:3px; font-size:12px; color:#cfe3f2}
+header .badge{
+  display:inline-block; margin-left:8px; padding:1px 8px; border-radius:10px;
+  background:rgba(255,255,255,.16); font-size:11px; font-weight:400;
+}
+nav.tabs{display:flex; gap:2px; background:#123a56; padding:0 14px; flex-wrap:wrap}
+nav.tabs button{
+  appearance:none; border:0; background:transparent; color:#b9d4e6;
+  padding:9px 18px; font:inherit; font-size:13px; cursor:pointer;
+  border-bottom:3px solid transparent;
+}
+nav.tabs button:hover{color:#fff; background:rgba(255,255,255,.06)}
+nav.tabs button.on{color:#fff; border-bottom-color:#7fc4f0; background:rgba(255,255,255,.1)}
+.legend{display:flex; flex-wrap:wrap; gap:5px 16px; padding:6px 6px 10px;
+        font-size:12px; color:#41505f}
+.legend .item{display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none}
+.legend .item.off{opacity:.32; text-decoration:line-through}
+.legend .chip{width:11px; height:11px; border-radius:2px; flex:0 0 auto}
+.plotbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+         padding:9px 14px; border-bottom:1px solid var(--line); font-size:13px; color:#41505f}
+.plotbar select,.plotbar input[type=number]{
+  font:inherit; font-size:12px; padding:5px 8px; border:1px solid #cbd4de; border-radius:6px}
+.plotbar input[type=number]{width:78px}
+#plotCanvas{width:100%; height:440px; display:block; cursor:crosshair}
+.cvwrap{position:relative}
+.tip{position:absolute; pointer-events:none; background:#0f2433; color:#e6f3fb;
+     font-family:var(--mono); font-size:11.5px; padding:6px 9px; border-radius:6px;
+     white-space:pre; display:none; z-index:5; box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.dsrow{display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13px;
+       border-bottom:1px dashed #eef1f5}
+.dsrow:last-child{border-bottom:0}
+.dsrow .nm{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.dsrow .n{color:var(--muted); font-size:11px; font-family:var(--mono)}
+.dsrow button{border:0; background:none; color:#a3231b; cursor:pointer; font-size:12px; padding:0 2px}
+.dsrow button:hover{text-decoration:underline}
+.subhead{font-size:12px; font-weight:600; color:var(--brand); margin:14px 0 6px;
+         padding-bottom:3px; border-bottom:1px solid var(--line)}
+.subhead:first-child{margin-top:0}
+textarea.mini{width:100%; min-height:86px; font-family:var(--mono); font-size:11.5px;
+  border:1px solid #cbd4de; border-radius:7px; padding:7px; resize:vertical; line-height:1.45}
+.row3{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin-top:8px}
+.row3 .field label{font-size:11.5px}
+main{padding:16px; max-width:1400px; margin:0 auto}
+section{display:none}
+section.on{display:block}
+.grid{display:grid; grid-template-columns:320px 1fr; gap:14px; align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:10px;
+      box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.card h2{margin:0; padding:11px 14px; font-size:13px; font-weight:600;
+         color:var(--brand); border-bottom:1px solid var(--line); letter-spacing:.3px}
+.card .body{padding:12px 14px}
+
+ul.methods{list-style:none; margin:0; padding:4px 0; max-height:640px; overflow:auto}
+ul.methods .cat{padding:8px 14px 4px; font-size:11px; color:var(--muted); letter-spacing:1px}
+ul.methods li{padding:7px 14px; cursor:pointer; border-left:3px solid transparent; font-size:13px}
+ul.methods li:hover{background:#eef5fa}
+ul.methods li.on{background:#e6f0f8; border-left-color:var(--brand2); font-weight:600}
+ul.methods li .dot{display:inline-block; width:7px; height:7px; border-radius:50%;
+                   margin-right:7px; background:var(--ok); vertical-align:1px}
+ul.methods li .dot.warn{background:#d08b16}
+
+.mhead{padding:12px 14px; border-bottom:1px solid var(--line)}
+.mhead h3{margin:0 0 4px; font-size:16px; color:var(--ink)}
+.mhead .meta{font-size:12px; color:var(--muted); line-height:1.7}
+.mhead .meta b{color:#41505f; font-weight:600}
+.tag{display:inline-block; padding:1px 7px; border-radius:9px; font-size:11px; font-weight:600}
+.tag.ok{background:var(--okbg); color:var(--ok)}
+.tag.warn{background:var(--warnbg); color:var(--warn)}
+.mtag{display:inline-block; margin-left:7px; padding:0 6px; border-radius:8px;
+      font-size:10px; font-weight:600; letter-spacing:.2px; vertical-align:1.5px}
+.mtag.oxy{background:#e6f5ec; color:#1f7a4d}
+.mtag.thermo{background:#e0edf8; color:#1a5b86}
+.mtag.index{background:#eef1f5; color:#5a6673}
+.mtag.calc{background:#f2ecf9; color:#6b3fa0}
+.mtag.tool{background:#eef1f5; color:#5a6673}
+ul.methods li .mtag{float:none}
+.pairline{margin-top:5px; padding:6px 9px; background:#eef6fc; border-left:3px solid #2a7fb8;
+          border-radius:0 5px 5px 0; font-size:12px; color:#1a4a68}
+
+form.fields{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+            gap:10px 16px; padding:14px}
+.field{display:flex; flex-direction:column; gap:3px}
+.field label{font-size:12px; color:#41505f; font-weight:600}
+.field label span.u{color:var(--muted); font-weight:400}
+.field input,.field select{
+  font:inherit; font-family:var(--mono); font-size:13px; padding:6px 8px;
+  border:1px solid #cbd4de; border-radius:6px; background:#fff; color:var(--ink);
+  width:100%;
+}
+.field input:focus,.field select:focus{outline:2px solid #b8d9f0; border-color:var(--brand2)}
+.actions{display:flex; gap:8px; padding:0 14px 14px; flex-wrap:wrap}
+button.primary,button.ghost{
+  font:inherit; font-size:13px; padding:8px 18px; border-radius:7px; cursor:pointer; border:1px solid;
+}
+button.primary{background:var(--brand); border-color:var(--brand); color:#fff; font-weight:600}
+button.primary:hover{background:var(--brand2)}
+button.ghost{background:#fff; border-color:#cbd4de; color:#41505f}
+button.ghost:hover{background:#f0f4f8}
+button:disabled{opacity:.5; cursor:not-allowed}
+
+.result{padding:12px 14px; background:#f8fbfd; border-top:1px solid var(--line);
+        border-radius:0 0 10px 10px; min-height:52px}
+.result .row{display:flex; align-items:baseline; gap:10px; padding:3px 0}
+.result .k{min-width:180px; color:#41505f; font-size:13px}
+.result .v{font-family:var(--mono); font-size:17px; font-weight:600; color:#0f3f5f}
+.result .err{color:#a3231b; font-family:var(--mono); font-size:13px}
+
+.conv{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px}
+.conv .field input,.conv .field select{font-size:12px}
+.convout{margin-top:10px; font-family:var(--mono); font-size:13px; line-height:2;
+         background:#f8fbfd; border:1px dashed #cbd4de; border-radius:8px; padding:10px 12px}
+.convout b{color:#0f3f5f}
+
+textarea.csv{
+  width:100%; min-height:170px; font-family:var(--mono); font-size:12px;
+  border:1px solid #cbd4de; border-radius:8px; padding:8px; line-height:1.5; resize:vertical;
+}
+.tblwrap{max-height:460px; overflow:auto; border:1px solid var(--line); border-radius:8px; margin-top:10px}
+table{border-collapse:collapse; width:100%; font-family:var(--mono); font-size:12px}
+th,td{padding:5px 9px; border-bottom:1px solid #eef1f5; text-align:right; white-space:nowrap}
+th{background:#f0f4f8; position:sticky; top:0; z-index:1; font-weight:600; color:#41505f}
+td:first-child,th:first-child{text-align:left}
+tbody tr:hover{background:#f7fafc}
+.hint{font-size:12px; color:var(--muted); margin:6px 0 0}
+.bar{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px}
+.bar input[type=text]{
+  flex:1; min-width:200px; font:inherit; font-family:var(--mono); font-size:12px;
+  padding:6px 9px; border:1px solid #cbd4de; border-radius:6px;
+}
+
+.docs{padding:4px 18px 24px}
+.docs h2{font-size:16px; color:var(--brand); margin:22px 0 6px; padding-bottom:4px;
+         border-bottom:1px solid var(--line)}
+.docs h3{font-size:14px; margin:16px 0 4px}
+.docs p,.docs li{font-size:13px; color:#33404f}
+.docs code{font-family:var(--mono); background:#eef2f6; padding:1px 5px; border-radius:4px; font-size:12px}
+.docs pre{font-family:var(--mono); background:#0f2433; color:#d8ecf8; padding:11px 14px;
+          border-radius:8px; overflow-x:auto; font-size:12.5px; line-height:1.6}
+.docs table{font-family:inherit; font-size:12.5px; margin:8px 0}
+.docs th,.docs td{text-align:left; white-space:normal}
+.note{background:var(--warnbg); border-left:3px solid #d08b16; padding:9px 12px;
+      border-radius:0 6px 6px 0; font-size:12.5px; color:#5c4200; margin:10px 0}
+.note.blue{background:#e8f2fa; border-left-color:var(--brand2); color:#17405c}
+footer{text-align:center; color:var(--muted); font-size:11.5px; padding:18px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>OxyBar · 岩浆氧逸度计计算器<span class="badge">离线单文件 v1.0</span></h1>
+  <div class="sub">缓冲剂 · 锆石 Ce/√(U·Ti) · 锆石 Ce⁴⁺/Ce³⁺ · 磷灰石 Mn / Eu · 角闪石 · T–ΔFMQ 对比图 —— 全部公式可追溯到文献</div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="calc" class="on">单点计算</button>
+  <button data-tab="batch">批量表格</button>
+  <button data-tab="buffer">缓冲剂表</button>
+  <button data-tab="plot">对比图</button>
+  <button data-tab="docs">公式与说明</button>
+</nav>
+
+<main>
+
+<!-- ============================ 单点计算 ============================ -->
+<section id="tab-calc" class="on">
+  <div class="grid">
+    <div class="card">
+      <h2>方法列表</h2>
+      <ul class="methods" id="methodList"></ul>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="mhead" id="mhead">
+          <h3>请选择左侧方法</h3>
+          <div class="meta">每个方法都标注了文献、适用范围、误差与验证状态。</div>
+        </div>
+        <form class="fields" id="form" onsubmit="return false"></form>
+        <div class="actions">
+          <button class="primary" id="btnCalc">计 算</button>
+          <button class="ghost" id="btnDemo">填入示例值</button>
+          <button class="ghost" id="btnCopy">复制结果</button>
+        </div>
+        <div class="result" id="result"><span class="hint">结果会显示在这里。</span></div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h2>Δ 换算器 &nbsp;·&nbsp; log fO₂ ↔ ΔFMQ / ΔNNO / ΔIW</h2>
+        <div class="body">
+          <div class="conv">
+            <div class="field"><label>数值</label><input type="number" step="any" id="cvVal" value="-12"></div>
+            <div class="field"><label>类型</label>
+              <select id="cvMode">
+                <option value="abs">绝对 log fO₂</option>
+                <option value="ΔFMQ">ΔFMQ</option>
+                <option value="ΔNNO">ΔNNO</option>
+              </select>
+            </div>
+            <div class="field"><label>温度 <span class="u">°C</span></label><input type="number" step="any" id="cvT" value="800"></div>
+            <div class="field"><label>压力 <span class="u">bar</span></label><input type="number" step="any" id="cvP" value="2000"></div>
+            <div class="field"><label>&nbsp;</label><button class="ghost" id="btnConv">换算</button></div>
+          </div>
+          <div class="convout" id="convOut">填入数值后点“换算”。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 批量表格 ============================ -->
+<section id="tab-batch">
+  <div class="card">
+    <h2>批量计算 &nbsp;·&nbsp; 列名 = 该方法的输入名（可直接从 Excel 粘贴）</h2>
+    <div class="body">
+      <div class="bar">
+        <span style="font-size:13px;color:#41505f">方法：</span>
+        <select id="bMethod" style="font:inherit;padding:6px 9px;border:1px solid #cbd4de;border-radius:6px;min-width:280px"></select>
+        <label style="font-size:13px;color:#41505f">
+          <input type="checkbox" id="bWithDelta" checked> 同时给出 ΔFMQ / ΔNNO
+        </label>
+        <input type="file" id="bFile" accept=".csv,.txt" style="display:none">
+        <button class="ghost" id="bLoad">载入 CSV…</button>
+        <button class="primary" id="bRun">计算</button>
+        <button class="ghost" id="bSave">下载结果 CSV</button>
+      </div>
+      <div id="bCols" class="hint"></div>
+      <textarea class="csv" id="bInput" spellcheck="false"></textarea>
+      <div id="bMsg" class="hint"></div>
+      <div class="tblwrap" id="bWrap" style="display:none">
+        <table id="bTable"></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 缓冲剂表 ============================ -->
+<section id="tab-buffer">
+  <div class="card">
+    <h2>缓冲剂 log fO₂ 表</h2>
+    <div class="body">
+      <div class="conv">
+        <div class="field"><label>温度 <span class="u">°C，逗号分隔</span></label>
+          <input type="text" id="bfT" value="600,700,800,900,1000,1100,1200,1300"></div>
+        <div class="field"><label>压力 <span class="u">bar</span></label><input type="number" step="any" id="bfP" value="1"></div>
+        <div class="field"><label>&nbsp;</label><button class="primary" id="bfRun">生成表格</button></div>
+        <div class="field"><label>&nbsp;</label><button class="ghost" id="bfSave">下载 CSV</button></div>
+      </div>
+      <div class="tblwrap" id="bfWrap" style="display:none"><table id="bfTable"></table></div>
+      <p class="hint">缓冲剂之间可互相换算：ΔFMQ = +1 在 800 °C / 2 kbar 下约等于 ΔNNO +1.6。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 对比图 ============================ -->
+<section id="tab-plot">
+  <div class="grid" style="grid-template-columns:310px 1fr">
+    <div class="card">
+      <h2>数据集</h2>
+      <div class="body" style="padding:8px 12px">
+        <div id="dsList"><div class="hint">还没有数据。用右侧“导入数据”添加。</div></div>
+        <div class="actions" style="padding:10px 0 2px">
+          <button class="ghost" id="dsClear" style="font-size:12px;padding:6px 12px">清空全部</button>
+        </div>
+        <p class="hint" style="margin-top:8px">点色块可显示/隐藏；× 删除该组。</p>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="plotbar">
+          <span>纵轴</span>
+          <select id="plotY">
+            <option value="dFMQ">ΔFMQ（相对 FMQ）</option>
+            <option value="logfO2">绝对 log fO₂</option>
+          </select>
+          <span>参考压力</span>
+          <input type="number" step="any" id="plotP" value="1">
+          <span style="color:#8a9099">bar</span>
+          <label><input type="checkbox" id="plotBuf" checked> 缓冲剂曲线</label>
+          <button class="ghost" id="plotPng" style="margin-left:auto;font-size:12px;padding:6px 12px">导出 PNG</button>
+        </div>
+        <div class="body" style="padding:10px 12px 4px">
+          <div class="cvwrap">
+            <canvas id="plotCanvas"></canvas>
+            <div class="tip" id="plotTip"></div>
+          </div>
+          <div class="legend" id="plotLegend"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h2>导入数据</h2>
+        <div class="body">
+          <div class="grid" style="grid-template-columns:1fr 1fr;gap:18px">
+            <div>
+              <div class="subhead">① Fe–Ti 氧化物结果（MELTS/GE 在线计算器算完后粘过来）</div>
+              <textarea class="mini" id="feInput" spellcheck="false"
+placeholder="sample,T_C,logfO2
+B250,739,-15.358
+B275a,749,-14.901"></textarea>
+              <div class="row3">
+                <div class="field"><label>温度单位</label>
+                  <select id="feUnit"><option value="C">°C</option><option value="K">K</option></select></div>
+                <div class="field"><label>组名</label><input type="text" id="feName" value="Fe–Ti 氧化物"></div>
+              </div>
+              <div class="actions" style="padding:8px 0 0;gap:6px">
+                <button class="primary" id="feAdd" style="font-size:12px;padding:6px 14px">解析并加入</button>
+                <button class="ghost" id="feDemo" style="font-size:12px;padding:6px 12px">载入 Bishop 示例</button>
+              </div>
+              <div class="hint" id="feMsg"></div>
+              <p class="hint">可识别的列名：<code>T_C / T / T(°C) / T(K)</code> +
+                <code>logfO2 / log fO2</code>，或 <code>dNNO / ΔFMQ</code>。若给了 <code>dNNO</code>，
+                会先按该点温度换算成绝对 log fO₂ 再转 ΔFMQ。</p>
+            </div>
+
+            <div>
+              <div class="subhead">② 从“批量表格”结果取</div>
+              <p class="hint" id="batchSrcHint">还没有批量结果。先到“批量表格”页算一遍，
+                结果表里需要有 <code>T_C</code> 或 <code>T_K</code> 列。</p>
+              <div class="actions" style="padding:0">
+                <button class="ghost" id="batchToPlot" style="font-size:12px;padding:6px 12px">加入对比图</button>
+              </div>
+
+              <div class="subhead" style="margin-top:16px">③ 手工加一组</div>
+              <textarea class="mini" id="manInput" spellcheck="false"
+placeholder="T_C,ΔFMQ
+800,1.2
+850,0.8"></textarea>
+              <div class="row3">
+                <div class="field"><label>组名</label><input type="text" id="manName" value="手工数据"></div>
+                <div class="field"><label>数值含义</label>
+                  <select id="manType">
+                    <option value="dFMQ">ΔFMQ</option>
+                    <option value="dNNO">ΔNNO</option>
+                    <option value="logfO2">log fO₂</option>
+                  </select></div>
+              </div>
+              <div class="actions" style="padding:8px 0 0">
+                <button class="ghost" id="manAdd" style="font-size:12px;padding:6px 12px">加入</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 说明 ============================ -->
+<section id="tab-docs">
+  <div class="docs" id="docs"></div>
+</section>
+
+</main>
+
+<footer>
+  OxyBar · 单文件离线版 · 所有公式均可用 Python 版 <code>tests/test_validation.py</code> 复算核对
+</footer>
+
+<script>
+/* =========================================================================
+ *  OXY —— 纯计算内核（不依赖 DOM，可在 Node 中单独测试）
+ * ========================================================================= */
+const OXY = (function () {
+  "use strict";
+  const LN10 = Math.log(10);
+
+  /* ---------------- 1. 缓冲剂 ---------------- */
+  const FROST = {
+    QIF_L:  {label:"QIF (Low T) 石英-铁橄榄石-铁", A:-29435.7, B:7.391,  C:0.044, t:[300,600]},
+    QIF_H:  {label:"QIF (High T) 石英-铁橄榄石-铁", A:-29520.8, B:7.492, C:0.050, t:[600,1200]},
+    IW:     {label:"IW 铁-方铁矿",                A:-27489.0, B:6.702,  C:0.055, t:[400,1400]},
+    WM:     {label:"WM 方铁矿-铁",                A:-32807.0, B:13.012, C:0.083, t:[700,1000]},
+    IM:     {label:"IM 铁-磁铁矿",                A:-28690.6, B:8.130,  C:0.056, t:[400,1200]},
+    CoCoO:  {label:"Co-CoO 钴-氧化钴",            A:-24332.6, B:7.295,  C:0.052, t:[700,1200]},
+    FMQ_L:  {label:"FMQ (Low T) 铁橄榄石-磁铁矿-石英", A:-26455.3, B:10.344, C:0.092, t:[400,600]},
+    FMQ_H:  {label:"FMQ (High T) 铁橄榄石-磁铁矿-石英", A:-25096.3, B:8.735, C:0.110, t:[600,1400]},
+    NNO:    {label:"NNO 镍-氧化镍",               A:-24930.0, B:9.360,  C:0.046, t:[400,1400]},
+    MH_L:   {label:"MH (Low T) 磁铁矿-赤铁矿",     A:-25497.5, B:14.330, C:0.019, t:[400,600]},
+    MH_M:   {label:"MH (Med T) 磁铁矿-赤铁矿",     A:-26452.6, B:15.455, C:0.019, t:[600,800]},
+    MH_H:   {label:"MH (High T) 磁铁矿-赤铁矿",    A:-25700.6, B:14.558, C:0.019, t:[800,1400]}
+  };
+
+  const ANALYTIC = {
+    FMQ: {
+      label:"FMQ 解析式 (O'Neill 1987)",
+      f: T => (-587474 + 1584.427*T - 203.3164*T*Math.log(T) + 0.09271*T*T) / (8.314511*T*LN10)
+    },
+    NNO_ONEILL: {
+      label:"NNO 解析式 (O'Neill & Pownceby 1993)",
+      f: T => (-478967 + 248.514*T - 9.7961*T*Math.log(T)) / (8.314511*T*LN10)
+    },
+    ReReO2: {
+      label:"Re-ReO2 铼-二氧化铼 (Pownceby & O'Neill 1994)",
+      f: T => (-451020 + 297.595*T - 14.6586*T*Math.log(T)) / (8.31441*T*LN10)
+    },
+    CrCr2O3: {
+      label:"Cr-Cr2O3 (Holzheid & O'Neill 1995)",
+      f: T => (-758585 + 349.718*T - 25.5216*T*Math.log(T) + 0.00935*T*T) / (8.314*T*LN10)
+    },
+    MoMoO2: {
+      label:"Mo-MoO2 (Bygden et al. 1994)",
+      f: T => (-580563 + 173*T) / (8.314*T*LN10)
+    },
+    MnMnO: {
+      label:"Mn-MnO (Robie et al. 1979)",
+      f: T => 2*(-376969 - 4.19123*T*Math.log(T)) / (8.314*T*LN10)
+    },
+    CCO: {
+      label:"CCO 石墨-CO-CO2 (French & Eugster 1965)",
+      f: (T,P) => (-20586/T) - 0.044 + Math.log10(P) - 0.028*(P-1)/T
+    },
+    SiSiO2: {
+      label:"Si-SiO2 (Chase 1998)",
+      f: (T,P) => {
+        const p = P/10000, p0 = 0.0001;
+        const poly = (0.00251*p*p*p - 0.20044*p*p + 10.32257*p)
+                   - (0.00251*p0*p0*p0 - 0.20044*p0*p0 + 10.32257*p0);
+        const base = (-911336 + 212.2423*T - 4.512*T*Math.log(T)) / (8.314*T*LN10);
+        return (1/T)*0.4343*120*poly + base;
+      }
+    },
+    IW_HP: {
+      label:"IW 高压式 (Campbell et al. 2009, P>10 GPa)",
+      f: (T,P) => {
+        const p = P/10000;
+        return (6.54106 + 0.0012324*p)
+             + (-28163.6 + 546.32*p - 1.13412*p*p + 0.0019274*p*p*p)/T;
+      }
+    }
+  };
+
+  const ALL_BUFFERS = Object.keys(FROST).concat(Object.keys(ANALYTIC));
+
+  function bufferLabel(key) {
+    return FROST[key] ? FROST[key].label : (ANALYTIC[key] ? ANALYTIC[key].label : key);
+  }
+
+  function bufferLogfO2(key, T, P) {
+    if (!(T > 0)) throw new Error("温度必须为正的开尔文值");
+    if (FROST[key]) {
+      const b = FROST[key];
+      return b.A/T + b.B + b.C*((P===undefined?1:P)-1)/T;
+    }
+    if (ANALYTIC[key]) return ANALYTIC[key].f(T, (P===undefined?1:P));
+    throw new Error("未知缓冲剂: " + key);
+  }
+
+  function bufferDelta(logfO2, key, T, P) {
+    return logfO2 - bufferLogfO2(key, T, P);
+  }
+  function bufferAbsolute(d, key, T, P) {
+    return d + bufferLogfO2(key, T, P);
+  }
+  function convertDelta(value, src, dst, T, P) {
+    return value + bufferLogfO2(src, T, P) - bufferLogfO2(dst, T, P);
+  }
+  /* 绝对 logfO2 -> 一组 Δ */
+  function toDelta(logfO2, T_C, P) {
+    const T = T_C + 273.15;
+    const out = {};
+    ["FMQ","NNO","IW","MH_H","QIF_H","WM","CoCoO","CCO","ReReO2","MoMoO2","CrCr2O3"].forEach(function (k) {
+      out["Δ"+k] = logfO2 - bufferLogfO2(k, T, P);
+    });
+    out["logfO2(FMQ)"] = bufferLogfO2("FMQ", T, P);
+    out["logfO2(NNO)"] = bufferLogfO2("NNO", T, P);
+    return out;
+  }
+
+  /* ---------------- 2. 锆石 ---------------- */
+  function tiInZirconT(ti, aTiO2, aSiO2, pMPa, model) {
+    ti = +ti; aTiO2 = (aTiO2===undefined||aTiO2==="")?0.7:+aTiO2;
+    aSiO2 = (aSiO2===undefined||aSiO2==="")?1.0:+aSiO2;
+    pMPa = (pMPa===undefined||pMPa==="")?1000:+pMPa;
+    if (!(ti > 0)) throw new Error("Ti 含量必须为正");
+    if (!(aTiO2 > 0) || !(aSiO2 > 0)) throw new Error("活度必须为正");
+    const denom = 5.711 - Math.log10(ti) + Math.log10(aTiO2) - Math.log10(aSiO2);
+    if (Math.abs(denom) < 1e-9) throw new Error("活度组合使分母为 0");
+    let T;
+    if ((model||"loucks2020") === "ferry2007") T = 4800/denom;
+    else T = (4800 - 0.4748*(pMPa - 1000))/denom;
+    return {T_K:T, T_C:T-273.15, logTi:Math.log10(ti)};
+  }
+
+  const CHONDRITE = {La:0.237, Ce:0.613, Pr:0.0928, Nd:0.457, Sm:0.148,
+                     Eu:0.0563, Gd:0.199, Tb:0.0361, Dy:0.246, Ho:0.0546,
+                     Er:0.16, Tm:0.0247, Yb:0.161, Lu:0.0246};
+  function ceAnomaly(la, ce, pr) {
+    if (!(la>0) || !(ce>0) || !(pr>0)) throw new Error("REE 浓度必须为正");
+    return (ce/CHONDRITE.Ce) / Math.sqrt((la/CHONDRITE.La)*(pr/CHONDRITE.Pr));
+  }
+  function euAnomaly(sm, eu, gd) {
+    if (!(sm>0) || !(eu>0) || !(gd>0)) throw new Error("REE 浓度必须为正");
+    return (eu/CHONDRITE.Eu) / Math.sqrt((sm/CHONDRITE.Sm)*(gd/CHONDRITE.Gd));
+  }
+
+  const LOUCKS_A = 3.998, LOUCKS_B = 2.284, LOUCKS_SIGMA = 0.6;
+  function loucks2020(ce, u, ti) {
+    if (!(ce>0) || !(u>0) || !(ti>0)) throw new Error("Ce、U、Ti 必须为正的 ppm 值");
+    const x = ce/Math.sqrt(u*ti);
+    const logx = Math.log10(x);
+    return {dFMQ: LOUCKS_A*logx + LOUCKS_B, logX: logx, x: x, sigma: LOUCKS_SIGMA};
+  }
+
+  const SB = {k1:1.0487, k2:13136, k3:2.064, k4:8.878, k5:8.9554};
+  function smythe2016(ce4ce3, T_K, nboT, xH2O) {
+    if (!(ce4ce3 > 0)) throw new Error("Ce4+/Ce3+ 必须为正");
+    if (!(T_K > 0)) throw new Error("温度必须为 K 正值");
+    const v = (4/LN10) * (Math.log(ce4ce3*SB.k1) - SB.k2/T_K
+              + SB.k3*(nboT||0) + SB.k4*(xH2O||0) + SB.k5);
+    return {logfO2:v};
+  }
+
+  function ceratioFromD(dCe, dCe3, dCe4) {
+    if (dCe4 === dCe3) throw new Error("两条回归线重合");
+    const r = (dCe - dCe3)/(dCe4 - dCe);
+    if (!(r > 0 && r < 1)) throw new Error("D_Ce 落在两条回归线之外 (r=" + r.toFixed(4) + ")，该测点不可用");
+    return r/(1-r);
+  }
+
+  /* ---------------- 3. 磷灰石 ---------------- */
+  function miles2014(mn) {
+    if (!(mn >= 0)) throw new Error("Mn 含量必须为非负 ppm");
+    return {logfO2: -9.75 - 0.0022*(+mn)};
+  }
+  const JD_K = 6.15e-4;
+  function jidygert2023(euA, euP, d2a, d3a, d2p, d3p) {
+    if (!(euA>0) || !(euP>0)) throw new Error("Eu 含量必须为正");
+    const X = euA/euP;
+    const num = X*d2p - d2a, den = d3a - X*d3p;
+    if (!(num > 0) || !(den > 0)) {
+      throw new Error("分配系数组合使对数项非正 (num=" + fmt(num) + ", den=" + fmt(den) + ")，检查 D 值或平衡性");
+    }
+    return {logfO2: 4*Math.log10(JD_K*num/den), X: X};
+  }
+
+  /* ---------------- 4. 角闪石 ---------------- */
+  const OXIDE_MW = {SiO2:60.0843, TiO2:79.8664, Al2O3:101.9613, FeO:71.8444,
+                    Fe2O3:159.6882, MnO:70.9374, MgO:40.3044, CaO:56.0774,
+                    Na2O:61.9789, K2O:94.1960, Cr2O3:151.9904, F:18.9984, Cl:35.4527};
+
+  function amphiboleCations(ox) {
+    const g = function (k) { const v = ox[k]; return (v===undefined||v===null||v==="")?0:+v; };
+    const m = {};
+    for (const k in OXIDE_MW) m[k] = g(k)/OXIDE_MW[k];
+    let Si = m.SiO2, Ti = m.TiO2, Al = m.Al2O3*2, Cr = m.Cr2O3*2;
+    let Fe = m.FeO + m.Fe2O3*2, Mn = m.MnO, Mg = m.MgO, Ca = m.CaO;
+    let Na = m.Na2O*2, K = m.K2O*2, F = m.F, Cl = m.Cl;
+    const basis = Si+Ti+Al+Cr+Fe+Mn+Mg;
+    if (!(basis > 0)) throw new Error("氧化物总量为 0");
+    const f = 13/basis;
+    Si*=f; Ti*=f; Al*=f; Cr*=f; Fe*=f; Mn*=f; Mg*=f; Ca*=f; Na*=f; K*=f; F*=f; Cl*=f;
+    const OH = 2 - F - Cl;
+    let Fe3, Fe2;
+    if (g("Fe2O3") > 0) { Fe3 = m.Fe2O3*2*f; Fe2 = Fe - Fe3; }
+    else {
+      Fe3 = 46 - (4*(Si+Ti) + 3*(Al+Cr) + 2*(Fe+Mn+Mg+Ca) + Na + K);
+      if (Fe3 < 0) Fe3 = 0;
+      Fe2 = Fe - Fe3;
+    }
+    return {Si:Si, Ti:Ti, Al:Al, Cr:Cr, FeT:Fe, Fe3:Fe3, Fe2:Fe2,
+            Mn:Mn, Mg:Mg, Ca:Ca, Na:Na, K:K, OH:OH};
+  }
+
+  function ridolfiT(c) {
+    const Si = c.Si, Al = c.Al, Ca = c.Ca, Na = c.Na;
+    const AV = (Si-4)/4, AW = (8-Si)/4, AX = (Si+Al-8)/2;
+    const BA = Ca + Na - 2;
+    const BB = (2-Ca)/2, BC = Ca/2;
+    const num = 78.44 + 3 - 33.6*BB - (66.8 - 2.92*1.3)*AX + 78.5*AW + 9.4*BA;
+    const inner = (27*BB*AV*0.307) / (64*BC*AW*0.659);
+    if (!(inner > 0)) throw new Error("ln 项非正，成分超出该温度计范围");
+    const T = num / (0.0721 - 0.00831451*Math.log(inner));
+    return {T_K:T, T_C:T-273.15};
+  }
+
+  function mgStar(c) {
+    const alIV = Math.max(0, Math.min(c.Al, 8 - c.Si));
+    const alVI = Math.max(0, c.Al - alIV);
+    return c.Mg + c.Si/47 - alVI/9 - 1.3*c.Ti + c.Fe3/3.7 + c.Fe2/5.2
+         - c.Ca/20 + c.Na/2.8 + c.Al/9.5;
+  }
+  function ridolfiDNNO(c) {
+    const mgs = mgStar(c);
+    return {dNNO: 1.644*mgs - 4.01, Mgstar: mgs};
+  }
+
+  function fmt(v) {
+    if (!isFinite(v)) return String(v);
+    if (v !== 0 && (Math.abs(v) < 1e-4 || Math.abs(v) >= 1e6)) return v.toExponential(3);
+    return String(Math.round(v*1e6)/1e6);
+  }
+
+  return {
+    FROST:FROST, ANALYTIC:ANALYTIC, ALL_BUFFERS:ALL_BUFFERS,
+    bufferLabel:bufferLabel, bufferLogfO2:bufferLogfO2,
+    bufferDelta:bufferDelta, bufferAbsolute:bufferAbsolute,
+    convertDelta:convertDelta, toDelta:toDelta,
+    tiInZirconT:tiInZirconT, ceAnomaly:ceAnomaly, euAnomaly:euAnomaly,
+    loucks2020:loucks2020, smythe2016:smythe2016, ceratioFromD:ceratioFromD,
+    miles2014:miles2014, jidygert2023:jidygert2023,
+    amphiboleCations:amphiboleCations, ridolfiT:ridolfiT, ridolfiDNNO:ridolfiDNNO,
+    CHONDRITE:CHONDRITE, fmt:fmt,
+    LOUCKS_A:LOUCKS_A, LOUCKS_B:LOUCKS_B
+  };
+})();
+
+if (typeof module !== "undefined" && module.exports) { module.exports = OXY; }
+if (typeof globalThis !== "undefined") { globalThis.OXY = OXY; }
+
+
+/* =========================================================================
+ *  方法登记表
+ * ========================================================================= */
+const AMPH_FIELDS = [
+  {name:"SiO2",  label:"SiO₂",  unit:"wt%", def:50.0},
+  {name:"TiO2",  label:"TiO₂",  unit:"wt%", def:1.0},
+  {name:"Al2O3", label:"Al₂O₃", unit:"wt%", def:5.0},
+  {name:"FeO",   label:"FeO(t)",unit:"wt%", def:12.0},
+  {name:"MnO",   label:"MnO",   unit:"wt%", def:0.3},
+  {name:"MgO",   label:"MgO",   unit:"wt%", def:16.0},
+  {name:"CaO",   label:"CaO",   unit:"wt%", def:11.0},
+  {name:"Na2O",  label:"Na₂O",  unit:"wt%", def:1.2},
+  {name:"K2O",   label:"K₂O",   unit:"wt%", def:0.5}
+];
+
+/* =========================================================================
+ *  方法性质标签：氧逸度计 / 温度计 / 指标 / 中间计算 / 换算工具
+ *  —— 只有“氧逸度计”直接产出 fO₂；温度计是它的配套输入
+ * ========================================================================= */
+const METHOD_KIND = {
+  buffer_value: {kind: "tool", label: "换算工具",
+    pair: "把绝对 log fO₂ 与 ΔFMQ / ΔNNO / ΔIW 等互相换算，本身不产出新数据"},
+  zircon_ti: {kind: "thermo", label: "温度计",
+    pair: "锆石 Ce/√(U·Ti) 给出的是 ΔFMQ，不含温度；要换成绝对 log fO₂、"
+        + "或要与 Fe–Ti 氧化物叠在同一坐标上比较时，就需要这个 T。"
+        + "同一个 LA-ICP-MS 测点的 Ti 与 Ce、U 是同时测的，所以一颗锆石即可自洽"},
+  zircon_loucks2020: {kind: "oxy", label: "氧逸度计",
+    pair: "ΔFMQ 与温度无关（这是 Loucks 等刻意设计的），所以温度计误差不会传进来；"
+        + "但换绝对值和跨方法对比时仍需 Ti 温度计"},
+  zircon_smythe2016: {kind: "oxy", label: "氧逸度计",
+    pair: "标定式里含 −13136/T 项，必须给出温度；T 可用 Ti-in-zircon 温度计"},
+  zircon_ce_anomaly: {kind: "index", label: "指标",
+    pair: "半定量的相对氧化态指标，只能横向比较，不能换算绝对 fO₂"},
+  zircon_eu_anomaly: {kind: "index", label: "指标",
+    pair: "Eu 异常同时受斜长石分异和 fO₂ 控制，不能单独定量氧逸度"},
+  zircon_ceratio: {kind: "calc", label: "中间计算",
+    pair: "为 Smythe & Brenan (2016) 法准备输入：由 D(Ce) 反算熔体 Ce⁴⁺/Ce³⁺"},
+  apatite_miles2014: {kind: "oxy", label: "氧逸度计",
+    pair: "经验式不含温度项，直接给出绝对 log fO₂（需自行按 T 换算成 Δ）"},
+  apatite_jidygert2023: {kind: "oxy", label: "氧逸度计",
+    pair: "需要温度来算四个分配系数；本文没有配套温度计，请用全岩或其它矿物温度计"},
+  amphibole_T: {kind: "thermo", label: "温度计",
+    pair: "与下面的 ΔNNO 出自同一份角闪石成分、同一套 Ridolfi 标定，"
+        + "所以两者天然自洽——这也是角闪石氧逸度计的优点"},
+  amphibole_dNNO: {kind: "oxy", label: "氧逸度计",
+    pair: "与角闪石 Ti 温度计同源，同一张电子探针数据同时给出 T 与 ΔNNO"}
+};
+
+function kindOf(m) {
+  return METHOD_KIND[m.key] || {kind: "oxy", label: "氧逸度计", pair: ""};
+}
+
+const METHODS = [
+  {
+    key:"buffer_value", cat:"缓冲剂 / 换算", name:"缓冲剂 log fO₂", status:"ok",
+    ref:"Frost (1991)；O'Neill (1987)；O'Neill & Pownceby (1993)；Iacovino (2021) Zenodo",
+    range:"按各缓冲剂适用区间", sigma:"—",
+    note:"线性式 log fO₂ = A/T + B + C(P−1)/T，T 以 K、P 以 bar 计",
+    fields:[
+      {name:"buffer", label:"缓冲剂", kind:"select", options:OXY.ALL_BUFFERS,
+       labels:OXY.ALL_BUFFERS.map(function(k){return OXY.bufferLabel(k);})},
+      {name:"T_C", label:"温度", unit:"°C", def:1000},
+      {name:"P_bar", label:"压力", unit:"bar", def:1}
+    ],
+    calc:function(v){
+      const T = +v.T_C + 273.15, P = +v.P_bar;
+      return [{k:"log fO₂", v:OXY.bufferLogfO2(v.buffer, T, P)}];
+    }
+  },
+  {
+    key:"zircon_ti", cat:"锆石", name:"Ti-in-zircon 温度计", status:"ok",
+    ref:"Ferry & Watson (2007) CMP 154:429-437；Loucks et al. (2020) J.Petrol. 61, egaa034",
+    doi:"10.1007/s00410-007-0201-0", range:"650–1300 °C", sigma:"±20–30 °C",
+    note:"loucks2020 版本含压力项，P 以 MPa 计（约 −95 K/GPa）",
+    fields:[
+      {name:"ti_ppm", label:"Ti", unit:"ppm", def:10},
+      {name:"a_tio2", label:"a(TiO₂)", def:0.7},
+      {name:"a_sio2", label:"a(SiO₂)", def:1.0},
+      {name:"p_mpa",  label:"压力", unit:"MPa", def:500},
+      {name:"model",  label:"模型", kind:"select", options:["loucks2020","ferry2007"],
+       labels:["Loucks 2020（含压力项）","Ferry & Watson 2007（无压力项）"]}
+    ],
+    calc:function(v){
+      const r = OXY.tiInZirconT(v.ti_ppm, v.a_tio2, v.a_sio2, v.p_mpa, v.model);
+      return [{k:"T (°C)", v:r.T_C}, {k:"T (K)", v:r.T_K}];
+    }
+  },
+  {
+    key:"zircon_loucks2020", cat:"锆石", name:"锆石 Ce/√(U·Ti) 氧逸度计", status:"ok",
+    ref:"Loucks, Fiorentini & Henríquez (2020) J. Petrol. 61, egaa034",
+    doi:"10.1093/petrology/egaa034", range:"650–1300 °C；0–4 GPa；FMQ−4.9 ~ +2.9",
+    sigma:"1σ ≈ 0.6 log unit",
+    note:"ΔFMQ = 3.998·log₁₀(Ce/√(U·Ti)) + 2.284。U 应为做过放射性衰变校正的初始 U（Uᵢ）",
+    fields:[
+      {name:"ce_ppm", label:"Ce", unit:"ppm", def:40},
+      {name:"u_ppm",  label:"U (初始 Uᵢ)", unit:"ppm", def:600},
+      {name:"ti_ppm", label:"Ti", unit:"ppm", def:8}
+    ],
+    calc:function(v){
+      const r = OXY.loucks2020(v.ce_ppm, v.u_ppm, v.ti_ppm);
+      return [{k:"ΔFMQ", v:r.dFMQ, big:true},
+              {k:"log₁₀ Ce/√(U·Ti)", v:r.logX},
+              {k:"Ce/√(U·Ti)", v:r.x}];
+    }
+  },
+  {
+    key:"zircon_smythe2016", cat:"锆石", name:"锆石 Ce⁴⁺/Ce³⁺ 氧逸度计", status:"ok",
+    ref:"Smythe & Brenan (2016) EPSL 453:260-266", doi:"10.1016/j.epsl.2016.08.013",
+    range:"700–1100 °C（含 NBO/T、H₂O 成分项）", sigma:"±0.3~0.5 log unit",
+    note:"输入为熔体 Ce⁴⁺/Ce³⁺；可用下方“晶格应变反算”由 D(Ce) 得到",
+    fields:[
+      {name:"ce4_ce3", label:"熔体 Ce⁴⁺/Ce³⁺", def:10},
+      {name:"T_K", label:"温度", unit:"K", def:1100},
+      {name:"nbo_t", label:"NBO/T", def:0},
+      {name:"x_h2o", label:"x(H₂O)", def:0}
+    ],
+    calc:function(v){
+      const r = OXY.smythe2016(v.ce4_ce3, v.T_K, v.nbo_t, v.x_h2o);
+      return [{k:"log fO₂", v:r.logfO2, big:true}];
+    }
+  },
+  {
+    key:"zircon_ce_anomaly", cat:"锆石", name:"锆石 Ce 异常（相对氧化态）", status:"ok",
+    ref:"Ballard et al. (2002) CMP 144:347-364", doi:"10.1007/s00410-002-0402-5",
+    range:"—", sigma:"半定量",
+    note:"Ce/Ce* = Ce_N/√(La_N·Pr_N)，球粒陨石标准化（McDonough & Sun 1995）。只能相对比较",
+    fields:[
+      {name:"la", label:"La", unit:"ppm", def:0.1},
+      {name:"ce", label:"Ce", unit:"ppm", def:30},
+      {name:"pr", label:"Pr", unit:"ppm", def:0.05}
+    ],
+    calc:function(v){
+      const a = OXY.ceAnomaly(v.la, v.ce, v.pr);
+      return [{k:"Ce/Ce*", v:a}, {k:"log Ce/Ce*", v:Math.log10(a)}];
+    }
+  },
+  {
+    key:"zircon_eu_anomaly", cat:"锆石", name:"锆石 Eu 异常", status:"ok",
+    ref:"球粒陨石标准化（McDonough & Sun 1995）", range:"—", sigma:"半定量",
+    note:"Eu/Eu* = Eu_N/√(Sm_N·Gd_N)。Eu 异常反映斜长石分异与 fO₂ 共同作用，不能单独定量 fO₂",
+    fields:[
+      {name:"sm", label:"Sm", unit:"ppm", def:3},
+      {name:"eu", label:"Eu", unit:"ppm", def:0.5},
+      {name:"gd", label:"Gd", unit:"ppm", def:30}
+    ],
+    calc:function(v){
+      const a = OXY.euAnomaly(v.sm, v.eu, v.gd);
+      return [{k:"Eu/Eu*", v:a}, {k:"log Eu/Eu*", v:Math.log10(a)}];
+    }
+  },
+  {
+    key:"zircon_ceratio", cat:"锆石", name:"晶格应变反算 Ce⁴⁺/Ce³⁺", status:"ok",
+    ref:"Smythe & Brenan (2016) 附表方法（两线法）", range:"—", sigma:"—",
+    note:"对三价/四价 REE 各做 ln D 对 (rᵢ/3+r₀/6)(rᵢ−r₀)² 的回归，取 Ce 半径处预测值",
+    fields:[
+      {name:"d_ce",  label:"实测 D(Ce)", def:0.017},
+      {name:"d_ce3", label:"预测 D(Ce³⁺)", def:0.005},
+      {name:"d_ce4", label:"预测 D(Ce⁴⁺)", def:0.03}
+    ],
+    calc:function(v){
+      const r = OXY.ceratioFromD(v.d_ce, v.d_ce3, v.d_ce4);
+      return [{k:"熔体 Ce⁴⁺/Ce³⁺", v:r, big:true}];
+    }
+  },
+  {
+    key:"apatite_miles2014", cat:"磷灰石", name:"磷灰石 Mn 氧逸度计", status:"ok",
+    ref:"Miles et al. (2014) GCA 132:101-119", doi:"10.1016/j.gca.2013.12.017",
+    range:"660–920 °C，SiO₂ 59–78 wt%", sigma:"±0.6 log unit",
+    note:"log fO₂ = −9.75 − 0.0022·Mn(ppm)。无 T/P 项，极简便但精度有限",
+    fields:[{name:"mn_ppm", label:"Mn", unit:"ppm", def:1000}],
+    calc:function(v){ return [{k:"log fO₂", v:OXY.miles2014(v.mn_ppm).logfO2, big:true}]; }
+  },
+  {
+    key:"apatite_jidygert2023", cat:"磷灰石", name:"磷灰石-斜长石 Eu 氧逸度计", status:"ok",
+    ref:"Ji & Dygert (2023) GCA", range:"—", sigma:"±0.5 log unit",
+    note:"log fO₂ = 4·log₁₀(6.15e−4 · (X·D2_plag − D2_apt)/(D3_apt − X·D3_plag))，X = Eu_apt/Eu_plag",
+    fields:[
+      {name:"eu_apatite", label:"Eu 磷灰石", unit:"ppm", def:38.9},
+      {name:"eu_plagioclase", label:"Eu 斜长石", unit:"ppm", def:22.5},
+      {name:"d_eu2_apatite", label:"D(Eu²⁺) 磷灰石", def:1.0},
+      {name:"d_eu3_apatite", label:"D(Eu³⁺) 磷灰石", def:35.0},
+      {name:"d_eu2_plagioclase", label:"D(Eu²⁺) 斜长石", def:2.0},
+      {name:"d_eu3_plagioclase", label:"D(Eu³⁺) 斜长石", def:0.1}
+    ],
+    calc:function(v){
+      const r = OXY.jidygert2023(v.eu_apatite, v.eu_plagioclase,
+        v.d_eu2_apatite, v.d_eu3_apatite, v.d_eu2_plagioclase, v.d_eu3_plagioclase);
+      return [{k:"log fO₂", v:r.logfO2, big:true}, {k:"X = Eu_apt/Eu_plag", v:r.X}];
+    }
+  },
+  {
+    key:"amphibole_T", cat:"角闪石", name:"角闪石 Ti 温度计", status:"warn",
+    ref:"Ridolfi, Renzulli & Puerini (2010) CMP 160:45-66", doi:"10.1007/s00410-009-0465-7",
+    range:"800–1100 °C", sigma:"±22 °C",
+    note:"实验性：公式形式取自 Loucks 2020 数据表，标定常数疑为单样品特定，需与原文核对",
+    fields:AMPH_FIELDS,
+    calc:function(v){
+      const c = OXY.amphiboleCations(v);
+      const r = OXY.ridolfiT(c);
+      return [{k:"T (°C)", v:r.T_C, big:true}, {k:"T (K)", v:r.T_K}];
+    }
+  },
+  {
+    key:"amphibole_dNNO", cat:"角闪石", name:"角闪石 ΔNNO 氧逸度计", status:"warn",
+    ref:"Ridolfi et al. (2010) CMP 160:45-66", doi:"10.1007/s00410-009-0465-7",
+    range:"—", sigma:"±0.3 log unit",
+    note:"实验性：Mg* 的 Al_IV/Al_VI 配分与原作者实现不同，复算有 0.2–0.4 log unit 系统偏差，请勿直接发表",
+    fields:AMPH_FIELDS,
+    calc:function(v){
+      const c = OXY.amphiboleCations(v);
+      const r = OXY.ridolfiDNNO(c);
+      return [{k:"ΔNNO", v:r.dNNO, big:true}, {k:"Mg*", v:r.Mgstar}];
+    }
+  }
+];
+
+/* =========================================================================
+ *  界面
+ * ========================================================================= */
+(function () {
+  "use strict";
+  if (typeof document === "undefined") return;
+
+  const $ = function (s) { return document.querySelector(s); };
+  const $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+  let current = null, lastResult = null;
+
+  /* ---- 选项卡 ---- */
+  $$("nav.tabs button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      $$("nav.tabs button").forEach(function (x) { x.classList.remove("on"); });
+      b.classList.add("on");
+      $$("main section").forEach(function (s) { s.classList.remove("on"); });
+      document.getElementById("tab-" + b.dataset.tab).classList.add("on");
+    });
+  });
+
+  /* ---- 方法列表 ---- */
+  (function buildList() {
+    const ul = $("#methodList");
+    const cats = {};
+    METHODS.forEach(function (m) { (cats[m.cat] = cats[m.cat] || []).push(m); });
+    Object.keys(cats).forEach(function (cat) {
+      const h = document.createElement("div");
+      h.className = "cat"; h.textContent = cat;
+      ul.appendChild(h);
+      cats[cat].forEach(function (m) {
+        const li = document.createElement("li");
+        li.dataset.key = m.key;
+        const k = kindOf(m);
+        li.innerHTML = '<span class="dot' + (m.status === "warn" ? " warn" : "") +
+                       '"></span>' + m.name +
+                       '<span class="mtag ' + k.kind + '">' + k.label + '</span>';
+        li.title = m.name + "（" + k.label + "）" +
+                   (k.pair ? "\n配套：" + k.pair : "");
+        li.addEventListener("click", function () { showMethod(m.key); });
+        ul.appendChild(li);
+      });
+    });
+  })();
+
+  function showMethod(key) {
+    const m = METHODS.filter(function (x) { return x.key === key; })[0];
+    if (!m) return;
+    current = m;
+    $$("#methodList li").forEach(function (li) {
+      li.classList.toggle("on", li.dataset.key === key);
+    });
+
+    const tag = m.status === "ok"
+      ? '<span class="tag ok">已验证</span>'
+      : '<span class="tag warn">⚠ 实验性 / 未验证</span>';
+    const k = kindOf(m);
+    let meta = m.ref;
+    if (m.doi) meta += ' &nbsp;·&nbsp; DOI: ' + m.doi;
+    $("#mhead").innerHTML =
+      '<h3>' + m.name + ' &nbsp;' +
+      '<span class="mtag ' + k.kind + '" style="margin-left:0">' + k.label + '</span> ' +
+      tag + '</h3>' +
+      (k.pair ? '<div class="pairline">🔗 ' + k.pair + '</div>' : '') +
+      '<div class="meta" style="margin-top:6px">' + meta + '<br>' +
+      '<b>适用范围</b> ' + (m.range || "—") +
+      ' &nbsp;&nbsp; <b>误差</b> ' + (m.sigma || "见文献") + '<br>' +
+      '<span style="color:#8a5a00">' + (m.note || "") + '</span></div>';
+
+    const f = $("#form");
+    f.innerHTML = "";
+    m.fields.forEach(function (fd) {
+      const div = document.createElement("div");
+      div.className = "field";
+      const lab = document.createElement("label");
+      lab.innerHTML = fd.label + (fd.unit ? ' <span class="u">(' + fd.unit + ')</span>' : "");
+      div.appendChild(lab);
+      let el;
+      if (fd.kind === "select") {
+        el = document.createElement("select");
+        const labels = fd.labels || fd.options;
+        fd.options.forEach(function (o, i) {
+          const op = document.createElement("option");
+          op.value = o; op.textContent = labels[i];
+          el.appendChild(op);
+        });
+        if (fd.options.length) el.value = fd.options[0];
+      } else {
+        el = document.createElement("input");
+        el.type = "number"; el.step = "any";
+        if (fd.def !== undefined) el.value = fd.def;
+      }
+      el.name = fd.name;
+      el.id = "f_" + fd.name;
+      el.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); doCalc(); }
+      });
+      div.appendChild(el);
+      f.appendChild(div);
+    });
+
+    $("#result").innerHTML = '<span class="hint">填好参数后点“计 算”。</span>';
+    lastResult = null;
+  }
+
+  function readForm() {
+    const v = {};
+    current.fields.forEach(function (fd) {
+      const el = document.getElementById("f_" + fd.name);
+      v[fd.name] = el.value;
+    });
+    return v;
+  }
+
+  function doCalc() {
+    if (!current) return;
+    const out = $("#result");
+    try {
+      const res = current.calc(readForm());
+      lastResult = {method: current.name, rows: res};
+      out.innerHTML = res.map(function (r) {
+        return '<div class="row"><span class="k">' + r.k + '</span>' +
+               '<span class="v" style="' + (r.big ? "" : "font-size:14px;font-weight:500") +
+               '">' + OXY.fmt(r.v) + "</span></div>";
+      }).join("");
+      /* 绝对值 -> 自动提示 Δ */
+      const absRow = res.filter(function (r) { return r.k === "log fO₂"; })[0];
+      if (absRow) {
+        const tEl = document.getElementById("cvT");
+        const pEl = document.getElementById("cvP");
+        document.getElementById("cvVal").value = absRow.v.toFixed(4);
+        document.getElementById("cvMode").value = "abs";
+        const d = OXY.toDelta(absRow.v, +tEl.value, +pEl.value);
+        out.innerHTML += '<div class="row"><span class="k">按 ' + tEl.value +
+          ' °C / ' + pEl.value + ' bar 换算</span><span class="v" style="font-size:14px">' +
+          "ΔFMQ = " + d["ΔFMQ"].toFixed(2) + " &nbsp; ΔNNO = " + d["ΔNNO"].toFixed(2) +
+          "</span></div>";
+      }
+    } catch (e) {
+      out.innerHTML = '<span class="err">⚠ ' + e.message + "</span>";
+      lastResult = null;
+    }
+  }
+
+  $("#btnCalc").addEventListener("click", doCalc);
+
+  $("#btnDemo").addEventListener("click", function () {
+    if (!current) return;
+    current.fields.forEach(function (fd) {
+      const el = document.getElementById("f_" + fd.name);
+      if (fd.kind === "select") return;
+      if (fd.def !== undefined) el.value = fd.def;
+    });
+    doCalc();
+  });
+
+  $("#btnCopy").addEventListener("click", function () {
+    if (!lastResult) return;
+    const txt = "【" + lastResult.method + "】\n" +
+      lastResult.rows.map(function (r) { return "  " + r.k + " = " + OXY.fmt(r.v); }).join("\n");
+    copyText(txt);
+  });
+
+  function copyText(t) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).catch(function () { fallbackCopy(t); });
+    } else fallbackCopy(t);
+  }
+  function fallbackCopy(t) {
+    const ta = document.createElement("textarea");
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  /* ---- Δ 换算器 ---- */
+  $("#btnConv").addEventListener("click", function () {
+    const v = +$("#cvVal").value;
+    const mode = $("#cvMode").value;
+    const T = +$("#cvT").value + 273.15;
+    const P = +$("#cvP").value;
+    let logf;
+    try {
+      if (mode === "abs") logf = v;
+      else if (mode === "ΔFMQ") logf = OXY.bufferAbsolute(v, "FMQ", T, P);
+      else logf = OXY.bufferAbsolute(v, "NNO", T, P);
+      const d = OXY.toDelta(logf, T - 273.15, P);
+      let html = "<b>log fO₂ = " + logf.toFixed(3) + "</b>  @ " +
+                 (T - 273.15).toFixed(0) + " °C / " + P + " bar<br>";
+      html += "ΔFMQ = <b>" + d["ΔFMQ"].toFixed(2) + "</b> &nbsp;&nbsp;" +
+              "ΔNNO = <b>" + d["ΔNNO"].toFixed(2) + "</b> &nbsp;&nbsp;" +
+              "ΔIW = <b>" + d["ΔIW"].toFixed(2) + "</b> &nbsp;&nbsp;" +
+              "ΔMH = <b>" + d["ΔMH_H"].toFixed(2) + "</b><br>";
+      html += "FMQ = " + d["logfO2(FMQ)"].toFixed(2) +
+              " &nbsp; NNO = " + d["logfO2(NNO)"].toFixed(2);
+      $("#convOut").innerHTML = html;
+    } catch (e) {
+      $("#convOut").innerHTML = '<span class="err">⚠ ' + e.message + "</span>";
+    }
+  });
+
+  /* ---- 批量 ---- */
+  const bSel = $("#bMethod");
+  METHODS.forEach(function (m) {
+    const o = document.createElement("option");
+    o.value = m.key;
+    o.textContent = "[" + m.cat + "] " + m.name + " · " + kindOf(m).label;
+    bSel.appendChild(o);
+  });
+
+  function updateBatchHint() {
+    const m = METHODS.filter(function (x) { return x.key === bSel.value; })[0];
+    if (!m) return;
+    $("#bCols").textContent = "需要的列：" +
+      m.fields.map(function (f) { return f.name; }).join(", ") +
+      (m.fields.some(function (f) { return f.kind === "select"; })
+        ? "（下拉项填英文键值）" : "");
+  }
+  bSel.addEventListener("change", updateBatchHint);
+  updateBatchHint();
+
+  function parseCSV(text, delim) {
+    const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+    const rows = [];
+    lines.forEach(function (line) {
+      if (line.trim() === "") return;
+      if (!delim) delim = (line.match(/\t/g) || []).length > (line.match(/,/g) || []).length ? "\t" : ",";
+      const parts = [];
+      let i = 0, inQ = false, cur = "";
+      while (i < line.length) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQ && line[i + 1] === '"') { cur += '"'; i += 2; continue; }
+          inQ = !inQ; i++; continue;
+        }
+        if (ch === delim && !inQ) { parts.push(cur); cur = ""; i++; continue; }
+        cur += ch; i++;
+      }
+      parts.push(cur);
+      rows.push(parts);
+    });
+    return rows;
+  }
+
+  let batchData = null;
+
+  $("#bRun").addEventListener("click", function () {
+    const m = METHODS.filter(function (x) { return x.key === bSel.value; })[0];
+    const txt = $("#bInput").value.trim();
+    const msg = $("#bMsg");
+    if (!txt) { msg.textContent = "请先粘贴 CSV 或载入文件。"; return; }
+    let rows;
+    try { rows = parseCSV(txt); } catch (e) { msg.textContent = "解析失败：" + e.message; return; }
+    if (rows.length < 2) { msg.textContent = "至少要有表头 + 一行数据。"; return; }
+
+    const head = rows[0].map(function (h) { return h.trim(); });
+    const need = m.fields.map(function (f) { return f.name; });
+    const missing = need.filter(function (n) { return head.indexOf(n) < 0; });
+    if (missing.length) {
+      msg.textContent = "缺少列：" + missing.join(", ") + "。该方法的输入列是：" + need.join(", ");
+      return;
+    }
+    const withD = $("#bWithDelta").checked;
+    const outHead = head.slice();
+    let extra = ["_error"];
+    const outRows = [];
+    let ok = 0;
+    for (let r = 1; r < rows.length; r++) {
+      const cells = rows[r];
+      if (cells.length === 1 && cells[0].trim() === "") continue;
+      const rec = {};
+      head.forEach(function (h, i) { rec[h] = (cells[i] === undefined ? "" : cells[i]); });
+      const v = {};
+      m.fields.forEach(function (fd) {
+        let raw = rec[fd.name];
+        if (raw === undefined || raw === "") v[fd.name] = fd.def;
+        else v[fd.name] = (fd.kind === "select") ? raw : +raw;
+      });
+      try {
+        const res = m.calc(v);
+        res.forEach(function (o) { rec[o.k] = o.v; });
+        if (withD && res.some(function (o) { return o.k === "log fO₂"; })) {
+          const lf = res.filter(function (o) { return o.k === "log fO₂"; })[0].v;
+          const T = v.T_C !== undefined ? +v.T_C
+                  : (v.T_K !== undefined ? +v.T_K - 273.15 : null);
+          if (T !== null && !isNaN(T)) {
+            const d = OXY.toDelta(lf, T, v.P_bar ? +v.P_bar : 1);
+            rec["ΔFMQ"] = d["ΔFMQ"]; rec["ΔNNO"] = d["ΔNNO"];
+          }
+        }
+        ok++;
+      } catch (e) {
+        rec["_error"] = e.message;
+      }
+      outRows.push(rec);
+    }
+
+    let resKeys;
+    try {
+      const defaults = m.fields.reduce(function (a, f) {
+        a[f.name] = (f.kind === "select") ? f.options[0] : f.def; return a; }, {});
+      resKeys = m.calc(defaults).map(function (o) { return o.k; });
+    } catch (e) {
+      resKeys = m.outputsHint || [];
+    }
+    extra = resKeys.slice();
+    if (withD) extra = extra.concat(["ΔFMQ", "ΔNNO"]);
+
+    const showHead = head.concat(extra).filter(function (h, i, arr) {
+      return arr.indexOf(h) === i;
+    });
+
+    batchData = {head: showHead, rows: outRows, methodName: m.name};
+    renderTable($("#bTable"), showHead, outRows, true);
+    $("#bWrap").style.display = "";
+    msg.textContent = "共 " + outRows.length + " 行，成功 " + ok + " 行。";
+    const bh = document.getElementById("batchSrcHint");
+    if (bh && outRows.length) {
+      bh.innerHTML = "已有批量结果：" + m.name + "（" + outRows.length + " 行）。" +
+        (showHead.some(function (h) { return /^t|temp/i.test(String(h).trim()); })
+          ? "点右边按钮加入对比图。"
+          : "⚠ 结果里没有 T_C 列，作图需要温度（锆石请先用 Ti 温度计算 T）。");
+    }
+  });
+
+  $("#bLoad").addEventListener("click", function () { $("#bFile").click(); });
+  $("#bFile").addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fr = new FileReader();
+    fr.onload = function () { $("#bInput").value = fr.result; $("#bMsg").textContent = "已载入 " + file.name; };
+    fr.readAsText(file, "utf-8");
+  });
+
+  $("#bSave").addEventListener("click", function () {
+    if (!batchData) { $("#bMsg").textContent = "还没有结果。"; return; }
+    const lines = [batchData.head.join(",")];
+    batchData.rows.forEach(function (r) {
+      lines.push(batchData.head.map(function (h) {
+        let v = r[h];
+        if (v === undefined || v === null) return "";
+        if (typeof v === "number") return String(v);
+        return '"' + String(v).replace(/"/g, '""') + '"';
+      }).join(","));
+    });
+    download("oxybar_result.csv", lines.join("\n"), "text/csv;charset=utf-8");
+  });
+
+  function download(name, text, mime) {
+    const blob = new Blob(["\ufeff" + text], {type: mime || "text/plain;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 100);
+  }
+
+  function renderTable(tbl, head, rows, numeric) {
+    let html = "<thead><tr>" + head.map(function (h) { return "<th>" + h + "</th>"; }).join("") +
+               "</tr></thead><tbody>";
+    rows.slice(0, 500).forEach(function (r) {
+      html += "<tr>" + head.map(function (h) {
+        const v = r[h];
+        if (v === undefined || v === null) return "<td></td>";
+        if (typeof v === "number") return "<td>" + (isFinite(v) ? (Math.abs(v) < 1e-3 || Math.abs(v) > 1e6 ? v.toExponential(3) : v.toFixed(4)) : "—") + "</td>";
+        return "<td>" + String(v) + "</td>";
+      }).join("") + "</tr>";
+    });
+    html += "</tbody>";
+    tbl.innerHTML = html;
+  }
+
+  /* ---- 缓冲剂表 ---- */
+  const BCOLS = ["FMQ","NNO","MH_H","IW","QIF_H","WM","CoCoO","CCO","ReReO2","MoMoO2","CrCr2O3"];
+  let bufferData = null;
+
+  function buildBufferTable() {
+    let temps = $("#bfT").value.split(/[,，\s]+/).filter(Boolean).map(Number);
+    const P = +$("#bfP").value;
+    if (!temps.length || temps.some(isNaN)) {
+      $("#bfWrap").style.display = "none"; return;
+    }
+    const head = ["T (°C)"].concat(BCOLS);
+    const rows = temps.map(function (t) {
+      const T = t + 273.15, rec = {"T (°C)": t};
+      BCOLS.forEach(function (k) { rec[k] = OXY.bufferLogfO2(k, T, P); });
+      return rec;
+    });
+    bufferData = {head: head, rows: rows};
+    renderTable($("#bfTable"), head, rows);
+    $("#bfWrap").style.display = "";
+  }
+  $("#bfRun").addEventListener("click", buildBufferTable);
+  $("#bfSave").addEventListener("click", function () {
+    if (!bufferData) buildBufferTable();
+    if (!bufferData) return;
+    const lines = [bufferData.head.join(",")];
+    bufferData.rows.forEach(function (r) {
+      lines.push(bufferData.head.map(function (h) {
+        return typeof r[h] === "number" ? r[h].toFixed(4) : r[h];
+      }).join(","));
+    });
+    download("oxybar_buffers.csv", lines.join("\n"), "text/csv;charset=utf-8");
+  });
+
+  /* ---- 说明页 ---- */
+  $("#docs").innerHTML = [
+    "<h2>0. 一句话原理</h2>",
+    "<p>氧逸度 <i>f</i>O₂ 不能直接测量。所有“氧逸度计”做的都是同一件事：找一个对氧化还原敏感的观测量（矿物中变价元素的比值、共生矿物的分配系数……），再用实验标定的关系把它换成 log <i>f</i>O₂。</p>",
+    "<p>绝对 <i>f</i>O₂ 对温压极其敏感（同一条缓冲剂曲线在不同温度下可差 10 个数量级），所以野外数据一律用 Δ 表示：</p>",
+    "<pre>ΔFMQ = log fO₂(样品) − log fO₂(FMQ 缓冲剂, 同一 T、P)\nΔNNO = log fO₂(样品) − log fO₂(NNO 缓冲剂, 同一 T、P)</pre>",
+    "<p>本页所有方法返回绝对值时，都会自动按你填的温度换算一次 ΔFMQ / ΔNNO。</p>",
+
+    "<h2>0.5 这里为什么会有温度计？</h2>",
+    "<p>因为“氧逸度”和温度是绑在一起的。<code>ΔFMQ = log fO₂(样品) − log fO₂(FMQ, 同一 T、P)</code>，" +
+      "而缓冲剂曲线很陡——<b>温度差 1 °C，绝对 log fO₂ 就差约 0.022 个 log 单位</b>（800 °C 附近）。" +
+      "没有 T 就没有 Δ，T 不准 Δ 也不准。</p>",
+    "<p>更直接的：好几个氧逸度计的标定式里本身就写着 T。Smythe &amp; Brenan (2016) 含 " +
+      "<code>−13136/T</code> 项；Ji &amp; Dygert (2023) 的 Eu 分配系数要用含 T 的晶格应变模型；" +
+      "Ridolfi (2010) 的温度式与 ΔNNO 式出自同一份角闪石成分、同一套标定。</p>",
+    '<div class="note blue"><b>Loucks et al. (2020) 是个例外，也是它好用的原因</b>：' +
+      "<code>ΔFMQ = 3.998·log₁₀(Ce/√(U·Ti)) + 2.284</code> 里没有 T。" +
+      "Ce 氧化、Ce 分配、U 分配三个反应的焓变与 FMQ 缓冲剂的焓变相互抵消（该文 EPSL 补充材料 ESM-1 专门论证了这一点）。" +
+      "好处是 Ti-in-zircon 温度计那 ±20–30 °C 的误差<b>不会进到 ΔFMQ 里</b>；" +
+      "代价是要换成绝对 log fO₂、或要与 Fe–Ti 氧化物叠在同一坐标上时，仍得另配一个 T。</div>",
+    "<p>所以本程序把方法分成四类，名称后面都有彩色标签：</p>",
+    "<table><thead><tr><th>标签</th><th>含义</th><th>本程序里的方法</th></tr></thead><tbody>" +
+      "<tr><td><span class='mtag oxy' style='margin-left:0'>氧逸度计</span></td>" +
+        "<td>直接产出 fO₂ 或 Δ</td><td>锆石 Ce/√(U·Ti)、锆石 Ce⁴⁺/Ce³⁺、磷灰石 Mn、磷灰石–斜长石 Eu、角闪石 ΔNNO</td></tr>" +
+      "<tr><td><span class='mtag thermo' style='margin-left:0'>温度计</span></td>" +
+        "<td>给出 T，供上面的方法换算</td><td>Ti-in-zircon、角闪石 Ti</td></tr>" +
+      "<tr><td><span class='mtag index' style='margin-left:0'>指标</span></td>" +
+        "<td>半定量，只能横向比</td><td>Ce/Ce*、Eu/Eu*</td></tr>" +
+      "<tr><td><span class='mtag calc' style='margin-left:0'>中间计算</span></td>" +
+        "<td>为某个方法准备输入</td><td>晶格应变反算 Ce⁴⁺/Ce³⁺</td></tr>" +
+      "</tbody></table>",
+    "<p>选到某个方法时，标题下方会有一行蓝底提示，说明它和谁配套、什么时候才需要它。</p>",
+
+    "<h2>1. 缓冲剂</h2>",
+    "<h3>Frost (1991) 线性式</h3>",
+    "<pre>log fO₂ = A/T + B + C·(P − 1)/T        T: K    P: bar</pre>",
+    "<table><thead><tr><th>缓冲剂</th><th>A</th><th>B</th><th>C</th><th>适用 T (K)</th></tr></thead><tbody>" +
+      Object.keys(OXY.FROST).map(function (k) {
+        const b = OXY.FROST[k];
+        return "<tr><td>" + b.label + "</td><td>" + b.A + "</td><td>" + b.B +
+               "</td><td>" + b.C + "</td><td>" + b.t[0] + "–" + b.t[1] + "</td></tr>";
+      }).join("") + "</tbody></table>",
+    "<h3>解析式</h3>",
+    "<table><thead><tr><th>缓冲剂</th><th>公式 / 出处</th></tr></thead><tbody>" +
+      "<tr><td>FMQ</td><td>(−587474 + 1584.427T − 203.3164T·lnT + 0.09271T²)/(8.314511·T·ln10) — O'Neill (1987)</td></tr>" +
+      "<tr><td>NNO</td><td>(−478967 + 248.514T − 9.7961T·lnT)/(8.314511·T·ln10) — O'Neill &amp; Pownceby (1993)</td></tr>" +
+      "<tr><td>Re-ReO₂</td><td>(−451020 + 297.595T − 14.6586T·lnT)/(8.31441·T·ln10) — Pownceby &amp; O'Neill (1994)</td></tr>" +
+      "<tr><td>Cr-Cr₂O₃</td><td>(−758585 + 349.718T − 25.5216T·lnT + 0.00935T²)/(8.314·T·ln10) — Holzheid &amp; O'Neill (1995)</td></tr>" +
+      "<tr><td>CCO</td><td>−20586/T − 0.044 + log₁₀(P[bar]) − 0.028·(P−1)/T — French &amp; Eugster (1965)</td></tr>" +
+      "</tbody></table>",
+    '<div class="note">你文件夹里 <code>Calc_fO2_buffer.xlsx</code> 的 <code>SiSiO2</code> 行内层误用 <code>LOG10(T)</code> 代替 <code>ln(T)</code>，<code>Graphite-CO-CO2</code> 行误用 <code>LOG10(P/10000)</code>。本程序按原始文献取正确形式，所以这两行的数值会与那张表不同，其余 15 个缓冲剂完全一致。</div>',
+
+    "<h2>2. 锆石</h2>",
+    "<h3>Ti-in-zircon 温度计</h3>",
+    "<pre>Ferry &amp; Watson (2007)：log₁₀(Ti) = 5.711 − 4800/T − log₁₀(a_SiO₂) + log₁₀(a_TiO₂)\n\nLoucks et al. (2020) 压力改正（P 以 MPa 计）：\nT(K) = (4800 − 0.4748·(P_MPa − 1000)) / (5.711 − log₁₀Ti + log₁₀a_TiO₂ − log₁₀a_SiO₂)</pre>",
+    "<p>压力效应约 <b>−95 K/GPa</b>：P 越高，同一 Ti 含量对应温度越低。无金红石时 <code>a(TiO₂)</code> 取 0.5–0.8，有石英时 <code>a(SiO₂)</code> 取 1。</p>",
+
+    "<h3>锆石 Ce/√(U·Ti) 氧逸度计 &nbsp;<span class='tag ok'>首推</span></h3>",
+    "<pre>ΔFMQ = 3.998·log₁₀( Ce / √(U·Ti) ) + 2.284          Ce、U、Ti 均为 ppm</pre>",
+    "<p>Loucks, Fiorentini &amp; Henríquez (2020) <i>J. Petrol.</i> 61, egaa034。1σ ≈ 0.6 log unit；适用 650–1300 °C、0–4 GPa、FMQ−4.9 ~ +2.9。Ce⁴⁺ 与 U⁴⁺ 离子半径几乎相同，二者分配行为同步抵消了压力效应，因此<b>可用于碎屑锆石</b>。</p>",
+    '<div class="note">U 必须用“初始 U”(Uᵢ)，即按 U-Pb 年龄做过放射性衰变校正的值。直接填实测 U，老锆石会系统性偏高（Bishop Tuff 上可达 0.5 log unit）。你文件夹里 Appendix 5 用实测 U、Appendix 3 用 Uᵢ，差异正是这个原因。</div>',
+
+    "<h3>锆石 Ce⁴⁺/Ce³⁺ 氧逸度计</h3>",
+    "<pre>log fO₂ = (4/ln10)·[ ln(Ce⁴⁺/Ce³⁺ · 1.0487) − 13136/T + 2.064·(NBO/T) + 8.878·x_H₂O + 8.9554 ]</pre>",
+    "<p>Smythe &amp; Brenan (2016) <i>EPSL</i> 453, 260–266。输入是<b>熔体</b>的 Ce⁴⁺/Ce³⁺，可由“晶格应变反算”得到：</p>",
+    "<pre>r = (D_Ce − D_Ce³) / (D_Ce⁴ − D_Ce)\nCe⁴⁺/Ce³⁺ = r / (1 − r)</pre>",
+    "<p>其中 D_Ce³、D_Ce⁴ 是把锆石中其余三价/四价 REE 的 ln D 对 <code>(rᵢ/3 + r₀/6)(rᵢ − r₀)²</code>（r₀ = 0.93 Å）回归后，在 Ce 半径处的预测值。</p>",
+
+    "<h3>Ce 异常（相对氧化态）</h3>",
+    "<pre>Ce/Ce* = Ce_N / √(La_N · Pr_N)      （球粒陨石 McDonough &amp; Sun 1995 标准化）</pre>",
+    "<p>Ballard et al. (2002) 的半定量指标，只能相对比较同一批样品，不能换算绝对 fO₂。</p>",
+
+    "<h2>3. 磷灰石</h2>",
+    "<h3>Mn 氧逸度计</h3>",
+    "<pre>log fO₂ = −9.75 − 0.0022·Mn_apatite(ppm)</pre>",
+    "<p>Miles et al. (2014) <i>GCA</i> 132, 101–119。1σ ≈ ±0.6 log unit，适用流纹质–安山质（SiO₂ 59–78 wt%）。<b>无温度、压力、熔体成分项</b>——极简便，精度也有限。</p>",
+
+    "<h3>磷灰石–斜长石 Eu 氧逸度计</h3>",
+    "<pre>X = Eu_apatite / Eu_plagioclase\nlog fO₂ = 4·log₁₀( 6.15e−4 · (X·D2_plag − D2_apt) / (D3_apt − X·D3_plag) )</pre>",
+    "<p>Ji &amp; Dygert (2023, <i>GCA</i>)。Eu²⁺/Eu³⁺ 对 fO₂ 极敏感（4 电子反应），比 Mn 法灵敏得多，但需要先用晶格应变模型算出四个分配系数（见原表 <code>Apatite_Kd_Calculator</code>）。</p>",
+
+    "<h2>4. 角闪石（⚠ 实验性）</h2>",
+    "<pre>ΔNNO = 1.644·Mg* − 4.01                      1σ ≈ 0.3 log unit\nMg* = Mg + Si/47 − Al_VI/9 − 1.3·Ti + Fe³⁺/3.7 + Fe²⁺/5.2 − Ca/20 + Na/2.8 + Al/9.5</pre>",
+    "<p>Ridolfi, Renzulli &amp; Puerini (2010) <i>CMP</i> 160, 45–66。公式与 13-CNK 阳离子配分（含电价平衡求 Fe³⁺）是可靠的，但 <b>Mg* 的 Al_IV/Al_VI 划分与原作者实现不同</b>，用 Loucks 汇编的 65 个分析复算有 0.2–0.4 log unit 系统偏差；温度式里的常数（3 / 1.3 / 0.659 / 0.307）也疑为单样品特定值。<b>请勿直接用于发表</b>——请对照原文或作者发布的 Amp-TB 电子表格。</p>",
+
+    "<h2>5. Fe–Ti 氧化物</h2>",
+    "<p>Ghiorso &amp; Evans (2008) 是完整的热力学固溶体模型（磁铁矿–钛铁尖晶石–赤铁矿–钛铁矿固溶体），需要求解非线性方程组并依赖 MELTS 的混合参数，无法用几条经验式复现。你文件夹里的 Fe-Ti 数据也都是用 MELTS 在线计算器算的。</p>",
+    "<p>建议工作流：① 用 MELTS/GE 在线计算器得到每个样品的 T 与 log <i>f</i>O₂；② 把结果整理成 CSV；③ 用本页“Δ 换算器”转成 ΔFMQ / ΔNNO，再与锆石/磷灰石结果叠在一张图上比较。</p>",
+
+    "<h2>6. 验证状态</h2>",
+    "<table><thead><tr><th>方法</th><th>验证依据</th><th>偏差</th></tr></thead><tbody>" +
+      "<tr><td>缓冲剂 (15 个)</td><td>Calc_fO2_buffer (2)22122版本.xlsx</td><td>&lt; 1e-14</td></tr>" +
+      "<tr><td>Ti-in-zircon T</td><td>Loucks 2020 附录 3（111 点）</td><td>0</td></tr>" +
+      "<tr><td>Loucks 2020 ΔFMQ</td><td>同上</td><td>0</td></tr>" +
+      "<tr><td>Smythe &amp; Brenan 2016</td><td>Calculating fO2-Smythe 2016.xlsx E64</td><td>3e-5</td></tr>" +
+      "<tr><td>Miles 2014</td><td>原始补充表（10 样品）</td><td>0</td></tr>" +
+      "<tr><td>Ji &amp; Dygert 2023</td><td>Apatite-Ji Dian-2023-GCA.xlsx B45</td><td>0</td></tr>" +
+      "<tr><td>Ridolfi 2010</td><td>mmc4.xlsx（65 分析）</td><td>⚠ 未通过</td></tr>" +
+      "</tbody></table>",
+    "<p>本页 JS 内核与 Python 版 <code>oxybar</code> 逐函数对齐，可用 <code>tests/test_html_parity.py</code> 复核。</p>",
+
+    "<h2>6. 对比图与 Fe–Ti 氧化物</h2>",
+    "<h3>T–ΔFMQ 图怎么读</h3>",
+    "<p>横轴是结晶温度，纵轴默认是 <b>ΔFMQ</b>——这样 FMQ 缓冲剂就是一条 <code>ΔFMQ = 0</code> 的水平参考线，" +
+      "不同矿物、不同样品可以直接叠在一张图上比较，不受各自温度不同的干扰。若换成“绝对 log fO₂”模式，" +
+      "会自动画出 FMQ / NNO / IW / MH 四条缓冲剂曲线。</p>",
+    "<p>示例里那两组来自 Loucks et al. (2020) 附录 3 的 Bishop Tuff 数据：磁铁矿–钛铁矿温度计（Ghiorso &amp; Evans 2008）" +
+      "给出的 ΔFMQ 与同一批锆石的 Ce/√(U·Ti) 结果落在同一个区间，正是该文论证锆石氧逸度计可靠性的核心图件。</p>",
+
+    "<h3>Fe–Ti 氧化物怎么做</h3>",
+    "<p>Ghiorso &amp; Evans (2008) 是完整的固溶体热力学模型，必须解非线性方程组，网页里无法用几条经验式复现。" +
+      "标准做法是：</p>",
+    "<ol>" +
+      "<li>把磁铁矿–钛铁矿电子探针成分输入 MELTS 的 <i>Fe–Ti oxide geothermometer/oxybarometer</i> 在线计算器；</li>" +
+      "<li>把结果（样品名、T、log fO₂）整理成两列或三列，直接粘到「导入数据 ①」里；</li>" +
+      "<li>点“解析并加入”，程序会按该点自己的温度把 log fO₂ 换算成 ΔFMQ，自动画进图里。</li>" +
+    "</ol>",
+    "<p>能识别的列名：<code>T_C / T(°C) / Temp</code>、<code>logfO2 / log fO2</code>、" +
+      "以及 <code>dNNO / ΔFMQ</code>（给了 ΔNNO 会先换成绝对 log fO₂ 再转 ΔFMQ）。" +
+      "若表头写的是 <code>T(K)</code> 会按开尔文处理，否则默认摄氏度。</p>",
+    '<div class="note blue">换算用的参考压力在图的工具栏里（默认 1 bar）。' +
+      "如果你要按 2 kbar 换算，把它改成 2000——注意这会让 ΔFMQ 整体平移约 0.2 log unit（FMQ 缓冲剂的压力项）。</div>",
+
+    "<h2>7. 参考文献</h2>",
+    "<ul>" +
+      "<li>Frost, B.R. (1991) Introduction to oxygen fugacity and its petrologic importance. <i>RiM</i> 25, 1–9.</li>" +
+      "<li>Ferry, J.M. &amp; Watson, E.B. (2007) <i>CMP</i> 154, 429–437. doi:10.1007/s00410-007-0201-0</li>" +
+      "<li>Loucks, R.R., Fiorentini, M.L. &amp; Henríquez, G.J. (2020) <i>J. Petrol.</i> 61, egaa034. doi:10.1093/petrology/egaa034</li>" +
+      "<li>Smythe, D.J. &amp; Brenan, J.M. (2016) <i>EPSL</i> 453, 260–266. doi:10.1016/j.epsl.2016.08.013</li>" +
+      "<li>Ballard, J.R., Palin, J.M. &amp; Campbell, I.H. (2002) <i>CMP</i> 144, 347–364. doi:10.1007/s00410-002-0402-5</li>" +
+      "<li>Miles, A.J. et al. (2014) <i>GCA</i> 132, 101–119. doi:10.1016/j.gca.2013.12.017</li>" +
+      "<li>Ji, D. &amp; Dygert, N. (2023) <i>GCA</i>.</li>" +
+      "<li>Ridolfi, F., Renzulli, A. &amp; Puerini, M. (2010) <i>CMP</i> 160, 45–66. doi:10.1007/s00410-009-0465-7</li>" +
+      "<li>Ghiorso, M.S. &amp; Evans, B.W. (2008) <i>Am. J. Sci.</i> 308, 957–1039. doi:10.2475/09.2008.01</li>" +
+      "<li>O'Neill, H.StC. (1987) <i>Am. Mineral.</i> 72, 67–75.</li>" +
+      "<li>O'Neill, H.StC. &amp; Pownceby, M.I. (1993) <i>CMP</i> 114, 296–314.</li>" +
+      "<li>Iacovino, K. (2021) <i>Calculate fO2 Buffer</i> v1.5, Zenodo. doi:10.5281/zenodo.5907867</li>" +
+    "</ul>"
+  ].join("\n");
+
+  /* =====================================================================
+   *  T–ΔFMQ 对比图
+   * ===================================================================== */
+  const PALETTE = ["#1f5f8b", "#c0392b", "#1f7a4d", "#8e44ad", "#d08b16",
+                   "#2a9d8f", "#e76f51", "#4a5568", "#b5179e", "#3a86ff"];
+  const SYMBOLS = ["circle", "square", "triangle", "diamond", "cross"];
+  const PLOT = {series: [], yMode: "dFMQ", screen: []};
+
+  /* Bishop Tuff 示例数据（来自 Loucks 2020 附录 3） */
+  const DEMO_FETI = [
+    {n: "B250", T: 739, lf: -15.3578}, {n: "B275a", T: 749, lf: -14.901},
+    {n: "B275b", T: 774, lf: -14.169}, {n: "B276", T: 734, lf: -15.4579},
+    {n: "B277a", T: 832, lf: -13.0627}, {n: "B277b", T: 797, lf: -13.5966},
+    {n: "B279", T: 717, lf: -16.1557}, {n: "B290", T: 791, lf: -13.8456},
+    {n: "B294", T: 700, lf: -16.8882}, {n: "B315A", T: 756, lf: -14.928},
+    {n: "B327", T: 805, lf: -13.367}, {n: "B332C", T: 850, lf: -12.4182},
+    {n: "B353F", T: 714, lf: -16.391}, {n: "B355B", T: 687, lf: -17.0894}
+  ];
+  const DEMO_ZIRCON = [
+    {n: "BT4_246_g1s1", T: 765.3, d: 0.649}, {n: "BT4_246_g2s1", T: 757.4, d: 0.784},
+    {n: "BT4_246_g3s1", T: 750.9, d: 0.959}, {n: "BT4_246_g4s1", T: 762.2, d: 0.608},
+    {n: "BT4_246_g5s1", T: 742.7, d: 0.947}, {n: "BT4_246_g6s1", T: 756.3, d: 0.597},
+    {n: "BT4_246_g7s1", T: 745.5, d: 0.49}, {n: "BT4_246_g8s1", T: 744.4, d: 0.838},
+    {n: "BT4_246_g9s1", T: 759.4, d: 0.942}, {n: "BT4_246_g10s1", T: 769.2, d: 0.35},
+    {n: "BT4_246_g1s2", T: 768.4, d: 1.327}, {n: "BT4_246_g2s2", T: 761.4, d: 1.185},
+    {n: "BT4_246_g3s2", T: 752.6, d: 1.307}, {n: "BT4_246_g5s2", T: 763.8, d: 1.208},
+    {n: "BT4_246_g6s2", T: 760.7, d: 1.571}, {n: "BT4_246_g7s2", T: 760.7, d: 1.258},
+    {n: "BT4_246_g8s2", T: 799.5, d: 1.891}, {n: "BT4_246_g9s2", T: 756, d: 1.92}
+  ];
+
+  function plotPressure() {
+    const el = document.getElementById("plotP");
+    const v = el ? parseFloat(el.value) : 1;
+    return (isFinite(v) && v > 0) ? v : 1;
+  }
+  function fmqAt(T_C, P) { return OXY.bufferLogfO2("FMQ", T_C + 273.15, P); }
+  function pointY(p, P) {
+    return PLOT.yMode === "logfO2" ? p.d + fmqAt(p.T, P) : p.d;
+  }
+
+  function addSeries(name, pts) {
+    if (!pts || !pts.length) return null;
+    const s = {
+      name: name || ("数据 " + (PLOT.series.length + 1)),
+      pts: pts, visible: true,
+      color: PALETTE[PLOT.series.length % PALETTE.length],
+      symbol: SYMBOLS[PLOT.series.length % SYMBOLS.length]
+    };
+    PLOT.series.push(s);
+    renderDatasetList(); drawPlot();
+    return s;
+  }
+
+  function removeSeries(i) {
+    PLOT.series.splice(i, 1);
+    renderDatasetList(); drawPlot();
+  }
+
+  function renderDatasetList() {
+    const box = document.getElementById("dsList");
+    if (!box) return;
+    if (!PLOT.series.length) {
+      box.innerHTML = '<div class="hint">还没有数据。用右侧“导入数据”添加。</div>';
+      return;
+    }
+    box.innerHTML = "";
+    PLOT.series.forEach(function (s, i) {
+      const row = document.createElement("div");
+      row.className = "dsrow";
+      const chip = document.createElement("span");
+      chip.className = "chip";
+      chip.style.background = s.color;
+      chip.style.cursor = "pointer";
+      chip.title = "显示 / 隐藏";
+      chip.addEventListener("click", function () {
+        s.visible = !s.visible; renderDatasetList(); drawPlot();
+      });
+      const nm = document.createElement("span");
+      nm.className = "nm";
+      nm.textContent = s.name;
+      if (!s.visible) nm.style.opacity = "0.4";
+      const n = document.createElement("span");
+      n.className = "n";
+      n.textContent = "n=" + s.pts.length;
+      const del = document.createElement("button");
+      del.textContent = "×";
+      del.title = "删除这一组";
+      del.addEventListener("click", function () { removeSeries(i); });
+      row.appendChild(chip); row.appendChild(nm); row.appendChild(n); row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+
+  function seriesStats(pts) {
+    const v = pts.map(function (p) { return p.d; });
+    const n = v.length;
+    const m = v.reduce(function (a, b) { return a + b; }, 0) / n;
+    const sd = Math.sqrt(v.reduce(function (a, b) { return a + (b - m) * (b - m); }, 0)
+                          / Math.max(n - 1, 1));
+    return {n: n, m: m, sd: sd};
+  }
+
+  function renderLegend() {
+    const lg = document.getElementById("plotLegend");
+    if (!lg) return;
+    lg.innerHTML = "";
+    PLOT.series.forEach(function (s) {
+      const it = document.createElement("span");
+      it.className = "item" + (s.visible ? "" : " off");
+      const c = document.createElement("span");
+      c.className = "chip";
+      c.style.background = s.color;
+      it.appendChild(c);
+      const st = seriesStats(s.pts);
+      it.appendChild(document.createTextNode(
+        s.name + "  n=" + st.n + ",  ΔFMQ " + st.m.toFixed(2) + "±" + st.sd.toFixed(2)));
+      it.addEventListener("click", function () {
+        s.visible = !s.visible; renderDatasetList(); drawPlot();
+      });
+      lg.appendChild(it);
+    });
+  }
+
+  function niceStep(span, target) {
+    const raw = span / Math.max(target, 1);
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const n = raw / mag;
+    let m;
+    if (n <= 1) m = 1; else if (n <= 2) m = 2; else if (n <= 2.5) m = 2.5;
+    else if (n <= 5) m = 5; else m = 10;
+    return m * mag;
+  }
+  function fmtTick(v, step) {
+    const dec = step >= 1 ? 0 : Math.min(4, Math.ceil(-Math.log10(step) - 1e-9));
+    return v.toFixed(dec);
+  }
+
+  function drawSymbol(g, x, y, sym, size, color) {
+    g.beginPath();
+    if (sym === "circle") { g.arc(x, y, size, 0, Math.PI * 2); }
+    else if (sym === "square") { g.rect(x - size, y - size, size * 2, size * 2); }
+    else if (sym === "triangle") {
+      g.moveTo(x, y - size * 1.2); g.lineTo(x + size * 1.1, y + size * 0.85);
+      g.lineTo(x - size * 1.1, y + size * 0.85); g.closePath();
+    } else if (sym === "diamond") {
+      g.moveTo(x, y - size * 1.25); g.lineTo(x + size * 1.25, y);
+      g.lineTo(x, y + size * 1.25); g.lineTo(x - size * 1.25, y); g.closePath();
+    } else {
+      g.moveTo(x - size, y - size); g.lineTo(x + size, y + size);
+      g.moveTo(x + size, y - size); g.lineTo(x - size, y + size);
+      g.strokeStyle = color; g.lineWidth = 1.6; g.stroke();
+      return;
+    }
+    g.fillStyle = color; g.globalAlpha = 0.82; g.fill(); g.globalAlpha = 1;
+    g.strokeStyle = "#ffffff"; g.lineWidth = 0.9; g.stroke();
+  }
+
+  function drawPlot() {
+    const cv = document.getElementById("plotCanvas");
+    if (!cv || !cv.getContext) return;
+    const g = cv.getContext("2d");
+    if (!g || !g.beginPath) return;
+
+    const dpr = (typeof window !== "undefined" && window.devicePixelRatio) || 1;
+    const w = cv.clientWidth || 820, h = cv.clientHeight || 440;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    if (g.setTransform) g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+    PLOT.screen = [];
+
+    const M = {l: 64, r: 78, t: 18, b: 48};
+    const pw = Math.max(w - M.l - M.r, 40);
+    const ph = Math.max(h - M.t - M.b, 40);
+    const P = plotPressure();
+    const absMode = PLOT.yMode === "logfO2";
+    const showBuf = document.getElementById("plotBuf") ?
+      document.getElementById("plotBuf").checked : true;
+
+    const vis = PLOT.series.filter(function (s) { return s.visible && s.pts.length; });
+    const xs = [], ys = [];
+    vis.forEach(function (s) {
+      s.pts.forEach(function (p) { xs.push(p.T); ys.push(pointY(p, P)); });
+    });
+
+    if (!xs.length) {
+      g.fillStyle = "#98a2ae";
+      g.font = "14px 'Microsoft YaHei UI','Microsoft YaHei',sans-serif";
+      g.textAlign = "center";
+      g.fillText("还没有数据 —— 在下方「导入数据」里粘贴 Fe–Ti 氧化物结果，", w / 2, h / 2 - 12);
+      g.fillText("或到「批量表格」算一遍，再点“加入对比图”。", w / 2, h / 2 + 12);
+      renderLegend();
+      return;
+    }
+
+    let xmin = Math.min.apply(null, xs), xmax = Math.max.apply(null, xs);
+    let ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys);
+    if (absMode && showBuf) {
+      ["FMQ", "NNO", "IW", "MH_H"].forEach(function (k) {
+        const a = OXY.bufferLogfO2(k, xmin + 273.15, P);
+        const b = OXY.bufferLogfO2(k, xmax + 273.15, P);
+        ymin = Math.min(ymin, a, b); ymax = Math.max(ymax, a, b);
+      });
+    }
+    if (!absMode) { ymin = Math.min(ymin, -0.15); ymax = Math.max(ymax, 0.15); }
+    if (xmax - xmin < 1) { xmin -= 25; xmax += 25; }
+    if (ymax - ymin < 0.2) { const c = (ymax + ymin) / 2; ymin = c - 0.3; ymax = c + 0.3; }
+    const xpad = (xmax - xmin) * 0.05, ypad = (ymax - ymin) * 0.08;
+    xmin -= xpad; xmax += xpad; ymin -= ypad; ymax += ypad;
+
+    const xstep = niceStep(xmax - xmin, 7);
+    const ystep = niceStep(ymax - ymin, 6);
+    const x0 = Math.floor(xmin / xstep) * xstep, x1 = Math.ceil(xmax / xstep) * xstep;
+    const y0 = Math.floor(ymin / ystep) * ystep, y1 = Math.ceil(ymax / ystep) * ystep;
+
+    const X = function (t) { return M.l + (t - x0) / (x1 - x0) * pw; };
+    const Y = function (v) { return M.t + ph - (v - y0) / (y1 - y0) * ph; };
+
+    /* 背景 */
+    g.fillStyle = "#ffffff";
+    g.fillRect(M.l, M.t, pw, ph);
+
+    /* 网格 */
+    g.strokeStyle = "#edf1f5"; g.lineWidth = 1;
+    let i, v;
+    for (i = 0; ; i++) {
+      v = y0 + i * ystep; if (v > y1 + 1e-9) break;
+      g.beginPath(); g.moveTo(M.l, Y(v)); g.lineTo(M.l + pw, Y(v)); g.stroke();
+    }
+    for (i = 0; ; i++) {
+      const t = x0 + i * xstep; if (t > x1 + 1e-9) break;
+      g.beginPath(); g.moveTo(X(t), M.t); g.lineTo(X(t), M.t + ph); g.stroke();
+    }
+
+    /* 缓冲剂曲线（绝对坐标模式） */
+    if (absMode && showBuf) {
+      ["MH_H", "NNO", "FMQ", "IW"].forEach(function (k) {
+        g.beginPath();
+        for (let j = 0; j <= 100; j++) {
+          const t = x0 + (x1 - x0) * j / 100;
+          const yy = Y(OXY.bufferLogfO2(k, t + 273.15, P));
+          if (j === 0) g.moveTo(X(t), yy); else g.lineTo(X(t), yy);
+        }
+        g.strokeStyle = (k === "FMQ") ? "#c0392b" : "#c8d2dc";
+        g.lineWidth = (k === "FMQ") ? 1.8 : 1.1;
+        g.stroke();
+        g.fillStyle = (k === "FMQ") ? "#c0392b" : "#9aa6b2";
+        g.font = "11px Consolas,monospace";
+        g.textAlign = "left"; g.textBaseline = "middle";
+        g.fillText(k === "MH_H" ? "MH" : k, M.l + pw + 4,
+                   Y(OXY.bufferLogfO2(k, x1 + 273.15, P)));
+      });
+    } else if (!absMode) {
+      /* ΔFMQ = 0 参考线 */
+      g.beginPath();
+      g.moveTo(M.l, Y(0)); g.lineTo(M.l + pw, Y(0));
+      g.strokeStyle = "#c0392b"; g.lineWidth = 1.6;
+      if (g.setLineDash) g.setLineDash([5, 4]);
+      g.stroke();
+      if (g.setLineDash) g.setLineDash([]);
+      g.fillStyle = "#c0392b"; g.font = "11px Consolas,monospace";
+      g.textAlign = "left"; g.textBaseline = "bottom";
+      g.fillText("FMQ", M.l + 4, Y(0) - 2);
+    }
+
+    /* 坐标轴 */
+    g.strokeStyle = "#9aa6b2"; g.lineWidth = 1.2;
+    g.beginPath();
+    g.moveTo(M.l, M.t); g.lineTo(M.l, M.t + ph); g.lineTo(M.l + pw, M.t + ph);
+    g.stroke();
+
+    /* 刻度 */
+    g.fillStyle = "#41505f"; g.font = "11.5px Consolas,monospace";
+    g.textAlign = "center"; g.textBaseline = "top";
+    for (i = 0; ; i++) {
+      const t = x0 + i * xstep; if (t > x1 + 1e-9) break;
+      g.fillText(fmtTick(t, xstep), X(t), M.t + ph + 6);
+      g.beginPath(); g.moveTo(X(t), M.t + ph); g.lineTo(X(t), M.t + ph + 4);
+      g.strokeStyle = "#9aa6b2"; g.stroke();
+    }
+    g.textAlign = "right"; g.textBaseline = "middle";
+    for (i = 0; ; i++) {
+      v = y0 + i * ystep; if (v > y1 + 1e-9) break;
+      g.fillText(fmtTick(v, ystep), M.l - 8, Y(v));
+      g.beginPath(); g.moveTo(M.l - 4, Y(v)); g.lineTo(M.l, Y(v));
+      g.strokeStyle = "#9aa6b2"; g.stroke();
+    }
+
+    /* 轴标题 */
+    g.fillStyle = "#41505f";
+    g.font = "12px 'Microsoft YaHei UI','Microsoft YaHei',sans-serif";
+    g.textAlign = "center"; g.textBaseline = "top";
+    g.fillText("结晶温度 T (°C)", M.l + pw / 2, M.t + ph + 24);
+    g.save();
+    g.translate(14, M.t + ph / 2);
+    g.rotate(-Math.PI / 2);
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(absMode ? "log fO₂ (bar)" : "ΔFMQ  =  log fO₂(样品) − log fO₂(FMQ)",
+               0, 0);
+    g.restore();
+
+    /* 数据点 */
+    vis.forEach(function (s) {
+      s.pts.forEach(function (p) {
+        const px = X(p.T), py = Y(pointY(p, P));
+        if (px < M.l - 2 || px > M.l + pw + 2) return;
+        drawSymbol(g, px, py, s.symbol, 4.2, s.color);
+        PLOT.screen.push({x: px, y: py, s: s, p: p});
+      });
+    });
+
+    renderLegend();
+  }
+
+  /* ---------- 解析与导入 ---------- */
+  function isTempHeader(h) {
+    const s = String(h).toLowerCase().replace(/[\s_]/g, "");
+    return s === "t" || s === "tc" || s === "temp" || s === "temperature" ||
+           s === "t°c" || s === "t(°c)" || s === "t(k)" || s === "tk" ||
+           s.indexOf("温度") >= 0 || s.indexOf("temp") === 0;
+  }
+  function isLogfHeader(h) {
+    const s = String(h).toLowerCase().replace(/[\s_]/g, "");
+    if (s.indexOf("nno") >= 0 || s.indexOf("fmq") >= 0 || s.indexOf("buffer") >= 0) return false;
+    return s.indexOf("logf") >= 0 || s.indexOf("fugacity") >= 0;
+  }
+  function findCol(head, test) {
+    for (let i = 0; i < head.length; i++) { if (test(head[i])) return i; }
+    return -1;
+  }
+  function num(x) {
+    if (x === undefined || x === null) return NaN;
+    const v = parseFloat(String(x).replace(/[^\d.eE+-]/g, ""));
+    return v;
+  }
+
+  function buildPoints(rows, head, spec) {
+    /* spec: {tCol, kind, valCol, kUnit, nameCol} */
+    const pts = [];
+    for (let r = 1; r < rows.length; r++) {
+      const cells = rows[r];
+      if (!cells || cells.length < 2) continue;
+      let T = num(cells[spec.tCol]);
+      if (!isFinite(T)) continue;
+      if (spec.kUnit === "K") T = T - 273.15;
+      const raw = num(cells[spec.valCol]);
+      if (!isFinite(raw)) continue;
+      let d;
+      const P = plotPressure();
+      if (spec.kind === "logfO2") d = raw - fmqAt(T, P);
+      else if (spec.kind === "dNNO") d = raw + OXY.bufferLogfO2("NNO", T + 273.15, P) - fmqAt(T, P);
+      else d = raw;
+      const tag = (spec.nameCol >= 0 && cells[spec.nameCol] !== undefined)
+        ? String(cells[spec.nameCol]).trim() : "";
+      pts.push({T: T, d: d, tag: tag});
+    }
+    return pts;
+  }
+
+  function importTable(text, unitSel, name, msgEl, kindHint) {
+    if (!text) { if (msgEl) msgEl.textContent = "先粘贴数据。"; return null; }
+    const rows = parseCSV(text);
+    if (rows.length < 2) { if (msgEl) msgEl.textContent = "至少要有表头 + 一行数据。"; return null; }
+    const head = rows[0].map(function (h) { return String(h).trim(); });
+
+    const tCol = findCol(head, isTempHeader);
+    if (tCol < 0) {
+      if (msgEl) msgEl.textContent = "没找到温度列（列名需为 T / T_C / T(°C) / Temp）。";
+      return null;
+    }
+    const logCol = findCol(head, isLogfHeader);
+    const nnoCol = findCol(head, function (h) { return /nno/i.test(h); });
+    const fmqCol = findCol(head, function (h) { return /fmq/i.test(h); });
+    let kind, valCol;
+    if (kindHint === "dFMQ" && fmqCol >= 0) { kind = "dFMQ"; valCol = fmqCol; }
+    else if (kindHint === "dNNO" && nnoCol >= 0) { kind = "dNNO"; valCol = nnoCol; }
+    else if (kindHint === "logfO2" && logCol >= 0) { kind = "logfO2"; valCol = logCol; }
+    else if (logCol >= 0) { kind = "logfO2"; valCol = logCol; }
+    else if (nnoCol >= 0) { kind = "dNNO"; valCol = nnoCol; }
+    else if (fmqCol >= 0) { kind = "dFMQ"; valCol = fmqCol; }
+    else {
+      if (msgEl) msgEl.textContent = "没找到数值列（需要 log fO₂、ΔNNO 或 ΔFMQ 之一）。";
+      return null;
+    }
+
+    const kUnit = /\(\s*k\s*\)/i.test(head[tCol]) ? "K"
+      : (/\(\s*°?c\s*\)/i.test(head[tCol]) ? "C" : (unitSel || "C"));
+    const nameCol = findCol(head, function (h) {
+      return /sample|name|id|spot|样品|编号/i.test(h);
+    });
+    const pts = buildPoints(rows, head, {tCol: tCol, kind: kind, valCol: valCol,
+                                         kUnit: kUnit, nameCol: nameCol});
+    if (!pts.length) { if (msgEl) msgEl.textContent = "没有解析出有效数据行。"; return null; }
+    if (msgEl) {
+      msgEl.textContent = "解析 " + pts.length + " 行（" + kind + "，温度 "
+        + (kUnit === "K" ? "K" : "°C") + "）。";
+    }
+    return addSeries(name || "导入数据", pts);
+  }
+
+  function importFeTi() {
+    const t = document.getElementById("feInput").value;
+    const unit = document.getElementById("feUnit").value;
+    const name = document.getElementById("feName").value || "Fe–Ti 氧化物";
+    importTable(t, unit, name, document.getElementById("feMsg"), null);
+  }
+
+  function loadDemo() {
+    const P = plotPressure();
+    addSeries("示例 · Bishop Tuff Fe–Ti 氧化物",
+      DEMO_FETI.map(function (o) {
+        return {T: o.T, d: o.lf - fmqAt(o.T, P), tag: o.n};
+      }));
+    addSeries("示例 · Bishop Tuff 锆石 Ce/√(U·Ti)",
+      DEMO_ZIRCON.map(function (o) { return {T: o.T, d: o.d, tag: o.n}; }));
+    document.getElementById("feMsg").textContent =
+      "已加入 2 组 Bishop Tuff 示例数据（Fe–Ti 与锆石），可直接对比。";
+  }
+
+  function importFromBatch() {
+    const hint = document.getElementById("batchSrcHint");
+    if (!batchData || !batchData.rows.length) {
+      hint.textContent = "还没有批量结果。先到“批量表格”页算一遍。";
+      return;
+    }
+    const head = batchData.head;
+    const tCol = findCol(head, isTempHeader);
+    if (tCol < 0) {
+      hint.textContent = "批量结果里没有 T_C / T_K 列，无法作图（锆石 Ce/√(U·Ti) 需先算 Ti 温度）。";
+      return;
+    }
+    const valCol = findCol(head, function (h) { return /^(Δ|d)fmq/i.test(h.trim()); });
+    const logCol = findCol(head, isLogfHeader);
+    const nameCol = findCol(head, function (h) { return /sample|name|样品/i.test(h); });
+    const pts = [];
+    batchData.rows.forEach(function (r) {
+      let T = num(r[head[tCol]]);
+      if (!isFinite(T)) return;
+      if (/k/i.test(head[tCol]) && !/°c|\(c\)/i.test(head[tCol]) && T > 200) T -= 273.15;
+      let d = NaN;
+      if (valCol >= 0) d = num(r[head[valCol]]);
+      else if (logCol >= 0) d = num(r[head[logCol]]) - fmqAt(T, plotPressure());
+      if (!isFinite(d)) return;
+      pts.push({T: T, d: d, tag: nameCol >= 0 ? String(r[head[nameCol]] || "") : ""});
+    });
+    if (!pts.length) { hint.textContent = "批量结果里没有可用的 ΔFMQ / log fO₂ 列。"; return; }
+    addSeries("批量 · " + (batchData.methodName || "结果"), pts);
+    hint.textContent = "已加入 " + pts.length + " 个点。";
+  }
+
+  function importManual() {
+    const t = document.getElementById("manInput").value;
+    const kind = document.getElementById("manType").value;
+    const name = document.getElementById("manName").value || "手工数据";
+    importTable(t, "C", name, null, kind);
+  }
+
+  function exportPng() {
+    const cv = document.getElementById("plotCanvas");
+    if (!cv || !cv.toDataURL) return;
+    const a = document.createElement("a");
+    a.href = cv.toDataURL("image/png");
+    a.download = "T-dFMQ.png";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { document.body.removeChild(a); }, 100);
+  }
+
+  function initPlot() {
+    const cv = document.getElementById("plotCanvas");
+    const tip = document.getElementById("plotTip");
+
+    ["plotY", "plotP", "plotBuf"].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("change", function () {
+        PLOT.yMode = document.getElementById("plotY").value;
+        drawPlot();
+      });
+    });
+
+    if (cv) {
+      cv.addEventListener("mousemove", function (ev) {
+        const r = cv.getBoundingClientRect();
+        const mx = ev.clientX - r.left, my = ev.clientY - r.top;
+        let best = null, bd = 144;
+        PLOT.screen.forEach(function (q) {
+          const dd = (q.x - mx) * (q.x - mx) + (q.y - my) * (q.y - my);
+          if (dd < bd) { bd = dd; best = q; }
+        });
+        if (best && tip) {
+          const P = plotPressure();
+          const yv = pointY(best.p, P);
+          tip.textContent = (best.p.tag ? best.p.tag + "\n" : "") +
+            best.p.s.name + "\nT = " + best.p.T.toFixed(1) + " °C\n" +
+            (PLOT.yMode === "logfO2"
+              ? "log fO₂ = " + yv.toFixed(2)
+              : "ΔFMQ = " + yv.toFixed(2));
+          tip.style.display = "block";
+          tip.style.left = Math.min(mx + 14, (cv.clientWidth || 800) - 190) + "px";
+          tip.style.top = Math.max(2, my - 60) + "px";
+        } else if (tip) {
+          tip.style.display = "none";
+        }
+      });
+      cv.addEventListener("mouseleave", function () { if (tip) tip.style.display = "none"; });
+    }
+
+    const bind = function (id, fn) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("click", fn);
+    };
+    bind("feAdd", importFeTi);
+    bind("feDemo", loadDemo);
+    bind("batchToPlot", importFromBatch);
+    bind("manAdd", importManual);
+    bind("plotPng", exportPng);
+    bind("dsClear", function () {
+      PLOT.series.length = 0; renderDatasetList(); drawPlot();
+    });
+
+    /* 切到本页时重画（canvas 隐藏时尺寸为 0） */
+    $$("nav.tabs button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        if (b.dataset.tab === "plot") setTimeout(drawPlot, 0);
+      });
+    });
+    if (typeof window !== "undefined" && window.addEventListener) {
+      window.addEventListener("resize", function () {
+        clearTimeout(PLOT._t);
+        PLOT._t = setTimeout(drawPlot, 120);
+      });
+    }
+
+    renderDatasetList();
+    drawPlot();
+    loadDemo();          /* 首次打开就有一张真实的 Bishop Tuff 对比图 */
+  }
+
+  /* 初始化 */
+  showMethod("zircon_loucks2020");
+  buildBufferTable();
+  initPlot();
+})();
+</script>
+</body>
+</html>
