@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>锆石饱和温度计 · Zircon Saturation Thermometry</title>
+<meta name="description" content="用全岩主量成分与 Zr 含量计算锆石饱和温度：Watson & Harrison (1983)、Boehnke et al. (2013)、Gervasoni et al. (2016)、Crisp & Berry (2022)。">
+<style>
+:root {
+  --bg: #f2eee4;
+  --bg-2: #e9e3d5;
+  --panel: #fffdf8;
+  --panel-2: #faf6ec;
+  --ink: #1d2a2e;
+  --muted: #6d7a7d;
+  --line: #ddd4c2;
+  --line-strong: #c9bda6;
+  --teal: #0e5a63;
+  --teal-2: #147a82;
+  --ochre: #b45309;
+  --gold: #d99a2b;
+  --red: #a83232;
+  --green: #2f6f4e;
+  --shadow: 0 10px 30px rgba(38, 45, 43, 0.08);
+  --radius: 14px;
+  --mono: "Cascadia Mono", "Consolas", "SFMono-Regular", monospace;
+  --sans: "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(14, 90, 99, 0.07), transparent 36%),
+    radial-gradient(circle at 88% 4%, rgba(180, 83, 9, 0.06), transparent 32%),
+    linear-gradient(180deg, #f6f2e9 0%, var(--bg) 48%, #eee8dc 100%);
+  min-height: 100vh;
+}
+
+.wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 28px 22px 56px;
+}
+
+/* ---------- header ---------- */
+header.top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 6px 0 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--teal);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+h1 {
+  font-size: clamp(26px, 3.2vw, 38px);
+  line-height: 1.12;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  max-width: 620px;
+  font-size: 14px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: flex-end;
+  max-width: 420px;
+}
+
+.chip {
+  font-size: 11.5px;
+  font-family: var(--mono);
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 253, 248, 0.7);
+  color: var(--teal);
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ---------- tabs ---------- */
+nav.tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 253, 248, 0.66);
+  border: 1px solid var(--line);
+  padding: 5px;
+  border-radius: 12px;
+  width: fit-content;
+  margin-bottom: 20px;
+}
+
+nav.tabs button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13.5px;
+  padding: 8px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+nav.tabs button:hover { color: var(--ink); background: rgba(14, 90, 99, 0.06); }
+nav.tabs button.active {
+  background: var(--teal);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(14, 90, 99, 0.22);
+}
+
+.panel { display: none; }
+.panel.active { display: block; animation: rise 0.22s ease; }
+@keyframes rise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+/* ---------- layout ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.86fr) minmax(460px, 1.14fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 20px 18px;
+}
+
+.card h2 {
+  font-size: 15px;
+  margin: 0 0 2px;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card h2 .num {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #fff;
+  font-size: 11px;
+  font-family: var(--mono);
+}
+
+.card .hint { color: var(--muted); font-size: 12.5px; margin: 0 0 14px; }
+
+/* ---------- form ---------- */
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 12px; color: var(--muted); }
+.field label b { color: var(--ink); font-weight: 600; }
+
+input[type="text"], input[type="number"], textarea, select {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  background: #fffef9;
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input[type="number"] { font-family: var(--mono); }
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--teal-2);
+  box-shadow: 0 0 0 3px rgba(20, 122, 130, 0.12);
+}
+
+input.invalid { border-color: var(--red); background: #fff6f5; }
+
+.oxide-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px 10px;
+  margin-bottom: 12px;
+}
+
+.oxide-grid .field label { font-family: var(--mono); font-size: 11.5px; }
+
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.row-3 {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr 0.7fr;
+  gap: 10px;
+}
+
+.section-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--teal);
+  font-family: var(--mono);
+  margin: 16px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-label::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+}
+
+.actions {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+button.btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 9px 15px;
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
+}
+
+button.btn:active { transform: translateY(1px); }
+
+button.primary {
+  background: var(--teal);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(14, 90, 99, 0.24);
+}
+button.primary:hover { background: var(--teal-2); }
+
+button.ghost {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+button.ghost:hover { background: var(--panel-2); }
+
+button.mini {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 7px;
+}
+
+.preset-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.preset-row button {
+  border: 1px dashed var(--line-strong);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11.5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.preset-row button:hover { color: var(--teal); border-color: var(--teal-2); background: rgba(20, 122, 130, 0.05); }
+
+/* ---------- results ---------- */
+.results-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.param-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.param {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px 9px;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.param b { color: var(--ink); font-weight: 600; }
+
+.model-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.model-card {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 12px 13px 11px;
+  background: linear-gradient(180deg, #fffef9, #fbf7ec);
+  position: relative;
+  overflow: hidden;
+}
+
+.model-card::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+}
+
+.model-card .mc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.model-card .mc-name {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-family: var(--mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.model-card .mc-tag {
+  font-size: 10px;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  padding: 1px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.model-card .mc-temp {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.model-card .mc-temp small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 2px; }
+.model-card .mc-k { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 1px; }
+
+.chart {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.chart-title {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-family: var(--mono);
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 82px 1fr 64px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+}
+
+.bar-label { color: var(--muted); font-family: var(--mono); }
+.bar-track {
+  height: 9px;
+  background: #eee7d8;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+.bar-value { text-align: right; font-family: var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.axis {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 90px;
+  margin-right: 72px;
+  font-size: 10px;
+  color: #9a9384;
+  font-family: var(--mono);
+  border-top: 1px dotted var(--line);
+  padding-top: 3px;
+}
+
+.spread-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.spread-note b { color: var(--ink); }
+
+/* ---------- warnings ---------- */
+.warn-box {
+  margin-top: 14px;
+  border-radius: 10px;
+  border: 1px solid #e6d6b8;
+  background: #fdf7e8;
+  padding: 10px 12px;
+}
+.warn-box.ok { border-color: #cfe0d3; background: #f3f8f2; }
+.warn-box h3 {
+  margin: 0 0 5px;
+  font-size: 12px;
+  color: #8a5a12;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.warn-box.ok h3 { color: var(--green); }
+.warn-box ul { margin: 0; padding-left: 17px; }
+.warn-box li { font-size: 12px; color: #6f5a33; margin: 2px 0; }
+.warn-box.ok li { color: #41604a; }
+
+.error-banner {
+  display: none;
+  margin-bottom: 12px;
+  border: 1px solid #e3b9b9;
+  background: #fdf1f0;
+  color: var(--red);
+  border-radius: 9px;
+  padding: 9px 11px;
+  font-size: 12.5px;
+}
+.error-banner.show { display: block; }
+
+/* ---------- batch ---------- */
+.batch-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.62fr) minmax(560px, 1.38fr);
+  gap: 20px;
+  align-items: start;
+}
+
+textarea#batchText {
+  min-height: 250px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  resize: vertical;
+  white-space: pre;
+}
+
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  max-height: 560px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+th, td {
+  padding: 6px 7px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+th {
+  position: sticky;
+  top: 0;
+  background: #f0ebdf;
+  color: var(--teal);
+  font-weight: 600;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  z-index: 1;
+}
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: inherit; }
+td:first-child { background: var(--panel); font-weight: 500; }
+tbody tr:hover td { background: #faf6ec; }
+td.num { font-family: var(--mono); }
+td.warn { color: var(--ochre); text-align: left; white-space: normal; min-width: 160px; font-size: 11px; }
+#batchTable { font-size: 11.5px; }
+#batchTable th, #batchTable td { padding: 5px 6px; }
+
+/* ---------- docs ---------- */
+.doc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.doc-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 18px 16px;
+  box-shadow: var(--shadow);
+}
+
+.doc-card h3 {
+  margin: 0 0 2px;
+  font-size: 15px;
+}
+.doc-card .ref { color: var(--muted); font-size: 11.5px; margin-bottom: 10px; }
+
+.eq {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  background: #f7f2e6;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--teal);
+  border-radius: 7px;
+  padding: 9px 11px;
+  margin: 9px 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.doc-card p { font-size: 12.5px; color: #4b5759; margin: 7px 0; }
+.doc-card ul { margin: 6px 0; padding-left: 18px; }
+.doc-card li { font-size: 12.5px; color: #4b5759; margin: 3px 0; }
+.tag {
+  display: inline-block;
+  font-size: 10px;
+  font-family: var(--mono);
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(14, 90, 99, 0.08);
+  color: var(--teal);
+  border: 1px solid rgba(14, 90, 99, 0.16);
+  margin-left: 5px;
+  vertical-align: 2px;
+}
+
+.wide { grid-column: 1 / -1; }
+
+.prose h2 { font-size: 19px; margin: 0 0 4px; }
+.prose h3 { font-size: 14.5px; margin: 18px 0 6px; color: var(--teal); }
+.prose p, .prose li { font-size: 13.5px; color: #3f4c4e; }
+.prose ul, .prose ol { padding-left: 20px; }
+.prose li { margin: 4px 0; }
+.prose code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: #f2ecdd;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.prose a { color: var(--teal); text-decoration: none; border-bottom: 1px dotted var(--teal-2); }
+.prose a:hover { color: var(--ochre); border-color: var(--ochre); }
+
+.compare-table th, .compare-table td { white-space: normal; text-align: left; vertical-align: top; font-size: 12px; }
+.compare-table td:first-child { min-width: 130px; }
+
+.footnote {
+  margin-top: 22px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: #8a8478;
+  font-size: 11.5px;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 1020px) {
+  .grid, .batch-grid { grid-template-columns: 1fr; }
+  .doc-grid { grid-template-columns: 1fr; }
+  header.top { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .chips { justify-content: flex-start; }
+}
+
+@media (max-width: 560px) {
+  .wrap { padding: 18px 14px 42px; }
+  .oxide-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .model-grid { grid-template-columns: 1fr; }
+  .bar-row { grid-template-columns: 64px 1fr 54px; }
+  .axis { margin-left: 72px; margin-right: 62px; }
+  nav.tabs { width: 100%; overflow-x: auto; }
+  nav.tabs button { flex: 1 0 auto; }
+}
+
+@media print {
+  body { background: #fff; }
+  nav.tabs, .actions, .preset-row, .chips, .footnote { display: none !important; }
+  .panel { display: none !important; }
+  .panel.active { display: block !important; }
+  .card, .doc-card { box-shadow: none; break-inside: avoid; }
+  .wrap { max-width: none; padding: 0; }
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="eyebrow">Zircon saturation thermometry</div>
+      <h1>锆石饱和温度计</h1>
+      <p class="subtitle">输入全岩主量成分、Zr 含量与压力，一次计算四种主流锆石饱和温度模型，并给出适用性诊断。</p>
+    </div>
+    <div class="chips">
+      <span class="chip">W&amp;H 1983</span>
+      <span class="chip">Boehnke 2013</span>
+      <span class="chip">Gervasoni 2016</span>
+      <span class="chip">Crisp &amp; Berry 2022</span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="active" data-tab="calc">计算器</button>
+    <button data-tab="batch">批量计算</button>
+    <button data-tab="models">模型与公式</button>
+    <button data-tab="about">使用说明</button>
+  </nav>
+
+  <!-- ============================ CALCULATOR ============================ -->
+  <section id="panel-calc" class="panel active">
+    <div class="grid">
+
+      <!-- input -->
+      <div class="card">
+        <h2><span class="num">01</span>样品组成</h2>
+        <p class="hint">氧化物单位 wt%；Zr 为 ppm；压力为 GPa。未测项填 0。</p>
+
+        <div class="row-3">
+          <div class="field">
+            <label for="in-name">样品名</label>
+            <input type="text" id="in-name" value="S-type granite" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="in-Zr"><b>Zr</b> (ppm)</label>
+            <input type="number" id="in-Zr" value="150" step="0.1" min="0" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="in-P"><b>P</b> (GPa)</label>
+            <input type="number" id="in-P" value="0.2" step="0.05" min="0" inputmode="decimal">
+          </div>
+        </div>
+
+        <div class="section-label">主量氧化物</div>
+        <div class="oxide-grid">
+          <div class="field"><label for="in-SiO2">SiO2</label><input type="number" id="in-SiO2" value="72.0" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-TiO2">TiO2</label><input type="number" id="in-TiO2" value="0.30" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-Al2O3">Al2O3</label><input type="number" id="in-Al2O3" value="14.5" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-FeO">FeO / FeOT</label><input type="number" id="in-FeO" value="2.0" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-Fe2O3">Fe2O3</label><input type="number" id="in-Fe2O3" value="0.5" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-MgO">MgO</label><input type="number" id="in-MgO" value="0.6" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-MnO">MnO</label><input type="number" id="in-MnO" value="0.05" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-CaO">CaO</label><input type="number" id="in-CaO" value="1.5" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-Na2O">Na2O</label><input type="number" id="in-Na2O" value="3.2" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-K2O">K2O</label><input type="number" id="in-K2O" value="4.5" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-P2O5">P2O5</label><input type="number" id="in-P2O5" value="0.12" step="0.01" min="0" inputmode="decimal"></div>
+          <div class="field"><label for="in-H2O">H2O</label><input type="number" id="in-H2O" value="2.0" step="0.01" min="0" inputmode="decimal"></div>
+        </div>
+
+        <p class="hint" style="margin-top:-2px">FeO 与 Fe2O3 同时给出时，FeO 填 FeO；只测 FeOT 时，FeO 填 FeOT、Fe2O3 填 0。</p>
+
+        <div class="section-label">快速示例</div>
+        <div class="preset-row">
+          <button data-preset="sType">S 型花岗岩</button>
+          <button data-preset="aType">A 型 / 过碱性</button>
+          <button data-preset="wetArc">含水弧流纹岩</button>
+          <button data-preset="crisp">Crisp 标定例</button>
+          <button data-preset="tonalite">低 Zr 英云闪长岩</button>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="calcBtn">计算温度</button>
+          <button class="btn ghost" id="resetBtn">重置</button>
+          <button class="btn ghost mini" id="copyBtn">复制结果</button>
+          <button class="btn ghost mini" id="printBtn">打印 / PDF</button>
+        </div>
+        <p class="hint" style="margin:10px 0 0">快捷键：Ctrl / ⌘ + Enter</p>
+      </div>
+
+      <!-- results -->
+      <div class="card">
+        <div class="results-head">
+          <h2><span class="num">02</span>计算结果</h2>
+          <span class="hint" style="margin:0">T 为 °C；下方为 K</span>
+        </div>
+
+        <div class="error-banner" id="errorBanner"></div>
+        <div class="param-strip" id="paramStrip"></div>
+        <div class="model-grid" id="modelGrid"></div>
+
+        <div class="chart">
+          <div class="chart-title"><span>模型对比</span><span>同一成分，不同标定</span></div>
+          <div id="chart"></div>
+          <div class="spread-note" id="spreadNote"></div>
+        </div>
+
+        <div class="warn-box ok" id="warnBox"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ BATCH ============================ -->
+  <section id="panel-batch" class="panel">
+    <div class="batch-grid">
+      <div class="card">
+        <h2><span class="num">01</span>粘贴或载入 CSV</h2>
+        <p class="hint">首行为表头。支持列名：sample、SiO2、TiO2、Al2O3、FeO/FeOT、Fe2O3、MgO、MnO、CaO、Na2O、K2O、P2O5、H2O、Zr、P；缺失项按 0 处理。</p>
+        <textarea id="batchText" spellcheck="false">sample,SiO2,TiO2,Al2O3,FeO,Fe2O3,MgO,MnO,CaO,Na2O,K2O,P2O5,H2O,Zr,P
+S_type_granite,72.0,0.30,14.5,2.0,0.5,0.6,0.05,1.5,3.2,4.5,0.12,2.0,150,0.2
+A_type_peralkaline,74.0,0.25,12.0,1.8,0.5,0.2,0.05,0.4,4.8,4.6,0.05,0.5,350,0.1
+arc_rhyolite_wet,70.0,0.35,14.0,2.2,0.4,0.9,0.06,2.2,3.6,3.4,0.15,5.0,90,1.0
+Crisp2022_ST5,61.26,0,13.12,1.33,0,0.45,0,2.51,2.26,2.15,0,15.0,62,2.0</textarea>
+        <div class="actions">
+          <button class="btn primary" id="batchRun">解析并计算</button>
+          <button class="btn ghost" id="batchDownload">下载结果 CSV</button>
+          <button class="btn ghost mini" id="batchClear">清空</button>
+        </div>
+        <div class="actions" style="margin-top:10px">
+          <input type="file" id="batchFile" accept=".csv,.txt,.tsv" style="font-size:12px;border:0;padding:0;background:transparent">
+        </div>
+        <p class="hint" id="batchNote" style="margin-top:10px">等待计算。</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="num">02</span>批量结果</h2>
+        <p class="hint">温度单位 °C；“提示”列为触发的诊断条数。</p>
+        <div class="table-wrap">
+          <table id="batchTable"></table>
+        </div>
+        <p class="hint" style="margin-top:8px">Excel 文件请先在 Excel 中“另存为 CSV UTF-8”，再载入。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ MODELS ============================ -->
+  <section id="panel-models" class="panel">
+    <div class="doc-grid">
+
+      <article class="doc-card">
+        <h3>Watson &amp; Harrison (1983) <span class="tag">经典</span></h3>
+        <div class="ref">EPSL 64, 295–304 · 锆石饱和的原始标定</div>
+        <div class="eq">T(K) = 12900 / [3.80 + 0.85(M − 1) + ln(496000/Zr<sub>melt</sub>)]</div>
+        <p>M = (Na + K + 2Ca) / (Al · Si)，均为无水阳离子摩尔分数。</p>
+        <ul>
+          <li>适用：准铝质至弱过铝质、M ≈ 0.9–2.3 的硅质熔体。</li>
+          <li>优点：形式简单、文献引用最广，便于与旧数据对比。</li>
+          <li>局限：无水标定；对强过铝质/碱性熔体与高压含水体系外推风险大。</li>
+        </ul>
+      </article>
+
+      <article class="doc-card">
+        <h3>Boehnke et al. (2013) <span class="tag">常用默认</span></h3>
+        <div class="ref">Chemical Geology 351, 324–334 · 锆石饱和再标定</div>
+        <div class="eq">T(K) = 10108 / [1.48 + 1.16(M − 1) + ln(500000/Zr<sub>melt</sub>)]</div>
+        <p>在 W&amp;H83 基础上扩充实验数据重新回归，M 的定义相同。</p>
+        <ul>
+          <li>适用：多数花岗质—流纹质熔体，是当前最常用的默认模型。</li>
+          <li>优点：实验覆盖更广，对 M 变化的敏感度与 W&amp;H83 不同。</li>
+          <li>局限：仍为无水标定；继承锆石或锆石堆积会使全岩 Zr 偏高。</li>
+        </ul>
+      </article>
+
+      <article class="doc-card">
+        <h3>Gervasoni et al. (2016) <span class="tag">过铝/碱性</span></h3>
+        <div class="ref">Contributions to Mineralogy and Petrology 171, 21</div>
+        <div class="eq">T(°C) = [ln(Zr<sub>melt</sub>) − 4.29 + 1.35 ln(G)] / 0.0056</div>
+        <p>G = (3Al/2 + Si) / (Na/2 + K/2 + Ca + Mg + Fe)，阳离子摩尔分数。</p>
+        <ul>
+          <li>适用：过铝质与碱性/过碱性熔体，弥补 M 参数对 Al 过饱和不敏感的问题。</li>
+          <li>优点：对富 Al、富碱体系更有针对性。</li>
+          <li>局限：G 超出约 1–20 时外推明显；对低 Zr 样品可能给出过低温度。</li>
+        </ul>
+      </article>
+
+      <article class="doc-card">
+        <h3>Crisp &amp; Berry (2022) <span class="tag">含水/高压</span></h3>
+        <div class="ref">Contributions to Mineralogy and Petrology 177, 71</div>
+        <div class="eq">T(°C) = 5790 / [0.96 − 1.28P + 12.39Λ + 0.83x(H<sub>2</sub>O) + 2.06PΛ − log<sub>10</sub>Zr] − 273.15</div>
+        <p>P 为 GPa；Λ 为氧加权光学碱度；x(H₂O) 为氧化物摩尔分数中的水。</p>
+        <ul>
+          <li>适用：含水、较高压力（约 0.5–4 GPa）的硅酸盐熔体。</li>
+          <li>优点：显式处理压力与熔体水含量，适合弧岩浆与深部岩浆房。</li>
+          <li>局限：需要可靠的 P 与 H₂O 估计；光学碱度对 Fe 价态敏感。</li>
+        </ul>
+      </article>
+
+      <div class="doc-card wide">
+        <h3>怎么选模型</h3>
+        <table class="compare-table">
+          <thead>
+            <tr><th>情形</th><th>首选</th><th>对照</th><th>理由</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>干燥、准铝质花岗岩/流纹岩，低压</td><td>Boehnke 2013</td><td>W&amp;H 1983</td><td>实验覆盖最广，二者差值可反映标定敏感度。</td></tr>
+            <tr><td>强过铝质（S 型、白云母/石榴石花岗岩）</td><td>Gervasoni 2016</td><td>Boehnke 2013</td><td>G 参数专门针对富 Al 熔体。</td></tr>
+            <tr><td>碱性/过碱性（A 型、钠闪石/霓石花岗岩）</td><td>Gervasoni 2016</td><td>Crisp &amp; Berry 2022</td><td>M 参数对过碱体系不敏感，G 更合适。</td></tr>
+            <tr><td>含水弧岩浆、高压岩浆房（≥0.5 GPa）</td><td>Crisp &amp; Berry 2022</td><td>Boehnke 2013</td><td>只有 CB22 显式含 P 与 H₂O 项。</td></tr>
+            <tr><td>只有全岩数据、无 P / H₂O 约束</td><td>Boehnke 2013</td><td>W&amp;H 1983</td><td>不引入额外假设，结果最稳。</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:12px"><b>建议：</b>四个模型都算一遍。若 B13 与 W&amp;H83 相差 &lt; 30 °C，说明 M 在标定范围内，结果较可靠；若 G16 与 B13 相差 &gt; 100 °C，先检查 G 是否超出 1–20，或岩性是否确实过铝/碱性。</p>
+      </div>
+
+      <div class="doc-card wide">
+        <h3>公式中的参数</h3>
+        <table class="compare-table">
+          <thead><tr><th>参数</th><th>定义</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td><b>M</b></td><td>(Na + K + 2Ca) / (Al · Si)</td><td>阳离子摩尔分数，无水基；Na、K、Ca、Al、Si 均为阳离子摩尔数除以阳离子总量。</td></tr>
+            <tr><td><b>G</b></td><td>(3Al/2 + Si) / (Na/2 + K/2 + Ca + Mg + Fe)</td><td>阳离子摩尔分数；Fe 为全铁（Fe²⁺ + Fe³⁺）。</td></tr>
+            <tr><td><b>Λ</b></td><td>Σ(n<sub>O,i</sub> · Λ<sub>i</sub>) / Σn<sub>O,i</sub></td><td>氧加权光学碱度；Λ<sub>i</sub> 取自 Lebouteiller &amp; Courtine (1998)。</td></tr>
+            <tr><td><b>x(H₂O)</b></td><td>n(H₂O) / Σn(氧化物)</td><td>氧化物摩尔分数中的水，不是 wt%。</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================ ABOUT ============================ -->
+  <section id="panel-about" class="panel">
+    <div class="doc-grid">
+      <div class="doc-card prose wide">
+        <h2>使用说明与边界条件</h2>
+        <p>本工具用全岩（或熔体/玻璃）主量成分与 Zr 含量计算锆石饱和温度。它假设 Zr 赋存在熔体中、锆石与熔体达到饱和平衡，并且所分析成分代表该熔体。以下情形需要特别小心：</p>
+        <ul>
+          <li><b>全岩 ≠ 熔体：</b>若岩石中含锆石斑晶或继承锆石，全岩 Zr 会高于熔体 Zr，算出的温度偏高。理想情况使用玻璃、基质或经锆石扣除后的熔体成分。</li>
+          <li><b>未饱和：</b>若熔体中没有锆石，测得的 Zr 低于该温度下的饱和值，计算出的 T<sub>Zr</sub> 会低于真实温度，应视为<b>下限</b>。</li>
+          <li><b>继承/堆积：</b>继承锆石或锆石堆积会使 Zr 偏高，T<sub>Zr</sub> 可能<b>高估</b>。</li>
+          <li><b>压力与水：</b>W&amp;H83、B13、G16 未显式含 P 与 H₂O；含水或高压体系优先用 Crisp &amp; Berry (2022)，并如实报告 P、H₂O 的取值依据。</li>
+          <li><b>Fe 价态：</b>光学碱度区分 Fe²⁺/Fe³⁺；只给 FeOT 时全部按 Fe²⁺ 处理，可能带来数度到十余度的差异。</li>
+          <li><b>分析误差：</b>Zr 的相对误差 10% 通常对应约 20–40 °C 的温度误差；主量元素误差影响较小，但 M 接近标定边界时会被放大。</li>
+        </ul>
+
+        <h3>计算与校验</h3>
+        <p>核心公式与参数定义已用本文件夹中的标定表逐项核对：</p>
+        <ul>
+          <li>Crisp &amp; Berry (2022) Supplementary Table ST5 示例：Λ = 0.5300、x(H₂O) = 0.3938、T = 745.45 °C；本工具给出 745.3 °C（差异来自摩尔质量舍入）。</li>
+          <li>Szymanowski et al. (2020) 表第 5 行：W&amp;H83 = 955.2 °C、B13 = 921.2 °C、G16 = 898.3 °C，本工具分别在 1 °C 内复现。</li>
+          <li>“锆饱和温度计算.xls”2024 年第 6 行：W&amp;H83 = 644.8 °C，本工具复现至 0.1 °C。</li>
+        </ul>
+
+        <h3>为什么是这四个模型</h3>
+        <p>文件夹里的表格很多是同一批标定的应用、对比或数据整理，而不是独立的新温度计。对应关系如下：</p>
+        <table class="compare-table">
+          <thead><tr><th>文件夹中的资料</th><th>内容</th><th>本工具</th></tr></thead>
+          <tbody>
+            <tr><td>Zircon saturation temperature calculator-Laura J. Crisp 2022 CMP.xlsx</td><td>Crisp &amp; Berry (2022) 标定、光学碱度与误差传播</td><td>CB22</td></tr>
+            <tr><td>Zircon saturation temperature-Szymanowski 2020.xlsx</td><td>W&amp;H83 / B13 / G16 三模型对比与晶体–熔体动力学讨论</td><td>WH83、B13、G16</td></tr>
+            <tr><td>Zr_Saturation Thermometer-Data from Watson 1983.xlsx</td><td>W&amp;H83 实验数据整理</td><td>WH83</td></tr>
+            <tr><td>锆饱和温度计算.xls（2024）</td><td>W&amp;H83 全岩计算表</td><td>WH83</td></tr>
+            <tr><td>锆饱和温度计-全岩主微量处理-Barboni 2016 PNAS.xlsx</td><td>用 B13 公式处理全岩数据</td><td>B13</td></tr>
+            <tr><td>Tzr &amp; Ti in Zrn Volante 2020 CMP.xlsx</td><td>W&amp;H83 与 B13 的应用及与 Ti-in-zircon 对比</td><td>WH83、B13</td></tr>
+            <tr><td>Zircon Saturation Thermometry -By Foley 2020 JP.xlsx</td><td>W&amp;H83 与 B13 的计算表（锆石 Zr 取 476000 ppm）</td><td>WH83、B13</td></tr>
+          </tbody>
+        </table>
+        <p><b>关于常数：</b>不同表格对锆石 Zr 含量取 476000–500000 ppm 不等。本工具按原文取 W&amp;H83 = 496000、B13 = 500000；这类差异通常小于 1 °C，但严格对比时会出现。Miller et al. (2003) 与 Szymanowski et al. (2020) 主要讨论继承锆石与晶体–熔体动力学对 T<sub>Zr</sub> 的影响，没有提出新的独立标定，因此未单列为模型。</p>
+
+        <h3>结果解读</h3>
+        <p>四个模型不是四个“真值”，而是四套实验标定。报告时建议写成“T<sub>Zr</sub> = 780 ± 40 °C（Boehnke et al., 2013；P = 0.2 GPa，H₂O = 2 wt%）”，并说明所用模型与假设。模型间极差 &gt; 150 °C 时，优先检查岩性、M/G 是否超出范围、全岩是否含锆石。</p>
+
+        <h3>参考文献</h3>
+        <ol>
+          <li>Watson, E.B., Harrison, T.M. (1983). Zircon saturation revisited: temperature and composition effects in a variety of crustal magma types. <i>Earth and Planetary Science Letters</i> 64, 295–304. <a href="https://doi.org/10.1016/0012-821X(83)90211-X" target="_blank" rel="noopener">doi</a></li>
+          <li>Boehnke, P., Watson, E.B., Trail, D., Harrison, T.M., Schmitt, A.K. (2013). Zircon saturation re-revisited. <i>Chemical Geology</i> 351, 324–334. <a href="https://doi.org/10.1016/j.chemgeo.2013.05.028" target="_blank" rel="noopener">doi</a></li>
+          <li>Gervasoni, F., Klemme, S., Rocha-Júnior, E.R.V., Berndt, J. (2016). Zircon saturation in silicate melts: a new and improved model for aluminous and alkaline melts. <i>Contributions to Mineralogy and Petrology</i> 171, 21. <a href="https://doi.org/10.1007/s00410-016-1227-y" target="_blank" rel="noopener">doi</a></li>
+          <li>Crisp, L.J., Berry, A.J. (2022). A new model for zircon saturation in silicate melts. <i>Contributions to Mineralogy and Petrology</i> 177, 71. <a href="https://doi.org/10.1007/s00410-022-01925-6" target="_blank" rel="noopener">doi</a></li>
+          <li>Miller, C.F., McDowell, S.M., Mapes, R.W. (2003). Hot and cold granites? Implications of zircon saturation temperatures and preservation of inheritance. <i>Geology</i> 31, 529–532. <a href="https://doi.org/10.1130/0091-7613(2003)031&lt;0529:HACGIO&gt;2.0.CO;2" target="_blank" rel="noopener">doi</a></li>
+          <li>Szymanowski, D., Forni, F., Wolff, J.A., Ellis, B.S. (2020). Modulation of zircon solubility by crystal–melt dynamics. <i>Geology</i> 48. <a href="https://doi.org/10.1130/G47405.1" target="_blank" rel="noopener">doi</a></li>
+        </ol>
+
+        <h3>版本与声明</h3>
+        <p>版本 1.0.0 · 2026-10 · 单文件离线运行，不收集任何数据。计算结果仅供研究参考，不能替代岩相学、矿物学与实验岩石学判断。</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="footnote">Zr·SAT — zircon saturation thermometry · 离线单文件工具 · 建议用 Chrome / Edge 打开</p>
+</div>
+
+<script>
+/* Zircon saturation thermometry calculator — core + UI.
+ * Pure functions are exported for Node-based cross-validation.
+ */
+(function (global) {
+  "use strict";
+
+  /* ------------------------------------------------------------------ */
+  /* Constants                                                          */
+  /* ------------------------------------------------------------------ */
+
+  const MW = {
+    SiO2: 60.0843, TiO2: 79.8658, Al2O3: 101.9613, Fe2O3: 159.6900,
+    FeO: 71.8464, MnO: 70.9374, MgO: 40.3044, CaO: 56.0774,
+    Na2O: 61.9789, K2O: 94.1960, P2O5: 141.9445, H2O: 18.01528
+  };
+
+  const OXIDES = ["SiO2", "TiO2", "Al2O3", "FeO", "Fe2O3", "MgO",
+                  "MnO", "CaO", "Na2O", "K2O", "P2O5", "H2O"];
+
+  const LAMBDA = {
+    SiO2: [0.48, 2], TiO2: [0.75, 2], Al2O3: [0.60, 3],
+    Fe2O3: [0.77, 3], FeO: [1.00, 1], MnO: [0.96, 1],
+    MgO: [0.78, 1], CaO: [1.00, 1], Na2O: [1.15, 1],
+    K2O: [1.40, 1], P2O5: [0.33, 5]
+  };
+
+  const MODEL_ORDER = ["WH83", "B13", "G16", "CB22"];
+
+  const MODEL_INFO = {
+    WH83: {
+      name: "Watson & Harrison (1983)", short: "W&H83", tag: "经典",
+      color: "#0e5a63", eq: "T(K) = 12900 / [3.80 + 0.85(M − 1) + ln(496000/Zr)]"
+    },
+    B13: {
+      name: "Boehnke et al. (2013)", short: "Boehnke13", tag: "常用默认",
+      color: "#1f6f8b", eq: "T(K) = 10108 / [1.48 + 1.16(M − 1) + ln(500000/Zr)]"
+    },
+    G16: {
+      name: "Gervasoni et al. (2016)", short: "Gervasoni16", tag: "过铝/碱性",
+      color: "#8a5a12", eq: "T(°C) = [ln(Zr) − 4.29 + 1.35 ln(G)] / 0.0056"
+    },
+    CB22: {
+      name: "Crisp & Berry (2022)", short: "Crisp22", tag: "含水/高压",
+      color: "#7a3e65", eq: "T(°C) = 5790 / [0.96 − 1.28P + 12.39Λ + 0.83x(H₂O) + 2.06PΛ − log₁₀Zr] − 273.15"
+    }
+  };
+
+  const KELVIN = 273.15;
+  const ZR_WH83 = 496000;
+  const ZR_B13 = 500000;
+
+  /* ------------------------------------------------------------------ */
+  /* Compositional parameters                                           */
+  /* ------------------------------------------------------------------ */
+
+  function finite(value) {
+    return typeof value === "number" && Number.isFinite(value);
+  }
+
+  function cationMoles(s) {
+    return {
+      Si: s.SiO2 / MW.SiO2,
+      Ti: s.TiO2 / MW.TiO2,
+      Al: 2 * s.Al2O3 / MW.Al2O3,
+      Fe3: 2 * s.Fe2O3 / MW.Fe2O3,
+      Fe2: s.FeO / MW.FeO,
+      Mn: s.MnO / MW.MnO,
+      Mg: s.MgO / MW.MgO,
+      Ca: s.CaO / MW.CaO,
+      Na: 2 * s.Na2O / MW.Na2O,
+      K: 2 * s.K2O / MW.K2O,
+      P: 2 * s.P2O5 / MW.P2O5
+    };
+  }
+
+  function sumValues(obj) {
+    return Object.keys(obj).reduce((acc, k) => acc + obj[k], 0);
+  }
+
+  function meltParameters(s) {
+    if (!(s.SiO2 > 0)) throw new Error("SiO2 必须大于 0");
+    if (!(s.Al2O3 > 0)) throw new Error("Al2O3 必须大于 0");
+
+    const cat = cationMoles(s);
+    const N = sumValues(cat);
+    if (!(N > 0)) throw new Error("阳离子总量为 0，请检查输入");
+
+    const M = (cat.Na + cat.K + 2 * cat.Ca) * N / (cat.Al * cat.Si);
+    const gDen = 0.5 * cat.Na + 0.5 * cat.K + cat.Ca + cat.Mg + cat.Fe2 + cat.Fe3;
+    if (!(gDen > 0)) throw new Error("G 的分母为 0，请检查 Ca、Mg、Fe");
+    const G = (1.5 * cat.Al + cat.Si) / gDen;
+
+    const ox = {};
+    OXIDES.forEach(k => { ox[k] = s[k] / MW[k]; });
+    const oxTotal = sumValues(ox);
+    if (!(oxTotal > 0)) throw new Error("氧化物总量为 0");
+
+    let lamNum = 0, lamDen = 0;
+    Object.keys(LAMBDA).forEach(k => {
+      const amount = ox[k];
+      const lam = LAMBDA[k][0], nO = LAMBDA[k][1];
+      lamNum += amount * nO * lam;
+      lamDen += amount * nO;
+    });
+    if (!(lamDen > 0)) throw new Error("无法计算光学碱度");
+
+    const totalAnhydrous = OXIDES
+      .filter(k => k !== "H2O")
+      .reduce((acc, k) => acc + s[k], 0);
+
+    return {
+      M: M, G: G,
+      Lambda: lamNum / lamDen,
+      x_H2O: ox.H2O / oxTotal,
+      cationTotal: N,
+      oxideTotal: oxTotal,
+      totalAnhydrous: totalAnhydrous,
+      totalWithWater: totalAnhydrous + s.H2O
+    };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Thermometers (degrees C)                                           */
+  /* ------------------------------------------------------------------ */
+
+  function tWH83(M, Zr) {
+    return 12900 / (3.80 + 0.85 * (M - 1) + Math.log(ZR_WH83 / Zr)) - KELVIN;
+  }
+
+  function tB13(M, Zr) {
+    return 10108 / (1.48 + 1.16 * (M - 1) + Math.log(ZR_B13 / Zr)) - KELVIN;
+  }
+
+  function tG16(G, Zr) {
+    return (Math.log(Zr) - 4.29 + 1.35 * Math.log(G)) / 0.0056;
+  }
+
+  function tCB22(Lambda, xH2O, P, Zr) {
+    const denom = 0.96 - 1.28 * P + 12.39 * Lambda + 0.83 * xH2O
+                + 2.06 * P * Lambda - Math.log10(Zr);
+    return 5790 / denom - KELVIN;
+  }
+
+  function normaliseSample(s) {
+    const out = { name: s && s.name ? String(s.name) : "sample" };
+    OXIDES.forEach(function (k) {
+      out[k] = s && finite(s[k]) ? s[k] : 0;
+    });
+    out.Zr = s && finite(s.Zr) ? s.Zr : 0;
+    out.P_GPa = s && finite(s.P_GPa) ? s.P_GPa : 0.1;
+    return out;
+  }
+
+  function calculate(s) {
+    s = normaliseSample(s);
+    if (!(s.Zr > 0)) throw new Error("Zr 必须大于 0");
+    if (!(s.P_GPa >= 0)) throw new Error("压力不能为负");
+    const p = meltParameters(s);
+    const results = {
+      WH83: { key: "WH83", T_C: tWH83(p.M, s.Zr) },
+      B13: { key: "B13", T_C: tB13(p.M, s.Zr) },
+      G16: { key: "G16", T_C: tG16(p.G, s.Zr) },
+      CB22: { key: "CB22", T_C: tCB22(p.Lambda, p.x_H2O, s.P_GPa, s.Zr) }
+    };
+    MODEL_ORDER.forEach(k => { results[k].T_K = results[k].T_C + KELVIN; });
+    return { sample: s, params: p, results: results, warnings: buildWarnings(s, p, results) };
+  }
+
+  function buildWarnings(s, p, results) {
+    const out = [];
+    const add = (level, text) => out.push({ level: level, text: text });
+
+    if (p.totalAnhydrous < 97 || p.totalAnhydrous > 103) {
+      add("warn", `无水氧化物总量为 ${p.totalAnhydrous.toFixed(2)} wt%，偏离 100% 较多；请检查输入或先归一化。`);
+    }
+    if (p.M < 0.9 || p.M > 2.3) {
+      add("warn", `M = ${p.M.toFixed(3)} 超出 W&H83 / B13 常见标定范围（约 0.9–2.3），结果为外推。`);
+    }
+    if (p.G < 1 || p.G > 20) {
+      add("warn", `G = ${p.G.toFixed(3)} 超出 Gervasoni (2016) 常见范围（约 1–20），该模型结果需谨慎。`);
+    }
+    if (s.FeO + s.Fe2O3 <= 0) {
+      add("warn", "未输入 FeO / Fe₂O₃；G 参数与光学碱度会偏低。");
+    }
+    if (s.Zr < 10) {
+      add("warn", "Zr < 10 ppm，温度对 Zr 非常敏感，分析误差会被放大。");
+    }
+    if (s.H2O > 0.5) {
+      add("info", "熔体含 H₂O；W&H83、B13 与 G16 均为无水标定，含水熔体建议优先参考 Crisp & Berry (2022)。");
+    }
+    if (s.H2O > 20) {
+      add("warn", "H₂O > 20 wt%，已超出常见硅酸盐熔体范围。");
+    }
+    if (s.P_GPa > 4) {
+      add("warn", "P > 4 GPa，Crisp & Berry (2022) 的压力外推范围较大。");
+    }
+    MODEL_ORDER.forEach(k => {
+      const t = results[k].T_C;
+      if (t < 600 || t > 1100) {
+        add("warn", `${MODEL_INFO[k].short} 给出 ${Math.round(t)} °C，超出 600–1100 °C 的常见适用范围。`);
+      }
+    });
+    const ts = MODEL_ORDER.map(k => results[k].T_C);
+    const spread = Math.max.apply(null, ts) - Math.min.apply(null, ts);
+    if (spread > 150) {
+      add("warn", `模型间温度差异达 ${Math.round(spread)} °C；建议结合岩性、含水量与压力判断适用模型。`);
+    }
+    return out;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* DOM helpers                                                        */
+  /* ------------------------------------------------------------------ */
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+  function fmt(value, digits) {
+    if (!finite(value)) return "–";
+    return value.toFixed(digits === undefined ? 0 : digits);
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+
+  const DEFAULT_SAMPLE = {
+    name: "S-type granite",
+    SiO2: 72.0, TiO2: 0.30, Al2O3: 14.5, FeO: 2.0, Fe2O3: 0.5,
+    MgO: 0.6, MnO: 0.05, CaO: 1.5, Na2O: 3.2, K2O: 4.5,
+    P2O5: 0.12, H2O: 2.0, Zr: 150, P_GPa: 0.2
+  };
+
+  const PRESETS = {
+    sType: DEFAULT_SAMPLE,
+    aType: {
+      name: "A-type / peralkaline", SiO2: 74.0, TiO2: 0.25, Al2O3: 12.0,
+      FeO: 1.8, Fe2O3: 0.5, MgO: 0.2, MnO: 0.05, CaO: 0.4,
+      Na2O: 4.8, K2O: 4.6, P2O5: 0.05, H2O: 0.5, Zr: 350, P_GPa: 0.1
+    },
+    wetArc: {
+      name: "Hydrous arc rhyolite", SiO2: 70.0, TiO2: 0.35, Al2O3: 14.0,
+      FeO: 2.2, Fe2O3: 0.4, MgO: 0.9, MnO: 0.06, CaO: 2.2,
+      Na2O: 3.6, K2O: 3.4, P2O5: 0.15, H2O: 5.0, Zr: 90, P_GPa: 1.0
+    },
+    crisp: {
+      name: "Crisp2022_ST5", SiO2: 61.26, TiO2: 0, Al2O3: 13.12,
+      FeO: 1.33, Fe2O3: 0, MgO: 0.45, MnO: 0, CaO: 2.51,
+      Na2O: 2.26, K2O: 2.15, P2O5: 0, H2O: 15.0, Zr: 62, P_GPa: 2.0
+    },
+    tonalite: {
+      name: "low-Zr tonalite", SiO2: 64.0, TiO2: 0.55, Al2O3: 16.5,
+      FeO: 4.0, Fe2O3: 0.8, MgO: 2.2, MnO: 0.08, CaO: 5.0,
+      Na2O: 3.8, K2O: 2.2, P2O5: 0.15, H2O: 1.0, Zr: 45, P_GPa: 0.3
+    }
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* UI                                                                */
+  /* ------------------------------------------------------------------ */
+
+  let lastBatch = null;
+
+  function init() {
+    bindTabs();
+    bindCalculator();
+    bindBatch();
+    restoreOrLoad(DEFAULT_SAMPLE);
+    computeAndRender();
+    runBatch();
+  }
+
+  function bindTabs() {
+    $all("nav.tabs button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        activateTab(btn.getAttribute("data-tab"));
+      });
+    });
+    const initial = String(global.location && global.location.hash || "").replace("#", "");
+    if (["calc", "batch", "models", "about"].indexOf(initial) >= 0) {
+      activateTab(initial);
+    }
+  }
+
+  function activateTab(tab) {
+    $all("nav.tabs button").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-tab") === tab);
+    });
+    $all(".panel").forEach(function (p) {
+      p.classList.toggle("active", p.id === "panel-" + tab);
+    });
+    try {
+      if (global.history && global.history.replaceState) {
+        global.history.replaceState(null, "", "#" + tab);
+      }
+    } catch (err) { /* file:// may disallow history changes */ }
+    if (tab === "calc") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function bindCalculator() {
+    $("#calcBtn").addEventListener("click", computeAndRender);
+    $("#resetBtn").addEventListener("click", function () {
+      restoreOrLoad(DEFAULT_SAMPLE);
+      computeAndRender();
+    });
+    $("#copyBtn").addEventListener("click", copySummary);
+    $("#printBtn").addEventListener("click", function () { window.print(); });
+
+    $all("[data-preset]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const preset = PRESETS[btn.getAttribute("data-preset")];
+        if (preset) {
+          fillInputs(preset);
+          computeAndRender();
+        }
+      });
+    });
+
+    document.addEventListener("keydown", function (ev) {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key === "Enter") {
+        ev.preventDefault();
+        computeAndRender();
+      }
+    });
+  }
+
+  function readInputs() {
+    const s = { name: ($("#in-name").value || "").trim() || "sample" };
+    OXIDES.forEach(function (k) {
+      s[k] = parseNumber($("#in-" + k));
+    });
+    s.Zr = parseNumber($("#in-Zr"));
+    s.P_GPa = parseNumber($("#in-P"));
+    return s;
+  }
+
+  function parseNumber(el) {
+    if (!el) return 0;
+    const raw = String(el.value || "").trim().replace(/,/g, "");
+    if (raw === "") return 0;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : NaN;
+  }
+
+  function fillInputs(s) {
+    $("#in-name").value = s.name || "sample";
+    OXIDES.forEach(function (k) {
+      $("#in-" + k).value = (s[k] === 0 ? "0" : String(s[k]));
+    });
+    $("#in-Zr").value = String(s.Zr);
+    $("#in-P").value = String(s.P_GPa);
+    $all("input").forEach(i => i.classList.remove("invalid"));
+  }
+
+  function validate(s) {
+    const errors = [];
+    $all("input").forEach(i => i.classList.remove("invalid"));
+
+    [["SiO2", "SiO₂"], ["Al2O3", "Al₂O₃"], ["Zr", "Zr"]].forEach(function (pair) {
+      const key = pair[0];
+      const el = key === "Zr" ? $("#in-Zr") : $("#in-" + key);
+      const value = s[key];
+      if (!finite(value)) {
+        errors.push(pair[1] + " 不是有效数字");
+        el.classList.add("invalid");
+      } else if (value <= 0) {
+        errors.push(pair[1] + " 必须大于 0");
+        el.classList.add("invalid");
+      }
+    });
+
+    const oxideKeys = OXIDES.concat(["Zr", "P_GPa"]);
+    oxideKeys.forEach(function (k) {
+      if (!finite(s[k])) {
+        errors.push(k + " 不是有效数字");
+        const el = k === "Zr" ? $("#in-Zr") : (k === "P_GPa" ? $("#in-P") : $("#in-" + k));
+        if (el) el.classList.add("invalid");
+      } else if (s[k] < 0) {
+        errors.push(k + " 不能为负值");
+        const el = k === "Zr" ? $("#in-Zr") : (k === "P_GPa" ? $("#in-P") : $("#in-" + k));
+        if (el) el.classList.add("invalid");
+      }
+    });
+    return errors;
+  }
+
+  function computeAndRender() {
+    const s = readInputs();
+    const errors = validate(s);
+    const banner = $("#errorBanner");
+    if (errors.length) {
+      banner.textContent = errors.join("；");
+      banner.classList.add("show");
+      return;
+    }
+    banner.classList.remove("show");
+    banner.textContent = "";
+
+    let calc;
+    try {
+      calc = calculate(s);
+    } catch (err) {
+      banner.textContent = err.message;
+      banner.classList.add("show");
+      return;
+    }
+    render(calc);
+    try {
+      localStorage.setItem("zirconSatInputs", JSON.stringify(s));
+    } catch (err) { /* localStorage may be unavailable */ }
+  }
+
+  function render(calc) {
+    const p = calc.params;
+    const r = calc.results;
+
+    $("#paramStrip").innerHTML =
+      param("M", fmt(p.M, 3)) +
+      param("G", fmt(p.G, 3)) +
+      param("Λ", fmt(p.Lambda, 3)) +
+      param("x(H<sub>2</sub>O)", fmt(p.x_H2O, 3)) +
+      param("Σ无水", fmt(p.totalAnhydrous, 2) + " wt%");
+
+    const keyParam = {
+      WH83: p => "M = " + fmt(p.M, 3),
+      B13: p => "M = " + fmt(p.M, 3),
+      G16: p => "G = " + fmt(p.G, 3),
+      CB22: p => "Λ = " + fmt(p.Lambda, 3) + " · P = " + fmt(calc.sample.P_GPa, 2) + " GPa"
+    };
+
+    $("#modelGrid").innerHTML = MODEL_ORDER.map(function (k) {
+      const info = MODEL_INFO[k];
+      const res = r[k];
+      return '<div class="model-card" style="--accent:' + info.color + '">' +
+        '<div class="mc-top"><span class="mc-name">' + info.short + '</span>' +
+        '<span class="mc-tag">' + info.tag + '</span></div>' +
+        '<div class="mc-temp">' + fmt(res.T_C, 0) + '<small>°C</small></div>' +
+        '<div class="mc-k">' + fmt(res.T_K, 1) + ' K · ' + keyParam[k](p) + '</div>' +
+        '</div>';
+    }).join("");
+
+    renderChart(calc);
+    renderWarnings(calc);
+
+    const spread = Math.max.apply(null, MODEL_ORDER.map(k => r[k].T_C)) -
+                   Math.min.apply(null, MODEL_ORDER.map(k => r[k].T_C));
+    $("#spreadNote").innerHTML = "模型间极差 <b>" + fmt(spread, 0) + " °C</b>" +
+      (spread > 150
+        ? "，不同模型分歧较大，请结合下表判断适用性。"
+        : spread > 80
+          ? "，模型间存在一定差异，请结合岩性与适用条件判断。"
+          : "，各模型结果较为一致。");
+  }
+
+  function param(label, value) {
+    return '<span class="param">' + label + ' <b>' + value + '</b></span>';
+  }
+
+  function renderChart(calc) {
+    const values = MODEL_ORDER.map(k => calc.results[k].T_C);
+    const min = Math.min.apply(null, values);
+    const max = Math.max.apply(null, values);
+    let lo = Math.floor((min - 50) / 100) * 100;
+    let hi = Math.ceil((max + 50) / 100) * 100;
+    if (hi - lo < 300) {
+      const mid = (hi + lo) / 2;
+      lo = Math.floor((mid - 150) / 100) * 100;
+      hi = Math.ceil((mid + 150) / 100) * 100;
+    }
+    lo = Math.max(0, lo);
+
+    $("#chart").innerHTML = MODEL_ORDER.map(function (k) {
+      const t = calc.results[k].T_C;
+      const pct = Math.max(1, Math.min(100, (t - lo) / (hi - lo) * 100));
+      return '<div class="bar-row">' +
+        '<span class="bar-label">' + MODEL_INFO[k].short + '</span>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) +
+        '%;background:' + MODEL_INFO[k].color + '"></div></div>' +
+        '<span class="bar-value">' + fmt(t, 0) + ' °C</span></div>';
+    }).join("");
+
+    const ticks = 5;
+    let axis = '<div class="axis">';
+    for (let i = 0; i < ticks; i++) {
+      axis += '<span>' + fmt(lo + (hi - lo) * i / (ticks - 1), 0) + '</span>';
+    }
+    axis += "</div>";
+    $("#chart").insertAdjacentHTML("beforeend", axis);
+  }
+
+  function renderWarnings(calc) {
+    const box = $("#warnBox");
+    if (!calc.warnings.length) {
+      box.className = "warn-box ok";
+      box.innerHTML = "<h3>✓ 诊断通过</h3><ul><li>输入落在常见适用范围，未发现明显外推。</li></ul>";
+      return;
+    }
+    box.className = "warn-box";
+    box.innerHTML = "<h3>⚠ 诊断与提示</h3><ul>" +
+      calc.warnings.map(w => "<li>" + escapeHtml(w.text) + "</li>").join("") +
+      "</ul>";
+  }
+
+  function copySummary() {
+    const s = readInputs();
+    let calc;
+    try { calc = calculate(s); } catch (err) { return; }
+    const p = calc.params;
+    const lines = [
+      "锆石饱和温度计 — " + s.name,
+      "M = " + fmt(p.M, 3) + "   G = " + fmt(p.G, 3) +
+        "   Λ = " + fmt(p.Lambda, 3) + "   x(H2O) = " + fmt(p.x_H2O, 3),
+      "Zr = " + fmt(s.Zr, 1) + " ppm   P = " + fmt(s.P_GPa, 2) + " GPa"
+    ];
+    MODEL_ORDER.forEach(function (k) {
+      lines.push(MODEL_INFO[k].short + ": " + fmt(calc.results[k].T_C, 0) + " °C");
+    });
+    const text = lines.join("\n");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        const btn = $("#copyBtn");
+        const old = btn.textContent;
+        btn.textContent = "已复制";
+        setTimeout(function () { btn.textContent = old; }, 1400);
+      });
+    } else {
+      window.prompt("复制结果：", text);
+    }
+  }
+
+  function restoreOrLoad(fallback) {
+    let saved = null;
+    try {
+      const raw = localStorage.getItem("zirconSatInputs");
+      if (raw) saved = JSON.parse(raw);
+    } catch (err) { saved = null; }
+    fillInputs(saved || fallback);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Batch                                                             */
+  /* ------------------------------------------------------------------ */
+
+  const ALIASES = {
+    name: "name", sample: "name", sampleid: "name", "样品": "name", "样品名": "name",
+    sio2: "SiO2", tio2: "TiO2", al2o3: "Al2O3",
+    feo: "FeO", feot: "FeO", fe2o3: "Fe2O3",
+    mgo: "MgO", mno: "MnO", cao: "CaO", na2o: "Na2O", k2o: "K2O",
+    p2o5: "P2O5", h2o: "H2O", water: "H2O",
+    zr: "Zr", zrppm: "Zr", p: "P_GPa", pgpa: "P_GPa", pressure: "P_GPa"
+  };
+
+  function normHeader(text) {
+    return String(text || "").replace(/^\uFEFF/, "").trim().toLowerCase()
+      .replace(/[\s\-\(\)\[\]%（），,]/g, "");
+  }
+
+  function parseDelimited(text) {
+    const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n")
+      .filter(line => line.trim() !== "");
+    if (!lines.length) return [];
+    let delimiter = ",", best = -1;
+    [",", ";", "\t"].forEach(function (candidate) {
+      const n = lines[0].split(candidate).length;
+      if (n > best) { best = n; delimiter = candidate; }
+    });
+    return lines.map(function (line) {
+      const cells = [];
+      let cell = "", quoted = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (quoted) {
+          if (ch === '"' && line[i + 1] === '"') { cell += '"'; i++; }
+          else if (ch === '"') { quoted = false; }
+          else { cell += ch; }
+        } else if (ch === '"') {
+          quoted = true;
+        } else if (ch === delimiter) {
+          cells.push(cell); cell = "";
+        } else {
+          cell += ch;
+        }
+      }
+      cells.push(cell);
+      return cells;
+    });
+  }
+
+  function batchSamples(text) {
+    const table = parseDelimited(text);
+    if (!table.length) throw new Error("没有可解析的数据。");
+    const header = table[0].map(normHeader);
+    const samples = [];
+    for (let r = 1; r < table.length; r++) {
+      const s = { name: "row" + (r + 1) };
+      OXIDES.forEach(k => { s[k] = 0; });
+      s.Zr = 0; s.P_GPa = 0.1;
+      let any = false;
+      header.forEach(function (h, i) {
+        const key = ALIASES[h];
+        if (!key) return;
+        const raw = String(table[r][i] === undefined ? "" : table[r][i]).trim();
+        if (raw === "") return;
+        if (key === "name") { s.name = raw; any = true; return; }
+        const value = Number(raw.replace(/,/g, ""));
+        if (Number.isFinite(value)) { s[key] = value; any = true; }
+      });
+      if (any) samples.push(s);
+    }
+    return samples;
+  }
+
+  function bindBatch() {
+    $("#batchRun").addEventListener("click", runBatch);
+    $("#batchDownload").addEventListener("click", downloadBatch);
+    $("#batchClear").addEventListener("click", function () {
+      $("#batchText").value = "";
+      $("#batchTable").innerHTML = "";
+      $("#batchNote").textContent = "等待计算。";
+      lastBatch = null;
+    });
+    $("#batchFile").addEventListener("change", function (ev) {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      if (!/\.(csv|txt|tsv)$/i.test(file.name)) {
+        $("#batchNote").textContent = "请选择 .csv 或 .txt 文件；Excel 文件请先另存为 CSV。";
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function () {
+        $("#batchText").value = String(reader.result || "");
+        runBatch();
+      };
+      reader.readAsText(file, "utf-8");
+    });
+  }
+
+  function runBatch() {
+    const text = $("#batchText").value;
+    let samples;
+    try {
+      samples = batchSamples(text);
+      if (!samples.length) throw new Error("未识别到样品行。");
+    } catch (err) {
+      $("#batchNote").textContent = "解析失败：" + err.message;
+      return;
+    }
+
+    const rows = [];
+    const failures = [];
+    samples.forEach(function (s, idx) {
+      try {
+        rows.push(calculate(s));
+      } catch (err) {
+        failures.push("第 " + (idx + 1) + " 行（" + s.name + "）：" + err.message);
+      }
+    });
+    lastBatch = rows;
+
+    if (!rows.length) {
+      $("#batchNote").textContent = "全部样品计算失败：" + failures.join("；");
+      return;
+    }
+
+    const head = "<thead><tr><th>样品</th><th>M</th><th>G</th><th>Λ</th><th>x(H₂O)</th>" +
+      "<th>W&H83</th><th>B13</th><th>G16</th><th>Crisp22</th><th>极差</th><th>提示</th></tr></thead>";
+    const body = "<tbody>" + rows.map(function (calc) {
+      const p = calc.params, r = calc.results;
+      const spread = Math.max.apply(null, MODEL_ORDER.map(k => r[k].T_C)) -
+                     Math.min.apply(null, MODEL_ORDER.map(k => r[k].T_C));
+      return "<tr><td>" + escapeHtml(calc.sample.name) + "</td>" +
+        "<td class=num>" + fmt(p.M, 3) + "</td>" +
+        "<td class=num>" + fmt(p.G, 3) + "</td>" +
+        "<td class=num>" + fmt(p.Lambda, 3) + "</td>" +
+        "<td class=num>" + fmt(p.x_H2O, 3) + "</td>" +
+        ["WH83", "B13", "G16", "CB22"].map(k => "<td class=num>" + fmt(r[k].T_C, 0) + "</td>").join("") +
+        "<td class=num>" + fmt(spread, 0) + "</td>" +
+        "<td class=warn>" + (calc.warnings.length ? calc.warnings.length + " 条" : "—") + "</td></tr>";
+    }).join("") + "</tbody>";
+
+    $("#batchTable").innerHTML = head + body;
+    $("#batchNote").textContent = "已计算 " + rows.length + " 个样品" +
+      (failures.length ? "；" + failures.length + " 行失败：" + failures.join("；") : "。");
+  }
+
+  function downloadBatch() {
+    if (!lastBatch || !lastBatch.length) {
+      $("#batchNote").textContent = "请先计算，再下载结果。";
+      return;
+    }
+    const header = ["sample", "M", "G", "Lambda", "x_H2O",
+      "T_WH83_C", "T_B13_C", "T_G16_C", "T_CB22_C", "T_spread_C", "warnings"];
+    const lines = [header.join(",")];
+    lastBatch.forEach(function (calc) {
+      const p = calc.params, r = calc.results;
+      const spread = Math.max.apply(null, MODEL_ORDER.map(k => r[k].T_C)) -
+                     Math.min.apply(null, MODEL_ORDER.map(k => r[k].T_C));
+      const cells = [
+        calc.sample.name, p.M.toFixed(4), p.G.toFixed(4), p.Lambda.toFixed(4),
+        p.x_H2O.toFixed(4), r.WH83.T_C.toFixed(1), r.B13.T_C.toFixed(1),
+        r.G16.T_C.toFixed(1), r.CB22.T_C.toFixed(1), spread.toFixed(1),
+        calc.warnings.map(w => w.text).join(" | ")
+      ];
+      lines.push(cells.map(function (c) {
+        const text = String(c);
+        return /[",\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+      }).join(","));
+    });
+    const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "zircon_saturation_results.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Export                                                             */
+  /* ------------------------------------------------------------------ */
+
+  const api = {
+    MW: MW, OXIDES: OXIDES, LAMBDA: LAMBDA,
+    MODEL_ORDER: MODEL_ORDER, MODEL_INFO: MODEL_INFO,
+    meltParameters: meltParameters,
+    tWH83: tWH83, tB13: tB13, tG16: tG16, tCB22: tCB22,
+    calculate: calculate,
+    parseDelimited: parseDelimited,
+    batchSamples: batchSamples
+  };
+
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  global.ZirconSat = api;
+
+  if (typeof document !== "undefined") {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
+    }
+  }
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script>
+</body>
+</html>

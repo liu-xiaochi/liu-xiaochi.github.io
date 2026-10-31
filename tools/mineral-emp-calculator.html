@@ -1,0 +1,3038 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>矿物电子探针计算器 · Mineral EMP Calculator</title>
+<style>
+:root {
+  --bg: #f3f6f4;
+  --bg-2: #e9efec;
+  --card: #ffffff;
+  --ink: #16211e;
+  --muted: #62736d;
+  --line: #dde6e2;
+  --line-strong: #c9d6d0;
+  --teal: #0f766e;
+  --teal-dark: #0b5d56;
+  --teal-soft: #e6f4f1;
+  --amber: #b45309;
+  --amber-soft: #fef3c7;
+  --red: #b91c1c;
+  --red-soft: #fee2e2;
+  --shadow: 0 10px 30px rgba(15, 60, 50, 0.07);
+  --radius: 14px;
+  --mono: "Cascadia Mono", "Consolas", "SFMono-Regular", monospace;
+  --sans: "Segoe UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background:
+    radial-gradient(900px 420px at 12% -10%, rgba(15, 118, 110, 0.10), transparent 60%),
+    radial-gradient(800px 380px at 100% 0%, rgba(180, 83, 9, 0.06), transparent 55%),
+    var(--bg);
+  min-height: 100vh;
+}
+
+/* ---------- Header ---------- */
+.topbar {
+  background: linear-gradient(135deg, #0b3b36 0%, #0f5a52 55%, #11786e 100%);
+  color: #eaf7f4;
+  padding: 22px 28px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+.topbar::after {
+  content: "";
+  position: absolute;
+  right: -80px;
+  top: -120px;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 28px rgba(255, 255, 255, 0.03), 0 0 0 64px rgba(255, 255, 255, 0.02);
+  pointer-events: none;
+}
+.brandline {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.brand {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.brand .mark {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-right: 9px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 17px;
+  vertical-align: -6px;
+}
+.version {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #d7f0ea;
+}
+.subtitle {
+  margin-top: 6px;
+  color: #b9ddd6;
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+}
+.top-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.top-actions button {
+  font: inherit;
+  font-size: 0.8rem;
+  color: #e7f7f3;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.top-actions button:hover { background: rgba(255, 255, 255, 0.15); }
+
+/* ---------- Layout ---------- */
+.wrap {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 22px 24px 40px;
+}
+.tabbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.tabbar button {
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.tabbar button.active {
+  color: var(--teal-dark);
+  border-bottom-color: var(--teal);
+}
+.tabpane { display: none; }
+.tabpane.active { display: block; }
+
+.main-grid {
+  display: grid;
+  grid-template-columns: minmax(380px, 440px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.main-grid > *, .batch-grid > * { min-width: 0; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 15px 18px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.card-head h2 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+}
+.card-head .hint {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+.card-body { padding: 16px 18px 18px; }
+
+/* ---------- Form ---------- */
+.field-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.field label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.field select,
+.field input,
+.field textarea {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: #fbfdfc;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  padding: 8px 10px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field select:focus,
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.oxide-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 8px;
+}
+.oxide-toolbar span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.switch input { accent-color: var(--teal); }
+
+.oxide-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+}
+.ox {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+.ox label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #3c4d47;
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.ox input {
+  font: inherit;
+  font-size: 0.86rem;
+  font-family: var(--mono);
+  text-align: right;
+  color: var(--ink);
+  background: #fbfdfc;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  padding: 6px 8px;
+  width: 100%;
+  outline: none;
+}
+.ox input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.10);
+  background: #fff;
+}
+.ox input.zero { color: #9aa8a2; }
+
+.sumline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.sumline b {
+  font-family: var(--mono);
+  font-size: 1rem;
+  color: var(--teal-dark);
+}
+.sumline .ok { color: var(--teal-dark); }
+.sumline .bad { color: var(--amber); }
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+button.btn {
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  border-radius: 9px;
+  padding: 9px 14px;
+  cursor: pointer;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: #32443e;
+  transition: transform 0.05s, background 0.15s, border-color 0.15s;
+}
+button.btn:hover { background: #f4f8f6; border-color: #b9cbc4; }
+button.btn:active { transform: translateY(1px); }
+button.btn.primary {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+  flex: 1;
+}
+button.btn.primary:hover { background: var(--teal-dark); border-color: var(--teal-dark); }
+button.btn.ghost { background: transparent; }
+button.btn.small { font-size: 0.78rem; padding: 6px 10px; }
+
+/* ---------- Result ---------- */
+.result-empty {
+  padding: 50px 24px;
+  text-align: center;
+  color: var(--muted);
+}
+.result-empty .glyph {
+  font-size: 2.6rem;
+  color: #b8d8d0;
+  margin-bottom: 8px;
+}
+.result-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.result-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.result-title h2 {
+  margin: 0;
+  font-size: 1.18rem;
+  letter-spacing: 0.01em;
+}
+.result-sub {
+  margin-top: 3px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--teal-dark);
+  background: var(--teal-soft);
+  border: 1px solid #c8e7e1;
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+.badge.amber {
+  color: var(--amber);
+  background: var(--amber-soft);
+  border-color: #fde68a;
+}
+.result-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.formula-box {
+  margin: 14px 18px 0;
+  padding: 14px 16px;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #f2faf8, #eef7f4);
+  border: 1px solid #d5ebe5;
+  overflow-x: auto;
+}
+.formula-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--teal-dark);
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.formula {
+  font-family: var(--mono);
+  font-size: 1.02rem;
+  line-height: 1.9;
+  white-space: nowrap;
+  color: #0c3f38;
+}
+.formula sub, .ion sub { font-size: 0.68em; }
+.formula sup, .ion sup { font-size: 0.68em; }
+
+.params {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 8px;
+  padding: 14px 18px 4px;
+}
+.param {
+  background: #fbfdfc;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.param .k {
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.param .v {
+  font-family: var(--mono);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--teal-dark);
+  margin-top: 1px;
+}
+.param .v .unit {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+.section {
+  padding: 12px 18px 0;
+  overflow-x: auto;
+}
+.section h3 {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 0 0 7px;
+}
+table.sites, table.details {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+table.sites th, table.details th {
+  text-align: left;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+table.sites td, table.details td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+table.sites tr:last-child td, table.details tr:last-child td { border-bottom: 0; }
+table.sites .site-name {
+  font-weight: 700;
+  color: var(--teal-dark);
+  white-space: nowrap;
+}
+table.sites .site-desc {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+table.sites .sum {
+  font-family: var(--mono);
+  font-weight: 700;
+  white-space: nowrap;
+}
+table.sites .ions {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+table.sites .ions span { margin-right: 7px; white-space: nowrap; }
+
+.warnings {
+  margin: 12px 18px 0;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: var(--amber-soft);
+  border: 1px solid #fde68a;
+  color: #78350f;
+  font-size: 0.8rem;
+}
+.warnings ul { margin: 0; padding-left: 18px; }
+.warnings li { margin: 2px 0; }
+
+.notes {
+  margin: 12px 18px 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #f7faf9;
+  border: 1px dashed var(--line-strong);
+  color: #4b5d56;
+  font-size: 0.8rem;
+}
+.notes ul { margin: 0; padding-left: 18px; }
+.notes li { margin: 2px 0; }
+
+details.trace {
+  margin: 12px 18px 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfdfc;
+}
+details.trace summary {
+  cursor: pointer;
+  padding: 9px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--teal-dark);
+  list-style: none;
+}
+details.trace summary::-webkit-details-marker { display: none; }
+details.trace summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform 0.15s;
+}
+details.trace[open] summary::before { transform: rotate(90deg); }
+details.trace .trace-body { padding: 0 12px 12px; }
+
+/* ---------- Batch ---------- */
+.batch-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.batch-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.batch-actions .btn.primary { flex: 0 0 auto; }
+.batch-note {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+textarea.batch-input {
+  min-height: 180px;
+  resize: vertical;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  white-space: pre;
+  overflow: auto;
+}
+.batch-summary {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  max-height: 520px;
+}
+table.batch {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+table.batch th, table.batch td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  text-align: left;
+}
+table.batch th {
+  position: sticky;
+  top: 0;
+  background: #eef5f2;
+  color: #334a43;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  z-index: 1;
+}
+table.batch tr:nth-child(even) td { background: #fbfdfc; }
+table.batch td.formula-cell {
+  font-family: var(--mono);
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.empty-mini {
+  padding: 30px 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+/* ---------- Modal ---------- */
+.modal-back {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 30, 26, 0.45);
+  backdrop-filter: blur(2px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+.modal-back.open { display: flex; }
+.modal {
+  width: min(760px, 100%);
+  max-height: 86vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line);
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-head h2 { margin: 0; font-size: 1.05rem; }
+.modal-body { padding: 16px 20px 22px; font-size: 0.86rem; }
+.modal-body h3 { font-size: 0.9rem; margin: 16px 0 6px; color: var(--teal-dark); }
+.modal-body h3:first-child { margin-top: 0; }
+.modal-body ul { margin: 4px 0; padding-left: 20px; }
+.modal-body li { margin: 3px 0; }
+.modal-body code {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  background: var(--bg-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%) translateY(20px);
+  background: #0f3b35;
+  color: #eaf7f4;
+  font-size: 0.82rem;
+  padding: 9px 16px;
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 60;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+footer {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px 30px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1080px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .batch-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .wrap { padding: 14px 12px 30px; }
+  .topbar { padding: 18px 16px; }
+  .brand { font-size: 1.12rem; }
+  .oxide-grid { grid-template-columns: 1fr; }
+  .field-row { grid-template-columns: 1fr; }
+  .params { grid-template-columns: 1fr 1fr; }
+  .card-body { padding: 13px 13px 15px; }
+  .result-head { flex-direction: column; }
+  .result-actions { justify-content: flex-start; }
+  .formula { font-size: 0.9rem; }
+}
+
+@media print {
+  body { background: #fff; }
+  .topbar, .tabbar, .card:first-child, .batch-grid, footer, .result-actions, .top-actions { display: none !important; }
+  .wrap { max-width: none; padding: 0; }
+  .main-grid { display: block; }
+  .card { box-shadow: none; border: 0; }
+  .result-panel { display: block; }
+  details.trace { break-inside: avoid; }
+}
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brandline">
+    <div class="brand"><span class="mark">◈</span>矿物电子探针计算器</div>
+    <span class="version">v1.0</span>
+  </div>
+  <div class="subtitle">18 种矿物 · 国际通用结构式算法 · 单样品与批量计算 · 离线可用</div>
+  <div class="top-actions">
+    <button id="openMethod" type="button">计算原理与氧基准</button>
+    <button id="printBtn" type="button">打印 / 保存 PDF</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabbar" role="tablist">
+    <button id="tabSingle" class="active" type="button" role="tab" aria-selected="true">单样品计算</button>
+    <button id="tabBatch" type="button" role="tab" aria-selected="false">批量计算</button>
+  </div>
+
+  <!-- ================= 单样品 ================= -->
+  <section id="paneSingle" class="tabpane active">
+    <div class="main-grid">
+      <div class="card">
+        <div class="card-head">
+          <h2>样品输入</h2>
+          <span class="hint">氧化物含量 wt%</span>
+        </div>
+        <div class="card-body">
+          <div class="field-row">
+            <div class="field">
+              <label for="mineralSelect">矿物类型</label>
+              <select id="mineralSelect"></select>
+            </div>
+            <div class="field">
+              <label for="sampleName">样品名称</label>
+              <input id="sampleName" type="text" autocomplete="off" placeholder="Sample-1">
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="feMode">Fe³⁺ 估算方式</label>
+              <select id="feMode">
+                <option value="auto">自动（推荐）</option>
+                <option value="charge">电荷平衡</option>
+                <option value="allFe2">全部按 Fe²⁺</option>
+                <option value="input">按输入 Fe₂O₃/FeO</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="basisHint">氧基准</label>
+              <input id="basisHint" type="text" readonly tabindex="-1">
+            </div>
+          </div>
+
+          <div class="oxide-toolbar">
+            <span>氧化物组成</span>
+            <label class="switch"><input id="showAllOxides" type="checkbox"> 显示次要氧化物</label>
+          </div>
+          <div id="oxideGrid" class="oxide-grid"></div>
+
+          <div class="sumline">
+            <span>氧化物总和</span>
+            <span><b id="wtTotal">0.00</b> wt% <span id="sumHint" class="bad"></span></span>
+          </div>
+
+          <div class="actions">
+            <button id="calcBtn" class="btn primary" type="button">计算结构式</button>
+            <button id="demoBtn" class="btn" type="button">载入示例</button>
+            <button id="clearBtn" class="btn ghost" type="button">清空</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="resultPanel" class="card result-panel">
+        <div class="result-empty">
+          <div class="glyph">◈</div>
+          <div>选择矿物、输入氧化物含量，然后点击“计算结构式”。</div>
+          <div style="margin-top:6px;font-size:0.8rem;">也可以先点“载入示例”查看完整输出。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 批量 ================= -->
+  <section id="paneBatch" class="tabpane">
+    <div class="batch-grid">
+      <div class="card">
+        <div class="card-head">
+          <h2>批量数据</h2>
+          <span class="hint">从 Excel 复制粘贴，或导入 CSV</span>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label for="batchText">粘贴表格（第一行是表头，支持 Tab / 逗号 / 分号分隔）</label>
+            <textarea id="batchText" class="batch-input" spellcheck="false" placeholder="Sample&#9;SiO2&#9;TiO2&#9;Al2O3&#9;FeO&#9;MnO&#9;MgO&#9;CaO&#9;Na2O&#9;K2O&#10;S-1&#9;50.2&#9;0.8&#9;2.6&#9;7.2&#9;0.2&#9;15.0&#9;20.8&#9;0.4&#9;0.0"></textarea>
+          </div>
+          <div class="batch-actions">
+            <button id="batchCalcBtn" class="btn primary" type="button">解析并计算</button>
+            <button id="batchFileBtn" class="btn" type="button">导入 CSV 文件</button>
+            <button id="batchDemoBtn" class="btn ghost" type="button">载入批量示例</button>
+            <button id="batchTemplateBtn" class="btn ghost" type="button">下载模板</button>
+            <button id="batchExportBtn" class="btn ghost" type="button" disabled>导出结果 CSV</button>
+          </div>
+          <div class="batch-note">
+            可直接从 Excel 选中区域复制后粘贴；若表格中有 <code>Mineral</code> 列，会按行识别矿物，否则使用左侧当前选择的矿物。
+            Excel 文件请先另存为 CSV，或直接复制粘贴。
+          </div>
+          <input id="batchFile" type="file" accept=".csv,.txt,.tsv" hidden>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>批量结果</h2>
+          <span class="hint" id="batchCount">尚未计算</span>
+        </div>
+        <div class="card-body">
+          <div id="batchSummary" class="batch-summary"></div>
+          <div id="batchTableWrap" class="table-wrap">
+            <div class="empty-mini">计算结果会显示在这里。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div>矿物电子探针计算器 · 单文件离线程序 · 结果用于科研参考，发表前请核对计算口径。</div>
+  <div>计算引擎：JavaScript · 无外部依赖</div>
+</footer>
+
+<!-- 方法说明 -->
+<div id="methodModal" class="modal-back" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>计算原理与氧基准</h2>
+      <button id="closeMethod" class="btn small" type="button">关闭</button>
+    </div>
+    <div class="modal-body">
+      <h3>1. 数据归一化</h3>
+      <p>把氧化物 wt% 换算为摩尔数，再按各矿物的氧基准归一化。对具有固定阳离子数的矿物（云母、绿泥石、电气石、磷灰石、长石、橄榄石、锆石等），程序先按理想阳离子数归一化，再给出对应的 O 数；结构 OH 已计入氧基准。</p>
+      <h3>2. 氧基准</h3>
+      <ul>
+        <li>橄榄石 4 O；辉石 6 O；角闪石 23 O；黑云母/白云母 24 O（含 OH）；绿泥石 28 O；石榴石 12 O；长石 8 O；尖晶石/磁铁矿 32 O；钛铁矿 6 O；榍石 5 O；绿帘石 13 O（含 OH）；电气石 31 O；磷灰石 26 O；锆石 4 O。</li>
+      </ul>
+      <h3>3. Fe³⁺ 的处理</h3>
+      <ul>
+        <li><b>自动（推荐）</b>：若输入了 Fe₂O₃，按 Fe₂O₃/FeO 分配；否则按矿物的标准化学计量估算。</li>
+        <li><b>辉石、石榴石、尖晶石、磁铁矿、钛铁矿</b>：由阳离子数与理想化学计量的偏差估算 Fe³⁺（与常用 EMP 表格一致）。</li>
+        <li><b>绿帘石</b>：由八面体 Al 的不足估算 Fe³⁺（Ps 分子）。</li>
+        <li><b>角闪石、云母、绿泥石、电气石</b>：默认全铁按 Fe²⁺；如测了 Fe₂O₃，请选择“按输入 Fe₂O₃/FeO”。</li>
+        <li><b>橄榄石、长石、磷灰石、锆石</b>：默认全铁为 Fe²⁺。</li>
+      </ul>
+      <h3>4. 端元与分类</h3>
+      <p>端元计算采用常用的理想端元分配；角闪石分类为 Leake et al. (1997) / IMA 2012 的简化方案，复杂成分请结合完整分类图。所有参数与结构式均为科研参考，发表前请用标准矿物计算软件复核。</p>
+      <h3>5. 数据质量</h3>
+      <p>程序会提示氧化物总和异常、Fe³⁺ 截断、电荷不平衡等情况。含结构水矿物的氧化物总和偏低是正常的，因为 EMP 通常不测 H₂O。</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/*
+ * 矿物电子探针计算引擎
+ * 纯 JavaScript，无外部依赖，可在浏览器或 Node.js 中运行。
+ *
+ * 计算约定：
+ *  橄榄石 4 O；辉石 6 O；角闪石 23 O；云母 24 O（含 OH）；
+ *  绿泥石 28 O；石榴石 12 O；长石 8 O；尖晶石/磁铁矿 32 O；
+ *  钛铁矿 6 O；榍石 5 O；绿帘石 13 O；电气石 31 O；磷灰石 26 O；锆石 4 O。
+ *  Fe3+ 默认按电荷平衡估算，也可选择全部按 Fe2+ 或按输入 Fe2O3/FeO。
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.MineralEngine = factory();
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  const CHARGE = {
+    Si: 4, Ti: 4, Al: 3, Cr: 3, V: 3,
+    Fe: 2, Fe3: 3, Fe2: 2, Mn: 2, Mg: 2,
+    Ca: 2, Na: 1, K: 1, P: 5, Ni: 2, Zn: 2,
+    Sr: 2, Ba: 2, Zr: 4, Nb: 5, W: 6, Sn: 4,
+    Co: 2, B: 3, Li: 1, H: 1
+  };
+
+  const OXIDES = [
+    { key: 'SiO2',  label: 'SiO2',  mw: 60.084,  o: 2, cats: { Si: 1 } },
+    { key: 'TiO2',  label: 'TiO2',  mw: 79.866,  o: 2, cats: { Ti: 1 } },
+    { key: 'Al2O3', label: 'Al2O3', mw: 101.961, o: 3, cats: { Al: 2 } },
+    { key: 'Cr2O3', label: 'Cr2O3', mw: 151.990, o: 3, cats: { Cr: 2 } },
+    { key: 'V2O3',  label: 'V2O3',  mw: 149.881, o: 3, cats: { V: 2 } },
+    { key: 'Fe2O3', label: 'Fe2O3', mw: 159.687, o: 3, cats: { Fe: 2 }, fe3: true },
+    { key: 'FeO',   label: 'FeO',    mw: 71.844,  o: 1, cats: { Fe: 1 }, fe2: true },
+    { key: 'MnO',   label: 'MnO',    mw: 70.937,  o: 1, cats: { Mn: 1 } },
+    { key: 'MgO',   label: 'MgO',    mw: 40.304,  o: 1, cats: { Mg: 1 } },
+    { key: 'CaO',   label: 'CaO',    mw: 56.077,  o: 1, cats: { Ca: 1 } },
+    { key: 'Na2O',  label: 'Na2O',   mw: 61.979,  o: 1, cats: { Na: 2 } },
+    { key: 'K2O',   label: 'K2O',    mw: 94.196,  o: 1, cats: { K: 2 } },
+    { key: 'P2O5',  label: 'P2O5',   mw: 141.944, o: 5, cats: { P: 2 } },
+    { key: 'NiO',   label: 'NiO',    mw: 74.692,  o: 1, cats: { Ni: 1 } },
+    { key: 'ZnO',   label: 'ZnO',    mw: 81.379,  o: 1, cats: { Zn: 1 } },
+    { key: 'SrO',   label: 'SrO',    mw: 103.619, o: 1, cats: { Sr: 1 } },
+    { key: 'BaO',   label: 'BaO',    mw: 153.326, o: 1, cats: { Ba: 1 } },
+    { key: 'ZrO2',  label: 'ZrO2',   mw: 123.222, o: 2, cats: { Zr: 1 } },
+    { key: 'Nb2O5', label: 'Nb2O5',  mw: 265.810, o: 5, cats: { Nb: 2 } },
+    { key: 'WO3',   label: 'WO3',    mw: 231.838, o: 3, cats: { W: 1 } },
+    { key: 'SnO2',  label: 'SnO2',   mw: 150.708, o: 2, cats: { Sn: 1 } },
+    { key: 'CoO',   label: 'CoO',    mw: 74.933,  o: 1, cats: { Co: 1 } },
+    { key: 'B2O3',  label: 'B2O3',   mw: 69.620,  o: 3, cats: { B: 2 } },
+    { key: 'Li2O',  label: 'Li2O',   mw: 29.881,  o: 1, cats: { Li: 2 } },
+    { key: 'F',     label: 'F',      mw: 18.998,  o: 0, anion: true },
+    { key: 'Cl',    label: 'Cl',     mw: 35.453,  o: 0, anion: true }
+  ];
+
+  const OXIDE_BY_KEY = {};
+  OXIDES.forEach(function (o) { OXIDE_BY_KEY[o.key] = o; });
+
+  const COMMON_OXIDE_KEYS = [
+    'SiO2', 'TiO2', 'Al2O3', 'Cr2O3', 'FeO', 'Fe2O3',
+    'MnO', 'MgO', 'CaO', 'Na2O', 'K2O', 'P2O5', 'NiO', 'ZnO', 'F', 'Cl'
+  ];
+  const ALL_OXIDE_KEYS = OXIDES.map(function (o) { return o.key; });
+
+  const CATION_ORDER = [
+    'Si', 'Ti', 'Al', 'Cr', 'V', 'Fe3', 'Fe2', 'Mn', 'Mg',
+    'Ca', 'Na', 'K', 'P', 'Ni', 'Zn', 'Sr', 'Ba', 'Zr',
+    'Nb', 'W', 'Sn', 'Co', 'B', 'Li'
+  ];
+
+  /* ---------------- 小工具 ---------------- */
+
+  function toNumber(v) {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    var s = String(v).trim();
+    if (!s) return 0;
+    s = s.replace(/,/g, '.').replace(/[%％]/g, '').replace(/\s+/g, '');
+    if (/^[<>≤≥]/.test(s)) s = s.replace(/^[<>≤≥]+/, '');
+    if (/^(b\.?d\.?|n\.?a\.?|n\.?d\.?|—|-|\/)$/i.test(s)) return 0;
+    var n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+
+  function remFrom(cats) {
+    var r = {};
+    for (var k in cats) r[k] = cats[k] || 0;
+    return r;
+  }
+
+  function take(r, el, max) {
+    var have = r[el] || 0;
+    var lim = (max === undefined || max === null) ? Infinity : max;
+    var v = Math.min(have, Math.max(0, lim));
+    r[el] = Math.max(0, have - v);
+    return v;
+  }
+
+  function addIon(site, el, n) {
+    if (!(n > 1e-10)) return;
+    site[el] = (site[el] || 0) + n;
+  }
+
+  function siteSum(site) {
+    var s = 0;
+    for (var k in site) s += site[k] || 0;
+    return s;
+  }
+
+  function sumObj(o) {
+    var s = 0;
+    for (var k in o) s += o[k] || 0;
+    return s;
+  }
+
+  function fillProportional(target, r, cap, els) {
+    var need = Math.max(0, cap - siteSum(target));
+    if (need <= 1e-12) return;
+    var pool = 0;
+    els.forEach(function (el) { pool += r[el] || 0; });
+    if (pool <= 1e-12) return;
+    var f = Math.min(1, need / pool);
+    els.forEach(function (el) {
+      var v = (r[el] || 0) * f;
+      addIon(target, el, v);
+      r[el] = Math.max(0, (r[el] || 0) - v);
+    });
+  }
+
+  function fillRest(target, r, cap) {
+    var need = Math.max(0, cap - siteSum(target));
+    if (need <= 1e-12) return;
+    var pool = sumObj(r);
+    if (pool <= 1e-12) return;
+    var f = Math.min(1, need / pool);
+    for (var el in r) {
+      var v = (r[el] || 0) * f;
+      addIon(target, el, v);
+      r[el] = Math.max(0, (r[el] || 0) - v);
+    }
+  }
+
+  function sub(x) { return '<sub>' + x + '</sub>'; }
+  function ionText(el) {
+    if (el === 'Fe3') return 'Fe3+';
+    if (el === 'Fe2') return 'Fe2+';
+    if (el === 'OH') return 'OH';
+    return el;
+  }
+  function ionHTML(el) {
+    if (el === 'Fe3') return 'Fe<sup>3+</sup>';
+    if (el === 'Fe2') return 'Fe<sup>2+</sup>';
+    if (el === 'OH') return 'OH';
+    return el;
+  }
+
+  function orderedIons(ions) {
+    var out = [];
+    CATION_ORDER.forEach(function (el) {
+      if ((ions[el] || 0) > 0.0005) out.push([el, ions[el]]);
+    });
+    for (var el in ions) {
+      if (CATION_ORDER.indexOf(el) === -1 && (ions[el] || 0) > 0.0005) out.push([el, ions[el]]);
+    }
+    return out;
+  }
+
+  function buildFormula(sites, oxygen, extraAnions) {
+    var htmlParts = [], textParts = [];
+    sites.forEach(function (s) {
+      var ions = orderedIons(s.ions);
+      if (!ions.length) return;
+      var sum = siteSum(s.ions);
+      var htmlInner = ions.map(function (p) {
+        return ionHTML(p[0]) + sub(p[1].toFixed(3));
+      }).join('');
+      var textInner = ions.map(function (p) {
+        return ionText(p[0]) + p[1].toFixed(3);
+      }).join('');
+      htmlParts.push('(' + htmlInner + ')' + sub('Σ' + sum.toFixed(2)));
+      textParts.push('(' + textInner + ')Σ' + sum.toFixed(2));
+    });
+    var htmlTail = 'O' + sub(oxygen);
+    var textTail = 'O' + oxygen;
+    (extraAnions || []).forEach(function (a) {
+      htmlTail += ionHTML(a.el) + (a.n ? sub(a.n.toFixed(2)) : '');
+      textTail += ionText(a.el) + (a.n ? a.n.toFixed(2) : '');
+    });
+    return { html: htmlParts.join('') + htmlTail, text: textParts.join('') + textTail };
+  }
+
+  function P(label, value, digits, unit) {
+    return { label: label, value: value, digits: (digits === undefined || digits === null) ? 3 : digits, unit: unit || '' };
+  }
+
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+
+  /* ---------------- 数据准备 ---------------- */
+
+  function prepare(input, mineral, options) {
+    options = options || {};
+    var catsRaw = {}, details = [];
+    var oSum = 0, F = 0, Cl = 0, wtSum = 0, molSum = 0, fe3Raw = 0, fe2Raw = 0;
+
+    OXIDES.forEach(function (ox) {
+      var wt = toNumber(input[ox.key]);
+      if (!(wt > 0)) return;
+      wtSum += wt;
+      var mol = wt / ox.mw;
+      molSum += mol;
+      var o = mol * ox.o;
+      oSum += o;
+      var cat = {};
+      if (!ox.anion) {
+        for (var el in ox.cats) {
+          var v = mol * ox.cats[el];
+          cat[el] = (cat[el] || 0) + v;
+          catsRaw[el] = (catsRaw[el] || 0) + v;
+        }
+      }
+      if (ox.key === 'F') F += mol;
+      if (ox.key === 'Cl') Cl += mol;
+      if (ox.key === 'Fe2O3') fe3Raw += mol * 2;
+      if (ox.key === 'FeO') fe2Raw += mol;
+      details.push({ key: ox.key, label: ox.label, wt: wt, mol: mol, o: o, cat: cat });
+    });
+
+    if (!(oSum > 1e-10)) throw new Error('没有有效的氧化物数据，请至少输入一个大于 0 的氧化物含量。');
+
+    // 结构水：EMP 通常不测 H2O，按理想化学计量补入，避免阳离子数被系统性高估。
+    var h2oMol = 0, h2oWt = 0;
+    if (mineral.h2oPerFormula) {
+      h2oMol = mineral.h2oPerFormula * oSum / (mineral.oxygen - mineral.h2oPerFormula);
+      oSum += h2oMol;
+      h2oWt = h2oMol * 18.015;
+    }
+
+    var scale = mineral.oxygen / oSum;
+    var cats = {};
+    for (var el2 in catsRaw) cats[el2] = catsRaw[el2] * scale;
+    F *= scale;
+    Cl *= scale;
+
+    var O_per = mineral.oxygen;
+
+    var method = mineral.fe3Method || 'charge';
+    var feMode = options.fe3Mode || 'auto';
+    if (feMode === 'auto') {
+      if (fe3Raw > 1e-12) feMode = 'input';
+      else if (mineral.forceFe2) feMode = 'allFe2';
+      else feMode = method;
+    }
+    if (feMode === 'forceFe2') feMode = 'allFe2';
+
+    // 固定阳离子数的矿物先缩放到目标阳离子数（用于公式与电荷法）。
+    var catTarget = mineral.cationTarget;
+    if (mineral.id === 'tourmaline' && !(cats.B > 0.5)) catTarget = 16;
+    if (catTarget) {
+      var sTarget = 0;
+      for (var e0 in cats) sTarget += cats[e0];
+      if (sTarget > 0) {
+        var fTarget = catTarget / sTarget;
+        for (var e1 in cats) cats[e1] *= fTarget;
+        F *= fTarget;
+        Cl *= fTarget;
+        scale *= fTarget;
+        O_per *= fTarget;
+      }
+    }
+
+    var FeT = cats.Fe || 0;
+    var fe3Input = fe3Raw * scale;
+
+    var ohMax = mineral.ohMax || 0;
+    var OH = Math.max(0, ohMax - F - Cl);
+    var anionCharge = 2 * O_per - OH - F - Cl;
+
+    var fe3 = 0, fe2 = 0, rawFe3 = 0, clamped = false;
+    if (FeT > 0) {
+      if (feMode === 'allFe2') {
+        fe3 = 0; fe2 = FeT;
+      } else if (feMode === 'input') {
+        fe3 = Math.min(FeT, fe3Input); fe2 = FeT - fe3;
+      } else if (feMode === 'charge') {
+        var otherCharge = 0;
+        for (var el3 in cats) {
+          if (el3 === 'Fe') continue;
+          otherCharge += cats[el3] * (CHARGE[el3] || 0);
+        }
+        rawFe3 = anionCharge - otherCharge - 2 * FeT;
+        fe3 = clamp(rawFe3, 0, FeT);
+        fe2 = FeT - fe3;
+        if (rawFe3 < -1e-8 || rawFe3 > FeT + 1e-8) clamped = true;
+      } else {
+        var S = 0;
+        for (var el5 in cats) S += cats[el5];
+        if (feMode === 'pyroxene') rawFe3 = S > 0 ? 12 * (1 - 4 / S) : 0;
+        else if (feMode === 'garnet') rawFe3 = S > 0 ? 24 * (1 - 8 / S) : 0;
+        else if (feMode === 'spinel') rawFe3 = (8 / 3) * (S - 24);
+        else if (feMode === 'ilmenite') rawFe3 = 3 * S - 2 * O_per;
+        else if (feMode === 'epidote') {
+          var AlT = Math.max(0, 3 - (cats.Si || 0));
+          var AlM = Math.max(0, (cats.Al || 0) - AlT);
+          rawFe3 = 3 - AlM;
+        } else rawFe3 = 0;
+        fe3 = clamp(rawFe3, 0, FeT);
+        fe2 = FeT - fe3;
+        if (rawFe3 < -1e-8 || rawFe3 > FeT + 1e-8) clamped = true;
+      }
+    }
+
+    cats.Fe3 = fe3;
+    cats.Fe2 = fe2;
+    delete cats.Fe;
+
+    // 经验 Fe3 法算出 Fe3 后，再把阳离子总数缩放到理想值，得到化学计量结构式。
+    if (mineral.cationTargetAfter) {
+      var sAfter = 0;
+      for (var el6 in cats) sAfter += cats[el6];
+      if (sAfter > 0) {
+        var fAfter = mineral.cationTargetAfter / sAfter;
+        for (var el7 in cats) cats[el7] *= fAfter;
+      }
+    }
+
+    var cationCharge = 0;
+    for (var el4 in cats) cationCharge += cats[el4] * (CHARGE[el4] || 0);
+    var chargeError = (feMode === 'charge') ? cationCharge - anionCharge : 0;
+
+    var warnings = [];
+    if (feMode === 'charge' && mineral.forceFe2) {
+      warnings.push('该矿物通常不区分 Fe3+；若没有 Fe2O3 实测，电荷平衡可能给出 Fe3+ = 0，建议使用“全部按 Fe2+”或直接输入 Fe2O3/FeO。');
+    }
+    if (wtSum > 0 && wtSum < 97) {
+      warnings.push('氧化物总和为 ' + wtSum.toFixed(2) + ' wt%，偏低；可能未测 H2O、CO2 或有烧失。');
+    }
+    if (wtSum > 103) {
+      warnings.push('氧化物总和为 ' + wtSum.toFixed(2) + ' wt%，偏高，请检查数据。');
+    }
+    if (clamped && (rawFe3 > FeT + 1e-8 || rawFe3 < -0.25)) {
+      warnings.push('Fe3+ 估算值 ' + rawFe3.toFixed(3) + ' 超出 0-Fe(total) 范围，已截断；请检查 FeO/Fe2O3 或氧基准。');
+    }
+    if (feMode === 'charge' && Math.abs(chargeError) > 0.05) {
+      warnings.push('归一化后电荷不平衡（差值 ' + chargeError.toFixed(3) + '），结构式可能不可靠。');
+    }
+
+    return {
+      input: input, mineral: mineral, cats: cats, oxygen: mineral.oxygen, O_per: O_per,
+      F: F, Cl: Cl, OH: OH, wtSum: wtSum, molSum: molSum, oSum: oSum,
+      h2oMol: h2oMol, h2oWt: h2oWt,
+      scale: scale, FeT: FeT, Fe3: fe3, Fe2: fe2, feMode: feMode,
+      fe3Raw: rawFe3, clamped: clamped, chargeError: chargeError,
+      anionCharge: anionCharge, details: details, warnings: warnings
+    };
+  }
+
+  /* ---------------- 结果封装 ---------------- */
+
+  function finish(ctx, spec) {
+    var sites = (spec.sites || []).map(function (s) {
+      return {
+        key: s.key, label: s.label, desc: s.desc || '',
+        cap: (s.cap === undefined ? null : s.cap), ions: s.ions || {}
+      };
+    });
+    sites.forEach(function (s) { s.sum = siteSum(s.ions); });
+
+    var cationSum = 0;
+    sites.forEach(function (s) { cationSum += s.sum; });
+
+    var formula = buildFormula(sites, ctx.oxygen, spec.extraAnions || []);
+    var warnings = ctx.warnings.slice();
+
+    return {
+      ok: true,
+      mineralId: ctx.mineral.id,
+      mineralLabel: ctx.mineral.label,
+      name: spec.name || ctx.mineral.label,
+      subtitle: spec.subtitle || '',
+      sites: sites,
+      formula: formula,
+      params: spec.params || [],
+      notes: spec.notes || [],
+      warnings: warnings,
+      extraAnions: spec.extraAnions || [],
+      cationSum: cationSum,
+      chargeError: ctx.chargeError,
+      ctx: ctx
+    };
+  }
+
+  /* ---------------- 橄榄石 ---------------- */
+
+  function calcOlivine(ctx) {
+    var r = remFrom(ctx.cats);
+    var T = {}, M = {};
+    addIon(T, 'Si', take(r, 'Si', 1));
+    addIon(T, 'Al', take(r, 'Al', Math.max(0, 1 - siteSum(T))));
+    addIon(T, 'Ti', take(r, 'Ti', Math.max(0, 1 - siteSum(T))));
+    ['Mg', 'Fe2', 'Mn', 'Ca', 'Ni', 'Zn', 'Co', 'Cr', 'Fe3'].forEach(function (el) {
+      addIon(M, el, take(r, el));
+    });
+    fillRest(M, r, 2);
+
+    var mg = M.Mg || 0, fe2 = M.Fe2 || 0, mn = M.Mn || 0;
+    var denom = mg + fe2 + mn || 1;
+    var fo = 100 * mg / denom, fa = 100 * fe2 / denom, tp = 100 * mn / denom;
+    var mgNo = mg + fe2 > 0 ? mg / (mg + fe2) : 0;
+
+    var name = '橄榄石';
+    if (fo >= 90) name = '镁橄榄石';
+    else if (fo < 50) name = '铁橄榄石';
+    else if (fo >= 70) name = '贵橄榄石';
+
+    return finish(ctx, {
+      name: name,
+      sites: [
+        { key: 'T', label: 'T', desc: '四面体', cap: 1, ions: T },
+        { key: 'M', label: 'M', desc: '八面体', cap: 2, ions: M }
+      ],
+      params: [
+        P('Fo（镁橄榄石）', fo, 2, '%'),
+        P('Fa（铁橄榄石）', fa, 2, '%'),
+        P('Tp（锰橄榄石）', tp, 2, '%'),
+        P('Mg#', mgNo, 3),
+        P('Fe3+/ΣFe', 0, 1, '%')
+      ],
+      notes: [
+        '橄榄石按 4 个氧 / 3 个阳离子归一化，默认全部铁为 Fe2+（橄榄石中 Fe3+ 通常可忽略）。',
+        'Fo = Mg/(Mg+Fe2+Mn) x100；Fa、Tp 同理。'
+      ]
+    });
+  }
+
+  /* ---------------- 辉石 ---------------- */
+
+  function calcPyroxene(ctx, kind) {
+    var r = remFrom(ctx.cats);
+    var T = {}, M1 = {}, M2 = {}, excess = {};
+
+    addIon(T, 'Si', take(r, 'Si', 2));
+    addIon(T, 'Al', take(r, 'Al', Math.max(0, 2 - siteSum(T))));
+    addIon(T, 'Ti', take(r, 'Ti', Math.max(0, 2 - siteSum(T))));
+    addIon(T, 'Fe3', take(r, 'Fe3', Math.max(0, 2 - siteSum(T))));
+
+    ['Ca', 'Na', 'Mn', 'Sr', 'Ba'].forEach(function (el) {
+      addIon(M2, el, take(r, el, Math.max(0, 1 - siteSum(M2))));
+    });
+    fillProportional(M2, r, 1, ['Mg', 'Fe2']);
+
+    ['Al', 'Ti', 'Cr', 'V', 'Fe3'].forEach(function (el) {
+      addIon(M1, el, take(r, el, Math.max(0, 1 - siteSum(M1))));
+    });
+    fillProportional(M1, r, 1, ['Mg', 'Fe2', 'Mn', 'Ni', 'Zn', 'Co']);
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var mg = ctx.cats.Mg || 0;
+    var feT = (ctx.cats.Fe2 || 0) + (ctx.cats.Fe3 || 0);
+    var mn = ctx.cats.Mn || 0;
+    var ca = ctx.cats.Ca || 0;
+    var na = ctx.cats.Na || 0;
+    var quad = mg + feT + mn + ca + na || 1;
+    var en = 100 * mg / quad;
+    var fs = 100 * (feT + mn) / quad;
+    var wo = 100 * ca / quad;
+    var ac = 100 * na / quad;
+    var mgNo = mg + feT > 0 ? mg / (mg + feT) : 0;
+    var alVI = M1.Al || 0;
+
+    var name;
+    if (kind === 'opx') {
+      if (en >= 50) name = '顽火辉石';
+      else if (fs >= 50) name = '铁辉石';
+      else name = '紫苏辉石';
+    } else {
+      if (na > 0.2 && alVI > 0.2) name = '绿辉石/硬玉质辉石';
+      else if (wo >= 45) name = mg >= feT ? '透辉石' : '钙铁辉石';
+      else if (wo >= 20) name = '普通辉石';
+      else if (wo >= 5) name = '易变辉石';
+      else if (en >= 50) name = '顽火辉石';
+      else if (fs >= 50) name = '铁辉石';
+      else name = '紫苏辉石';
+    }
+
+    var sites = [
+      { key: 'T', label: 'T', desc: '四面体', cap: 2, ions: T },
+      { key: 'M1', label: 'M1', desc: '八面体', cap: 1, ions: M1 },
+      { key: 'M2', label: 'M2', desc: '八面体/大阳离子', cap: 1, ions: M2 }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'X', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    return finish(ctx, {
+      name: name,
+      subtitle: kind === 'opx' ? '斜方辉石' : '单斜辉石',
+      sites: sites,
+      params: [
+        P('Wo（硅灰石）', wo, 2, '%'),
+        P('En（顽火辉石）', en, 2, '%'),
+        P('Fs（铁辉石）', fs, 2, '%'),
+        P('Ac（钠辉石）', ac, 2, '%'),
+        P('Mg#', mgNo, 3),
+        P('Al(IV)', T.Al || 0, 3, 'apfu'),
+        P('Al(VI)', alVI, 3, 'apfu'),
+        P('Fe3+/ΣFe', feT > 0 ? 100 * (ctx.cats.Fe3 || 0) / feT : 0, 1, '%')
+      ],
+      notes: [
+        '辉石按 6 个氧 / 4 个阳离子归一化；T 位 2 个、M1 位 1 个、M2 位 1 个。',
+        'En = Mg/(Mg+Fe+Mn+Ca+Na)，Fs = (Fe+Mn)/(...)，Wo = Ca/(...)，Ac = Na/(...)。',
+        'Fe3+ 默认由电荷平衡估算；如输入了 Fe2O3 则按输入比例分配。'
+      ]
+    });
+  }
+
+  /* ---------------- 角闪石 ---------------- */
+
+  function calcAmphibole(ctx) {
+    var r = remFrom(ctx.cats);
+    var T = {}, C = {}, B = {}, A = {}, excess = {};
+
+    addIon(T, 'Si', take(r, 'Si', 8));
+    addIon(T, 'Al', take(r, 'Al', Math.max(0, 8 - siteSum(T))));
+    addIon(T, 'Ti', take(r, 'Ti', Math.max(0, 8 - siteSum(T))));
+
+    ['Al', 'Ti', 'Cr', 'V', 'Fe3'].forEach(function (el) {
+      addIon(C, el, take(r, el, Math.max(0, 5 - siteSum(C))));
+    });
+    fillProportional(C, r, 5, ['Mg', 'Fe2', 'Mn', 'Ni', 'Zn', 'Co']);
+
+    ['Ca', 'Na', 'Mn', 'Sr', 'Ba'].forEach(function (el) {
+      addIon(B, el, take(r, el, Math.max(0, 2 - siteSum(B))));
+    });
+    fillProportional(B, r, 2, ['Mg', 'Fe2']);
+
+    ['Na', 'K', 'Ca'].forEach(function (el) {
+      addIon(A, el, take(r, el, Math.max(0, 1 - siteSum(A))));
+    });
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var mg = ctx.cats.Mg || 0;
+    var fe2 = ctx.cats.Fe2 || 0;
+    var feT = fe2 + (ctx.cats.Fe3 || 0);
+    var mgNo = mg + fe2 > 0 ? mg / (mg + fe2) : 0;
+    var alIV = T.Al || 0;
+    var alVI = C.Al || 0;
+    var caB = B.Ca || 0;
+    var naB = B.Na || 0;
+    var nkA = (A.Na || 0) + (A.K || 0);
+    var si = T.Si || 0;
+
+    var name;
+    if (caB + naB < 0.5) {
+      if (si >= 7.5) name = mgNo >= 0.5 ? '镁直闪石' : '铁直闪石';
+      else name = mgNo >= 0.5 ? '镁铁闪石' : '铁闪石';
+    } else if (naB < 0.5) {
+      if (si >= 7.5) {
+        if (mgNo >= 0.9) name = '透闪石';
+        else if (mgNo >= 0.5) name = '阳起石';
+        else name = '铁阳起石';
+      } else if (si >= 6.5) {
+        if (nkA >= 0.5) name = '韭闪石';
+        else if (alIV >= 1.0) name = '钙镁闪石';
+        else name = mgNo >= 0.5 ? '镁角闪石' : '铁角闪石';
+      } else {
+        name = nkA >= 0.5 ? '韭闪石' : '钙镁闪石';
+      }
+    } else if (naB < 1.5) {
+      if (alVI >= 1.0) name = '蓝闪石';
+      else name = mgNo >= 0.5 ? '钠钙角闪石' : '钠钙铁角闪石';
+    } else {
+      if (alVI >= 1.0) name = '蓝闪石';
+      else if (mgNo >= 0.5) name = '镁钠闪石';
+      else name = '钠闪石';
+    }
+
+    var sites = [
+      { key: 'T', label: 'T', desc: '四面体', cap: 8, ions: T },
+      { key: 'C', label: 'C', desc: '八面体', cap: 5, ions: C },
+      { key: 'B', label: 'B', desc: '配位', cap: 2, ions: B },
+      { key: 'A', label: 'A', desc: '大阳离子', cap: 1, ions: A }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'X', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    return finish(ctx, {
+      name: name,
+      subtitle: '角闪石（简化 IMA 分类）',
+      sites: sites,
+      params: [
+        P('Si(T)', si, 3, 'apfu'),
+        P('Al(IV)', alIV, 3, 'apfu'),
+        P('Al(VI)', alVI, 3, 'apfu'),
+        P('Mg#', mgNo, 3),
+        P('Mg#(C)', (C.Mg || 0) + (C.Fe2 || 0) > 0 ? (C.Mg || 0) / ((C.Mg || 0) + (C.Fe2 || 0)) : 0, 3),
+        P('(Ca+Na)B', caB + naB, 3, 'apfu'),
+        P('Na(B)', naB, 3, 'apfu'),
+        P('(Na+K)A', nkA, 3, 'apfu'),
+        P('Fe3+/ΣFe', feT > 0 ? 100 * (ctx.cats.Fe3 || 0) / feT : 0, 1, '%')
+      ],
+      notes: [
+        '角闪石按 23 个氧归一化；T=8、C=5、B=2、A=1。',
+        '分类为 Leake et al. (1997) / IMA 2012 的简化方案，复杂成分请结合完整分类图。',
+        'Fe3+ 默认由电荷平衡估算；也可在“Fe3+ 估算”中选择其他方式。'
+      ]
+    });
+  }
+
+  /* ---------------- 云母 ---------------- */
+
+  function calcMica(ctx, kind) {
+    var r = remFrom(ctx.cats);
+    var T = {}, O = {}, I = {}, excess = {};
+    var octCap = kind === 'muscovite' ? 4 : 6;
+
+    addIon(T, 'Si', take(r, 'Si', 8));
+    addIon(T, 'Al', take(r, 'Al', Math.max(0, 8 - siteSum(T))));
+    addIon(T, 'Ti', take(r, 'Ti', Math.max(0, 8 - siteSum(T))));
+    addIon(T, 'Fe3', take(r, 'Fe3', Math.max(0, 8 - siteSum(T))));
+
+    ['Al', 'Ti', 'Cr', 'V', 'Fe3'].forEach(function (el) {
+      addIon(O, el, take(r, el, Math.max(0, octCap - siteSum(O))));
+    });
+    fillProportional(O, r, octCap, ['Mg', 'Fe2', 'Mn', 'Ni', 'Zn', 'Co', 'Li']);
+
+    ['K', 'Na', 'Ca', 'Ba', 'Sr'].forEach(function (el) {
+      addIon(I, el, take(r, el, Math.max(0, 2 - siteSum(I))));
+    });
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var mg = ctx.cats.Mg || 0;
+    var fe2 = ctx.cats.Fe2 || 0;
+    var feT = fe2 + (ctx.cats.Fe3 || 0);
+    var mgNo = mg + fe2 > 0 ? mg / (mg + fe2) : 0;
+    var alIV = T.Al || 0;
+    var alVI = O.Al || 0;
+    var octSum = siteSum(O);
+    var si = T.Si || 0;
+    var ti = ctx.cats.Ti || 0;
+
+    var name;
+    if (kind === 'muscovite' || octSum < 4.5) {
+      if ((I.Na || 0) > (I.K || 0)) name = '钠云母';
+      else if (si > 6.2) name = '多硅白云母';
+      else name = '白云母';
+    } else {
+      if (mgNo >= 0.5) name = '金云母';
+      else name = '黑云母';
+      if (ti > 0.5) name = mgNo >= 0.5 ? '钛金云母' : '钛黑云母';
+    }
+
+    var sites = [
+      { key: 'T', label: 'T', desc: '四面体', cap: 8, ions: T },
+      { key: 'O', label: 'Oct', desc: '八面体', cap: octCap, ions: O },
+      { key: 'I', label: 'A', desc: '层间', cap: 2, ions: I }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'X', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    return finish(ctx, {
+      name: name,
+      subtitle: kind === 'muscovite' ? '白云母' : '黑云母',
+      sites: sites,
+      params: [
+        P('Si(T)', si, 3, 'apfu'),
+        P('Al(IV)', alIV, 3, 'apfu'),
+        P('Al(VI)', alVI, 3, 'apfu'),
+        P('Mg#', mgNo, 3),
+        P('Fe/(Fe+Mg)', 1 - mgNo, 3),
+        P('Ti', ti, 3, 'apfu'),
+        P('八面体总数', octSum, 3, 'apfu'),
+        P('Fe3+/ΣFe', feT > 0 ? 100 * (ctx.cats.Fe3 || 0) / feT : 0, 1, '%')
+      ],
+      notes: [
+        '云母按 24 个氧（含 OH）与 16/14 个阳离子归一化；T=8、八面体=4（白云母）或 6（黑云母）、层间=2。',
+        '黑云母/白云母的划分参考八面体占位总数与 Al(VI)；完整命名需结合成分图。'
+      ]
+    });
+  }
+
+  /* ---------------- 绿泥石 ---------------- */
+
+  function calcChlorite(ctx) {
+    var r = remFrom(ctx.cats);
+    var T = {}, O = {}, excess = {};
+
+    addIon(T, 'Si', take(r, 'Si', 8));
+    addIon(T, 'Al', take(r, 'Al', Math.max(0, 8 - siteSum(T))));
+    addIon(T, 'Fe3', take(r, 'Fe3', Math.max(0, 8 - siteSum(T))));
+    addIon(T, 'Ti', take(r, 'Ti', Math.max(0, 8 - siteSum(T))));
+
+    ['Al', 'Ti', 'Cr', 'V', 'Fe3'].forEach(function (el) {
+      addIon(O, el, take(r, el, Math.max(0, 12 - siteSum(O))));
+    });
+    fillProportional(O, r, 12, ['Mg', 'Fe2', 'Mn', 'Ni', 'Zn', 'Co']);
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var mg = ctx.cats.Mg || 0;
+    var fe2 = ctx.cats.Fe2 || 0;
+    var mn = ctx.cats.Mn || 0;
+    var mgNo = mg + fe2 > 0 ? mg / (mg + fe2) : 0;
+    var si = T.Si || 0;
+    var alIV = T.Al || 0;
+    var alVI = O.Al || 0;
+
+    var name;
+    if (mn > 1.0) name = '锰绿泥石';
+    else if (mgNo >= 0.5) name = '斜绿泥石';
+    else name = '鲕绿泥石';
+
+    var sites = [
+      { key: 'T', label: 'T', desc: '四面体', cap: 8, ions: T },
+      { key: 'O', label: 'Oct', desc: '八面体', cap: 12, ions: O }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'X', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    return finish(ctx, {
+      name: name,
+      subtitle: '绿泥石',
+      sites: sites,
+      params: [
+        P('Si(T)', si, 3, 'apfu'),
+        P('Al(IV)', alIV, 3, 'apfu'),
+        P('Al(VI)', alVI, 3, 'apfu'),
+        P('Mg#', mgNo, 3),
+        P('Fe/(Fe+Mg)', 1 - mgNo, 3),
+        P('八面体总数', siteSum(O), 3, 'apfu'),
+        P('Fe3+/ΣFe', (ctx.cats.Fe2 + ctx.cats.Fe3) > 0 ? 100 * (ctx.cats.Fe3 || 0) / (ctx.cats.Fe2 + ctx.cats.Fe3) : 0, 1, '%')
+      ],
+      notes: [
+        '绿泥石按 28 个氧 / 20 个阳离子归一化（常用惯例）；T=8、八面体约 12。',
+        '分类按 Mg# 与 Mn 含量简化；详细种属需结合结构式与成分图。'
+      ]
+    });
+  }
+
+  /* ---------------- 石榴石 ---------------- */
+
+  function calcGarnet(ctx) {
+    var r = remFrom(ctx.cats);
+    var T = {}, O = {}, X = {}, excess = {};
+
+    addIon(T, 'Si', take(r, 'Si', 3));
+    addIon(T, 'Al', take(r, 'Al', Math.max(0, 3 - siteSum(T))));
+    addIon(T, 'Ti', take(r, 'Ti', Math.max(0, 3 - siteSum(T))));
+
+    ['Al', 'Ti', 'Cr', 'V', 'Fe3', 'Zr'].forEach(function (el) {
+      addIon(O, el, take(r, el, Math.max(0, 2 - siteSum(O))));
+    });
+
+    ['Mg', 'Fe2', 'Mn', 'Ca'].forEach(function (el) {
+      addIon(X, el, take(r, el, Math.max(0, 3 - siteSum(X))));
+    });
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var mg = X.Mg || 0, fe2 = X.Fe2 || 0, mn = X.Mn || 0, ca = X.Ca || 0;
+    var xsum = mg + fe2 + mn + ca || 1;
+    var prp = 100 * mg / xsum;
+    var alm = 100 * fe2 / xsum;
+    var sps = 100 * mn / xsum;
+    var adr = 100 * (O.Fe3 || 0) / 2;
+    var uvr = 100 * (O.Cr || 0) / 2;
+    var grs = 100 - prp - alm - sps - adr - uvr;
+    if (grs < 0) {
+      var scale = (100 - prp - alm - sps) / (adr + uvr || 1);
+      grs = 0;
+      adr *= scale;
+      uvr *= scale;
+    }
+
+    var names = [
+      ['镁铝榴石', prp], ['铁铝榴石', alm], ['锰铝榴石', sps],
+      ['钙铝榴石', grs], ['钙铁榴石', adr], ['钙铬榴石', uvr]
+    ];
+    names.sort(function (a, b) { return b[1] - a[1]; });
+    var name = names[0][0];
+    var feT = fe2 + (ctx.cats.Fe3 || 0);
+    var mgNo = mg + feT > 0 ? mg / (mg + feT) : 0;
+
+    var sites = [
+      { key: 'T', label: 'T', desc: '四面体', cap: 3, ions: T },
+      { key: 'O', label: 'Y', desc: '八面体', cap: 2, ions: O },
+      { key: 'X', label: 'X', desc: '十二面体', cap: 3, ions: X }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'E', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    return finish(ctx, {
+      name: name,
+      subtitle: '石榴石',
+      sites: sites,
+      params: [
+        P('镁铝榴石 Prp', prp, 2, '%'),
+        P('铁铝榴石 Alm', alm, 2, '%'),
+        P('锰铝榴石 Sps', sps, 2, '%'),
+        P('钙铝榴石 Grs', grs, 2, '%'),
+        P('钙铁榴石 Adr', adr, 2, '%'),
+        P('钙铬榴石 Uvr', uvr, 2, '%'),
+        P('Mg#', mgNo, 3)
+      ],
+      notes: [
+        '石榴石按 12 个氧 / 8 个阳离子归一化；T=3、Y=2、X=3。',
+        '端元：Prp=Mg/ΣX，Alm=Fe2+/ΣX，Sps=Mn/ΣX，Adr=Fe3+/2，Uvr=Cr/2，Grs 由差值得到。',
+        'ΣX = Mg+Fe2+Mn+Ca。'
+      ]
+    });
+  }
+
+  /* ---------------- 长石 ---------------- */
+
+  function calcFeldspar(ctx, kind) {
+    var r = remFrom(ctx.cats);
+    var T = {}, X = {}, extra = {};
+
+    addIon(T, 'Si', take(r, 'Si', 4));
+    addIon(T, 'Al', take(r, 'Al', Math.max(0, 4 - siteSum(T))));
+    addIon(T, 'Ti', take(r, 'Ti', Math.max(0, 4 - siteSum(T))));
+    addIon(T, 'Fe3', take(r, 'Fe3', Math.max(0, 4 - siteSum(T))));
+
+    ['Ca', 'Na', 'K', 'Ba', 'Sr'].forEach(function (el) {
+      addIon(X, el, take(r, el, Math.max(0, 1 - siteSum(X))));
+    });
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(extra, el, take(r, el));
+
+    var ca = X.Ca || 0, na = X.Na || 0, k = X.K || 0;
+    var denom = ca + na + k || 1;
+    var an = 100 * ca / denom;
+    var ab = 100 * na / denom;
+    var or = 100 * k / denom;
+
+    var name;
+    if (or > 50) {
+      if (or > 90) name = '正长石';
+      else if (or > 65) name = '透长石';
+      else name = '歪长石';
+    } else if (an > 50) {
+      if (an >= 90) name = '钙长石';
+      else if (an >= 70) name = '培长石';
+      else if (an >= 50) name = '拉长石';
+      else name = '斜长石';
+    } else {
+      if (an >= 30) name = '中长石';
+      else if (an >= 10) name = '奥长石';
+      else name = '钠长石';
+      if (kind === 'alkali' && or >= 10) name = '碱性长石';
+    }
+
+    var sites = [
+      { key: 'T', label: 'T', desc: '四面体', cap: 4, ions: T },
+      { key: 'X', label: 'X', desc: '大阳离子', cap: 1, ions: X }
+    ];
+    if (siteSum(extra) > 0.001) sites.push({ key: 'E', label: '剩余', desc: '超出占位', cap: null, ions: extra });
+
+    return finish(ctx, {
+      name: name,
+      subtitle: kind === 'alkali' ? '碱性长石' : '斜长石',
+      sites: sites,
+      params: [
+        P('An（钙长石）', an, 2, '%'),
+        P('Ab（钠长石）', ab, 2, '%'),
+        P('Or（正长石）', or, 2, '%'),
+        P('Or/(An+Ab+Or)', or / 100, 3),
+        P('Fe3+/ΣFe', 0, 1, '%')
+      ],
+      notes: [
+        '长石按 8 个氧 / 5 个阳离子归一化；T=4、X=1。',
+        'An = Ca/(Ca+Na+K) x100，Ab、Or 同理；这是简化端元计算。'
+      ]
+    });
+  }
+
+  /* ---------------- 尖晶石族 ---------------- */
+
+  function calcSpinel(ctx, magnetite) {
+    var r = remFrom(ctx.cats);
+    var T = {}, M = {}, excess = {};
+
+    addIon(T, 'Si', take(r, 'Si', 8));
+    ['Mg', 'Mn', 'Zn', 'Ni', 'Co', 'Ca', 'Fe3', 'Fe2'].forEach(function (el) {
+      addIon(T, el, take(r, el, Math.max(0, 8 - siteSum(T))));
+    });
+
+    ['Al', 'Cr', 'V', 'Ti', 'Fe3', 'Fe2'].forEach(function (el) {
+      addIon(M, el, take(r, el, Math.max(0, 16 - siteSum(M))));
+    });
+    fillRest(M, r, 16);
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var ti = M.Ti || 0;
+    var cr = M.Cr || 0;
+    var fe3 = ctx.cats.Fe3 || 0;
+    var al = M.Al || 0;
+    var fe2 = ctx.cats.Fe2 || 0;
+    var mg = ctx.cats.Mg || 0;
+    var mn = ctx.cats.Mn || 0;
+    var zn = ctx.cats.Zn || 0;
+
+    var remFe2 = fe2, remTi = ti, remCr = cr, remFe3 = fe3;
+    var remAl = al, remMg = mg, remMn = mn, remZn = zn;
+
+    var usp = Math.min(remTi, remFe2); remTi -= usp; remFe2 -= usp;
+    var chr = Math.min(remCr / 2, remFe2); remCr -= 2 * chr; remFe2 -= chr;
+    var mag = Math.min(remFe3 / 2, remFe2); remFe3 -= 2 * mag; remFe2 -= mag;
+    var sp = Math.min(remMg, remAl / 2); remMg -= sp; remAl -= 2 * sp;
+    var hc = Math.min(remFe2, remAl / 2); remFe2 -= hc; remAl -= 2 * hc;
+    var gah = Math.min(remZn, remAl / 2); remZn -= gah; remAl -= 2 * gah;
+    var gal = Math.min(remMn, remAl / 2); remMn -= gal; remAl -= 2 * gal;
+    var frk = Math.min(remZn, remFe3 / 2); remZn -= frk; remFe3 -= 2 * frk;
+
+    var comps = [
+      ['尖晶石 Sp', sp], ['铁尖晶石 Hc', hc], ['磁铁矿 Mag', mag],
+      ['钛铁尖晶石 Usp', usp], ['铬铁矿 Chr', chr], ['锌尖晶石 Gah', gah],
+      ['锰尖晶石 Gal', gal], ['锌铁尖晶石 Frk', frk]
+    ].map(function (x) { return [x[0], x[1] / 8 * 100]; });
+
+    var total = 0;
+    comps.forEach(function (x) { total += x[1]; });
+    if (total > 0) comps.forEach(function (x) { x[1] = x[1] / total * 100; });
+    comps.sort(function (a, b) { return b[1] - a[1]; });
+
+    var name = comps[0][0].split(' ')[0];
+    if (magnetite) {
+      if (mag / 8 * 100 > 50) name = '磁铁矿';
+      else if (usp / 8 * 100 > 50) name = '钛铁尖晶石';
+      else if (chr / 8 * 100 > 50) name = '铬铁矿';
+      else name = comps[0][0].split(' ')[0];
+    }
+
+    var feT = fe2 + fe3;
+    var mgNo = mg + fe2 > 0 ? mg / (mg + fe2) : 0;
+
+    var sites = [
+      { key: 'T', label: 'T', desc: '四面体', cap: 8, ions: T },
+      { key: 'M', label: 'M', desc: '八面体', cap: 16, ions: M }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'E', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    var params = comps.map(function (x) { return P(x[0], x[1], 2, '%'); });
+    params.push(P('Mg#', mgNo, 3));
+    params.push(P('Fe3+/ΣFe', feT > 0 ? 100 * fe3 / feT : 0, 1, '%'));
+
+    return finish(ctx, {
+      name: name,
+      subtitle: magnetite ? '磁铁矿（尖晶石族）' : '尖晶石族',
+      sites: sites,
+      params: params,
+      notes: [
+        '尖晶石族按 32 个氧 / 24 个阳离子归一化（8 个 AB2O4 式量）；T=8、M=16。',
+        '端元为近似“定额”分配，不同作者采用的混合模型可能略有差异。',
+        'Fe3+ 默认由电荷平衡估算；磁铁矿中 Fe3+ 对端元影响很大。'
+      ]
+    });
+  }
+
+  /* ---------------- 钛铁矿 ---------------- */
+
+  function calcIlmenite(ctx) {
+    var r = remFrom(ctx.cats);
+    var T = {}, M = {}, excess = {};
+
+    addIon(T, 'Ti', take(r, 'Ti', 2));
+    addIon(T, 'Zr', take(r, 'Zr', Math.max(0, 2 - siteSum(T))));
+    addIon(T, 'Si', take(r, 'Si', Math.max(0, 2 - siteSum(T))));
+    addIon(T, 'Al', take(r, 'Al', Math.max(0, 2 - siteSum(T))));
+    addIon(T, 'Fe3', take(r, 'Fe3', Math.max(0, 2 - siteSum(T))));
+
+    ['Fe2', 'Mg', 'Mn', 'Ca', 'Fe3', 'Al'].forEach(function (el) {
+      addIon(M, el, take(r, el, Math.max(0, 2 - siteSum(M))));
+    });
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var ti = ctx.cats.Ti || 0;
+    var fe3 = ctx.cats.Fe3 || 0;
+    var fe2 = ctx.cats.Fe2 || 0;
+    var mg = ctx.cats.Mg || 0;
+    var mn = ctx.cats.Mn || 0;
+
+    var ilm = 100 * ti / 2;
+    var hem = 100 * fe3 / 4;
+    var gek = 100 * mg / 2;
+    var pyr = 100 * mn / 2;
+
+    var arr = [['钛铁矿', ilm], ['赤铁矿', hem], ['镁钛矿', gek], ['锰钛矿', pyr]];
+    arr.sort(function (a, b) { return b[1] - a[1]; });
+    var name = arr[0][0];
+    var mgNo = mg + fe2 > 0 ? mg / (mg + fe2) : 0;
+
+    var sites = [
+      { key: 'T', label: 'T', desc: 'Ti 位', cap: 2, ions: T },
+      { key: 'M', label: 'M', desc: 'Fe/Mg/Mn 位', cap: 2, ions: M }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'E', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    return finish(ctx, {
+      name: name,
+      subtitle: '钛铁矿—赤铁矿系列',
+      sites: sites,
+      params: [
+        P('钛铁矿 Ilm', ilm, 2, '%'),
+        P('赤铁矿 Hem', hem, 2, '%'),
+        P('镁钛矿 Gek', gek, 2, '%'),
+        P('锰钛矿 Pyr', pyr, 2, '%'),
+        P('其他（Fe2+ 等）', Math.max(0, 100 - ilm - hem - gek - pyr), 2, '%'),
+        P('Mg#', mgNo, 3),
+        P('Fe3+/ΣFe', (fe2 + fe3) > 0 ? 100 * fe3 / (fe2 + fe3) : 0, 1, '%')
+      ],
+      notes: [
+        '钛铁矿按 6 个氧 / 3 个阳离子归一化；Ti 位 2 个、M 位 2 个。',
+        'Ilm = Ti/2 x100，Hem = Fe3+/4 x100，Gek = Mg/2 x100，Pyr = Mn/2 x100。'
+      ]
+    });
+  }
+
+  /* ---------------- 榍石 ---------------- */
+
+  function calcTitanite(ctx) {
+    var r = remFrom(ctx.cats);
+    var Ca = {}, Ti = {}, Si = {}, excess = {};
+
+    ['Ca', 'Na', 'Sr', 'Ba', 'Mn', 'Fe2'].forEach(function (el) {
+      addIon(Ca, el, take(r, el, Math.max(0, 1 - siteSum(Ca))));
+    });
+    ['Ti', 'Al', 'Fe3', 'Cr', 'V', 'Zr', 'Nb'].forEach(function (el) {
+      addIon(Ti, el, take(r, el, Math.max(0, 1 - siteSum(Ti))));
+    });
+    ['Si', 'Al', 'P'].forEach(function (el) {
+      addIon(Si, el, take(r, el, Math.max(0, 1 - siteSum(Si))));
+    });
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var ti = ctx.cats.Ti || 0;
+    var al = ctx.cats.Al || 0;
+    var fe3 = ctx.cats.Fe3 || 0;
+    var ca = ctx.cats.Ca || 0;
+
+    var sites = [
+      { key: 'Ca', label: 'Ca', desc: 'Ca 位', cap: 1, ions: Ca },
+      { key: 'Ti', label: 'Ti', desc: 'Ti 位', cap: 1, ions: Ti },
+      { key: 'Si', label: 'Si', desc: 'Si 位', cap: 1, ions: Si }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'E', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    return finish(ctx, {
+      name: '榍石',
+      subtitle: '榍石（Titanite）',
+      sites: sites,
+      params: [
+        P('Ti', ti, 3, 'apfu'),
+        P('Al', al, 3, 'apfu'),
+        P('Fe3+', fe3, 3, 'apfu'),
+        P('Ca', ca, 3, 'apfu'),
+        P('Ti/(Ti+Al+Fe3+)', (ti + al + fe3) > 0 ? ti / (ti + al + fe3) : 0, 3),
+        P('Fe3+/ΣFe', (ctx.cats.Fe2 + fe3) > 0 ? 100 * fe3 / (ctx.cats.Fe2 + fe3) : 0, 1, '%')
+      ],
+      notes: [
+        '榍石按 5 个氧 / 3 个阳离子归一化；Ca 位 1、Ti 位 1、Si 位 1。',
+        'Al、Fe3+ 主要替代 Ti 进入 Ti 位。'
+      ]
+    });
+  }
+
+  /* ---------------- 绿帘石 ---------------- */
+
+  function calcEpidote(ctx) {
+    var r = remFrom(ctx.cats);
+    var T = {}, M = {}, Ca = {}, excess = {};
+
+    addIon(T, 'Si', take(r, 'Si', 3));
+    addIon(T, 'Al', take(r, 'Al', Math.max(0, 3 - siteSum(T))));
+
+    ['Al', 'Fe3', 'Fe2', 'Mn', 'Mg', 'Ti', 'Cr', 'V'].forEach(function (el) {
+      addIon(M, el, take(r, el, Math.max(0, 3 - siteSum(M))));
+    });
+    ['Ca', 'Sr', 'Ba', 'Na', 'Mn'].forEach(function (el) {
+      addIon(Ca, el, take(r, el, Math.max(0, 2 - siteSum(Ca))));
+    });
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var fe3 = ctx.cats.Fe3 || 0;
+    var alM = M.Al || 0;
+    var ps = 100 * fe3 / (fe3 + alM || 1);
+    var xFe3 = fe3 / (fe3 + alM || 1);
+    var xAl = alM / (fe3 + alM || 1);
+
+    var name;
+    if (ps < 5) name = '斜黝帘石';
+    else if (ps <= 15) name = '绿帘石';
+    else name = '富铁绿帘石';
+
+    var sites = [
+      { key: 'T', label: 'T', desc: '四面体', cap: 3, ions: T },
+      { key: 'M', label: 'M', desc: '八面体', cap: 3, ions: M },
+      { key: 'Ca', label: 'Ca', desc: 'Ca 位', cap: 2, ions: Ca }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'E', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    return finish(ctx, {
+      name: name,
+      subtitle: '绿帘石族',
+      sites: sites,
+      params: [
+        P('Ps（绿帘石分子）', ps, 2, '%'),
+        P('XFe3+', xFe3, 3),
+        P('XAl', xAl, 3),
+        P('Fe3+', fe3, 3, 'apfu'),
+        P('Al(VI)', alM, 3, 'apfu'),
+        P('Fe3+/ΣFe', (ctx.cats.Fe2 + fe3) > 0 ? 100 * fe3 / (ctx.cats.Fe2 + fe3) : 0, 1, '%')
+      ],
+      notes: [
+        '绿帘石按 13 个氧（含 OH）/ 8 个阳离子归一化；T=3、M=3、Ca=2。',
+        'Ps = Fe3+/(Fe3++Al(VI)) x100；Ps<5% 为斜黝帘石，5-15% 为绿帘石。'
+      ]
+    });
+  }
+
+  /* ---------------- 电气石 ---------------- */
+
+  function calcTourmaline(ctx) {
+    var r = remFrom(ctx.cats);
+    var T = {}, B = {}, Z = {}, Y = {}, X = {}, excess = {};
+    var notes = [];
+    var bAssumed = false;
+
+    addIon(T, 'Si', take(r, 'Si', 6));
+    addIon(T, 'Al', take(r, 'Al', Math.max(0, 6 - siteSum(T))));
+    addIon(T, 'Ti', take(r, 'Ti', Math.max(0, 6 - siteSum(T))));
+
+    var b = ctx.cats.B || 0;
+    if (b < 0.5) {
+      bAssumed = true;
+      addIon(B, 'B', 3);
+      r.B = 0;
+      notes.push('未输入 B2O3，按理想电气石 B = 3 apfu 计算；如有 B2O3 数据请补填。');
+    } else {
+      addIon(B, 'B', take(r, 'B', 3));
+    }
+
+    ['Al', 'Cr', 'V', 'Fe3', 'Ti'].forEach(function (el) {
+      addIon(Z, el, take(r, el, Math.max(0, 6 - siteSum(Z))));
+    });
+    ['Li', 'Al', 'Mg', 'Fe2', 'Mn', 'Zn', 'Ni', 'Ti', 'Cr'].forEach(function (el) {
+      addIon(Y, el, take(r, el, Math.max(0, 3 - siteSum(Y))));
+    });
+    ['Na', 'Ca', 'K'].forEach(function (el) {
+      addIon(X, el, take(r, el, Math.max(0, 1 - siteSum(X))));
+    });
+
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var xNa = X.Na || 0, xCa = X.Ca || 0;
+    var xVac = Math.max(0, 1 - siteSum(X));
+    var yMg = Y.Mg || 0, yFe = Y.Fe2 || 0, yLi = Y.Li || 0, yAl = Y.Al || 0;
+
+    var name;
+    if (xCa > 0.5) name = yMg >= yFe ? '钙镁电气石' : '钙铁电气石';
+    else if (xNa > 0.5) {
+      if (yLi > 0.3) name = '锂电气石';
+      else if (yFe > yMg) name = '黑电气石';
+      else name = '镁电气石';
+    } else {
+      name = '无碱电气石';
+    }
+
+    var sites = [
+      { key: 'X', label: 'X', desc: '大阳离子', cap: 1, ions: X },
+      { key: 'Y', label: 'Y', desc: '八面体', cap: 3, ions: Y },
+      { key: 'Z', label: 'Z', desc: '八面体', cap: 6, ions: Z },
+      { key: 'T', label: 'T', desc: '四面体', cap: 6, ions: T },
+      { key: 'B', label: 'B', desc: 'B 位', cap: 3, ions: B }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'E', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    var fe3 = ctx.cats.Fe3 || 0;
+    var fe2 = ctx.cats.Fe2 || 0;
+
+    return finish(ctx, {
+      name: name,
+      subtitle: '电气石',
+      sites: sites,
+      params: [
+        P('X(Na)', xNa, 3, 'apfu'),
+        P('X(Ca)', xCa, 3, 'apfu'),
+        P('X空位', xVac, 3, 'apfu'),
+        P('Y(Mg)', yMg, 3, 'apfu'),
+        P('Y(Fe2+)', yFe, 3, 'apfu'),
+        P('Y(Li)', yLi, 3, 'apfu'),
+        P('Y(Al)', yAl, 3, 'apfu'),
+        P('Mg#', (yMg + yFe) > 0 ? yMg / (yMg + yFe) : 0, 3),
+        P('Fe3+/ΣFe', (fe2 + fe3) > 0 ? 100 * fe3 / (fe2 + fe3) : 0, 1, '%')
+      ],
+      notes: [
+        '电气石按 31 个氧 / 19 个阳离子归一化；X=1、Y=3、Z=6、T=6、B=3。',
+        'X 位以 Na、Ca、空位区分；Y 位以 Mg、Fe2+、Li、Al 区分主种属。',
+        'Li2O 与 B2O3 常未测；Li 未测时按 0 处理，B 未测时按 3 apfu 处理。'
+      ].concat(notes)
+    });
+  }
+
+  /* ---------------- 磷灰石 ---------------- */
+
+  function calcApatite(ctx) {
+    var r = remFrom(ctx.cats);
+    var Ca = {}, Pp = {}, An = {}, excess = {};
+
+    ['Ca', 'Sr', 'Ba', 'Na', 'Mn', 'Fe2'].forEach(function (el) {
+      addIon(Ca, el, take(r, el, Math.max(0, 10 - siteSum(Ca))));
+    });
+    ['P', 'Si', 'Al'].forEach(function (el) {
+      addIon(Pp, el, take(r, el, Math.max(0, 6 - siteSum(Pp))));
+    });
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var f = ctx.F || 0;
+    var cl = ctx.Cl || 0;
+    var oh = Math.max(0, 2 - f - cl);
+    addIon(An, 'F', f);
+    addIon(An, 'Cl', cl);
+    if (oh > 0.001) addIon(An, 'OH', oh);
+
+    var name;
+    if (f >= cl && f >= oh) name = '氟磷灰石';
+    else if (cl >= f && cl >= oh) name = '氯磷灰石';
+    else name = '羟磷灰石';
+
+    var ca = Ca.Ca || 0;
+    var p = Pp.P || 0;
+
+    var sites = [
+      { key: 'Ca', label: 'Ca', desc: 'Ca 位', cap: 10, ions: Ca },
+      { key: 'P', label: 'P', desc: 'P 位', cap: 6, ions: Pp },
+      { key: 'An', label: 'An', desc: 'F/Cl/OH', cap: 2, ions: An }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'E', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    return finish(ctx, {
+      name: name,
+      subtitle: '磷灰石',
+      sites: sites,
+      params: [
+        P('Ca', ca, 3, 'apfu'),
+        P('P', p, 3, 'apfu'),
+        P('F', f, 3, 'apfu'),
+        P('Cl', cl, 3, 'apfu'),
+        P('OH（计算）', oh, 3, 'apfu'),
+        P('Ca/P', p > 0 ? ca / p : 0, 3),
+        P('F/(F+Cl+OH)', (f + cl + oh) > 0 ? f / (f + cl + oh) : 0, 3)
+      ],
+      notes: [
+        '磷灰石按 26 个氧 / 16 个阳离子归一化（2 个式量）；Ca=10、P=6、F/Cl/OH=2。',
+        'OH 由 2 - F - Cl 计算；若 F+Cl>2 则 OH=0。'
+      ]
+    });
+  }
+
+  /* ---------------- 锆石 ---------------- */
+
+  function calcZircon(ctx) {
+    var r = remFrom(ctx.cats);
+    var Zr = {}, Si = {}, excess = {};
+
+    ['Zr', 'Ti', 'Fe3', 'Nb'].forEach(function (el) {
+      addIon(Zr, el, take(r, el, Math.max(0, 1 - siteSum(Zr))));
+    });
+    ['Si', 'P', 'Al'].forEach(function (el) {
+      addIon(Si, el, take(r, el, Math.max(0, 1 - siteSum(Si))));
+    });
+    for (var el in r) if ((r[el] || 0) > 1e-6) addIon(excess, el, take(r, el));
+
+    var sites = [
+      { key: 'Zr', label: 'Zr', desc: 'Zr 位', cap: 1, ions: Zr },
+      { key: 'Si', label: 'Si', desc: 'Si 位', cap: 1, ions: Si }
+    ];
+    if (siteSum(excess) > 0.001) sites.push({ key: 'E', label: '剩余', desc: '超出占位', cap: null, ions: excess });
+
+    return finish(ctx, {
+      name: '锆石',
+      subtitle: '锆石（Zircon）',
+      sites: sites,
+      params: [
+        P('Zr', Zr.Zr || 0, 3, 'apfu'),
+        P('Si', Si.Si || 0, 3, 'apfu'),
+        P('Zr/Si', (Si.Si || 0) > 0 ? (Zr.Zr || 0) / Si.Si : 0, 3),
+        P('Ti', ctx.cats.Ti || 0, 3, 'apfu')
+      ],
+      notes: [
+        '锆石按 4 个氧 / 2 个阳离子归一化；Zr 位 1、Si 位 1。',
+        'Zr 位可含少量 Ti、Fe3+、Nb 等；Si 位可含少量 P、Al。'
+      ]
+    });
+  }
+
+  /* ---------------- 矿物注册表 ---------------- */
+
+  var MINERALS = {
+    olivine:  { id: 'olivine',  label: '橄榄石', en: 'Olivine', group: '岛状硅酸盐', oxygen: 4,  forceFe2: true, cationTarget: 3, calc: calcOlivine, hint: '(Mg,Fe)2SiO4 · 4 O' },
+    opx:      { id: 'opx',      label: '斜方辉石', en: 'Orthopyroxene', group: '链状硅酸盐', oxygen: 6,  fe3Method: 'pyroxene', cationTargetAfter: 4, calc: function (c) { return calcPyroxene(c, 'opx'); }, hint: '(Mg,Fe)2Si2O6 · 6 O' },
+    cpx:      { id: 'cpx',      label: '单斜辉石', en: 'Clinopyroxene', group: '链状硅酸盐', oxygen: 6,  fe3Method: 'pyroxene', cationTargetAfter: 4, calc: function (c) { return calcPyroxene(c, 'cpx'); }, hint: 'Ca(Mg,Fe)Si2O6 · 6 O' },
+    amphibole:{ id: 'amphibole',label: '角闪石', en: 'Amphibole', group: '链状硅酸盐', oxygen: 23, ohMax: 0, forceFe2: true, calc: calcAmphibole, hint: 'AB2C5T8O22(OH)2 · 23 O' },
+    biotite:  { id: 'biotite',  label: '黑云母', en: 'Biotite', group: '层状硅酸盐', oxygen: 24, ohMax: 4, cationTarget: 16, forceFe2: true, calc: function (c) { return calcMica(c, 'biotite'); }, hint: 'K(Mg,Fe)3AlSi3O10(OH)2 · 24 O' },
+    muscovite:{ id: 'muscovite',label: '白云母', en: 'Muscovite', group: '层状硅酸盐', oxygen: 24, ohMax: 4, cationTarget: 14, forceFe2: true, calc: function (c) { return calcMica(c, 'muscovite'); }, hint: 'KAl2(AlSi3O10)(OH)2 · 24 O' },
+    chlorite: { id: 'chlorite', label: '绿泥石', en: 'Chlorite', group: '层状硅酸盐', oxygen: 28, ohMax: 12.4444444444, cationTarget: 20, forceFe2: true, calc: calcChlorite, hint: '(Mg,Fe)5Al(Si3Al)O10(OH)8 · 28 O' },
+    garnet:   { id: 'garnet',   label: '石榴石', en: 'Garnet', group: '岛状硅酸盐', oxygen: 12, fe3Method: 'garnet', cationTargetAfter: 8, calc: calcGarnet, hint: 'X3Y2Si3O12 · 12 O' },
+    plagioclase:{ id: 'plagioclase', label: '斜长石', en: 'Plagioclase', group: '架状硅酸盐', oxygen: 8, forceFe2: true, cationTarget: 5, calc: function (c) { return calcFeldspar(c, 'plagioclase'); }, hint: '(Na,Ca)Al(Al,Si)3O8 · 8 O' },
+    alkali_feldspar:{ id: 'alkali_feldspar', label: '碱性长石', en: 'Alkali feldspar', group: '架状硅酸盐', oxygen: 8, forceFe2: true, cationTarget: 5, calc: function (c) { return calcFeldspar(c, 'alkali'); }, hint: '(K,Na)AlSi3O8 · 8 O' },
+    spinel:   { id: 'spinel',   label: '尖晶石', en: 'Spinel', group: '氧化物', oxygen: 32, fe3Method: 'spinel', cationTargetAfter: 24, calc: function (c) { return calcSpinel(c, false); }, hint: 'AB2O4 · 32 O' },
+    magnetite:{ id: 'magnetite',label: '磁铁矿', en: 'Magnetite', group: '氧化物', oxygen: 32, fe3Method: 'spinel', cationTargetAfter: 24, calc: function (c) { return calcSpinel(c, true); }, hint: 'Fe3O4 · 32 O' },
+    ilmenite: { id: 'ilmenite', label: '钛铁矿', en: 'Ilmenite', group: '氧化物', oxygen: 6, fe3Method: 'ilmenite', cationTargetAfter: 3, calc: calcIlmenite, hint: 'FeTiO3 · 6 O' },
+    titanite: { id: 'titanite', label: '榍石', en: 'Titanite', group: '岛状硅酸盐', oxygen: 5, fe3Method: 'charge', cationTarget: 3, calc: calcTitanite, hint: 'CaTiSiO5 · 5 O' },
+    epidote:  { id: 'epidote',  label: '绿帘石', en: 'Epidote', group: '岛状硅酸盐', oxygen: 13, ohMax: 1, fe3Method: 'epidote', cationTargetAfter: 8, calc: calcEpidote, hint: 'Ca2(Al,Fe3+)3Si3O12(OH) · 13 O' },
+    tourmaline:{ id: 'tourmaline', label: '电气石', en: 'Tourmaline', group: '环状硅酸盐', oxygen: 31, ohMax: 4, cationTarget: 19, forceFe2: true, calc: calcTourmaline, hint: 'XY3Z6T6O18(BO3)3V3W · 31 O' },
+    apatite:  { id: 'apatite',  label: '磷灰石', en: 'Apatite', group: '磷酸盐', oxygen: 26, ohMax: 2, forceFe2: true, cationTarget: 16, calc: calcApatite, hint: 'Ca5(PO4)3(F,Cl,OH) · 26 O' },
+    zircon:   { id: 'zircon',   label: '锆石', en: 'Zircon', group: '岛状硅酸盐', oxygen: 4, forceFe2: true, cationTarget: 2, calc: calcZircon, hint: 'ZrSiO4 · 4 O' }
+  };
+
+  var MINERAL_ORDER = [
+    'olivine', 'opx', 'cpx', 'amphibole',
+    'biotite', 'muscovite', 'chlorite',
+    'garnet', 'plagioclase', 'alkali_feldspar',
+    'spinel', 'magnetite', 'ilmenite',
+    'titanite', 'epidote', 'tourmaline',
+    'apatite', 'zircon'
+  ];
+
+  /* ---------------- 对外接口 ---------------- */
+
+  function calculate(mineralId, input, options) {
+    var mineral = MINERALS[mineralId];
+    if (!mineral) throw new Error('未知矿物类型：' + mineralId);
+    var ctx = prepare(input || {}, mineral, options || {});
+    var result = mineral.calc(ctx);
+    result.input = input || {};
+    result.oxideDetails = ctx.details;
+    result.oxygen = ctx.oxygen;
+    result.O_per = ctx.O_per;
+    result.scale = ctx.scale;
+    result.wtSum = ctx.wtSum;
+    result.F = ctx.F;
+    result.Cl = ctx.Cl;
+    result.OH = ctx.OH;
+    result.Fe3 = ctx.Fe3;
+    result.Fe2 = ctx.Fe2;
+    result.FeT = ctx.FeT;
+    result.feMode = ctx.feMode;
+    result.fe3Raw = ctx.fe3Raw;
+    result.chargeError = ctx.chargeError;
+    result.cats = ctx.cats;
+    return result;
+  }
+
+  /* ---------------- 示例数据 ---------------- */
+
+  var SAMPLES = {
+    olivine: { name: 'PL52F-1 橄榄石', data: { SiO2: 37.8353, TiO2: 0, Al2O3: 0, Cr2O3: 0, FeO: 24.4077, MnO: 0.438392, MgO: 37.1075, CaO: 0.016889, NiO: 0, Na2O: 0, K2O: 0 } },
+    opx: { name: 'OPX-1 斜方辉石', data: { SiO2: 55.20, TiO2: 0.12, Al2O3: 1.85, Cr2O3: 0.05, FeO: 13.40, MnO: 0.22, MgO: 28.60, CaO: 0.65, Na2O: 0.03, K2O: 0.01, NiO: 0.02 } },
+    cpx: { name: 'PL52F-1 单斜辉石', data: { SiO2: 50.9985, TiO2: 0.789901, Al2O3: 2.60428, Cr2O3: 0, FeO: 7.21763, MnO: 0.223868, MgO: 15.0213, CaO: 20.8393, Na2O: 0.39793, K2O: 0, NiO: 0 } },
+    amphibole: { name: '#4 角闪石', data: { SiO2: 46.405, TiO2: 1.686, Al2O3: 7.39, Cr2O3: 0.045, FeO: 14.493, MnO: 0.252, MgO: 13.346, CaO: 11.077, Na2O: 1.774, K2O: 0.142, NiO: 0 } },
+    biotite: { name: 'ZK203-3-1.1 黑云母', data: { SiO2: 37.953, TiO2: 3.65, Al2O3: 12.721, Cr2O3: 0.048, FeO: 15.075, MnO: 0.123, MgO: 15.853, CaO: 0, Na2O: 0.161, K2O: 9.822, NiO: 0.086, Cl: 0 } },
+    muscovite: { name: '白云母示例', data: { SiO2: 46.20, TiO2: 0.35, Al2O3: 35.10, Cr2O3: 0.02, FeO: 1.80, MnO: 0.05, MgO: 0.90, CaO: 0.10, Na2O: 0.55, K2O: 10.20, F: 0.10 } },
+    chlorite: { name: '绿泥石示例', data: { SiO2: 28.10, TiO2: 0.10, Al2O3: 19.80, Cr2O3: 0.02, FeO: 20.20, MnO: 0.25, MgO: 25.10, CaO: 0.10, Na2O: 0.05, K2O: 0.03 } },
+    garnet: { name: '07HT76-4-1 石榴石', data: { SiO2: 39.818, TiO2: 0, Al2O3: 18.546, Cr2O3: 0, FeO: 5.061, MnO: 0.648, MgO: 0.001, CaO: 36.887, Na2O: 0, K2O: 0.035, NiO: 0.033 } },
+    plagioclase: { name: 'PL52F-1 斜长石', data: { SiO2: 50.3879, TiO2: 0.02782, Al2O3: 30.968, FeO: 0.641908, MgO: 0.039238, MnO: 0, CaO: 13.193, Na2O: 3.86193, K2O: 0.10943, BaO: 0, SrO: 0, P2O5: 0.025718, Cr2O3: 0, Cl: 0, F: 0 } },
+    alkali_feldspar: { name: '碱性长石示例', data: { SiO2: 64.80, Al2O3: 18.40, FeO: 0.15, CaO: 0.20, Na2O: 2.10, K2O: 14.10, BaO: 0.35, TiO2: 0.02, MnO: 0.01 } },
+    spinel: { name: 'PL54C A5 尖晶石', data: { TiO2: 0.386907, SiO2: 0.105478, Al2O3: 63.8171, Cr2O3: 0.091939, V2O3: 0.074791, FeO: 18.0735, MnO: 0.093632, MgO: 16.7608, ZnO: 1.78673, CaO: 0, NiO: 0 } },
+    magnetite: { name: 'PL52F-1 磁铁矿', data: { TiO2: 7.94957, Al2O3: 3.34147, Cr2O3: 0.053533, V2O3: 0.795224, FeO: 80.7993, MnO: 0.342897, MgO: 1.02595, CaO: 0, SiO2: 0, ZnO: 0, NiO: 0 } },
+    ilmenite: { name: 'PL52F-1 钛铁矿', data: { TiO2: 51.3789, Al2O3: 2.45591, Cr2O3: 0.035593, V2O3: 0.3165, FeO: 42.059, MnO: 1.18673, MgO: 3.2283, CaO: 0.050417, SiO2: 0 } },
+    titanite: { name: '榍石-自形-1', data: { SiO2: 29.976, TiO2: 35.846, Al2O3: 1.189, Cr2O3: 0, FeO: 1.684, MnO: 0.096, MgO: 0.018, CaO: 29.008, Na2O: 0.052, K2O: 0.026, NiO: 0.006, F: 0.301 } },
+    epidote: { name: 'XTL17-92 绿帘石', data: { SiO2: 37.423, TiO2: 0.047, Al2O3: 23.714, FeO: 13.012, MnO: 0.551, MgO: 0.152, CaO: 22.475, K2O: 0.18, Na2O: 0.027, Cl: 0.007 } },
+    tourmaline: { name: '黑电气石示例', data: { SiO2: 34.00, TiO2: 0.50, Al2O3: 30.00, FeO: 12.00, MnO: 0.20, MgO: 3.00, CaO: 0.50, Na2O: 2.00, K2O: 0.10, B2O3: 10.50, F: 0.20, Cl: 0.02 } },
+    apatite: { name: '磷灰石示例', data: { P2O5: 41.00, CaO: 54.00, F: 3.50, Cl: 0.20, SiO2: 0.50, FeO: 0.20, MnO: 0.02, Na2O: 0.10 } },
+    zircon: { name: '锆石示例', data: { ZrO2: 66.00, SiO2: 32.00, TiO2: 0.20, FeO: 0.10, Al2O3: 0.05 } }
+  };
+
+  function sampleFor(mineralId) {
+    return SAMPLES[mineralId] || { name: '示例', data: {} };
+  }
+
+  /* ---------------- 批量解析 ---------------- */
+
+  var HEADER_ALIASES = {
+    sample: ['sample', '样品', '样品名称', '样品号', '编号', '点号', 'no', 'no.', 'name', 'comment', 'spot', 'analysis'],
+    mineral: ['mineral', '矿物', '矿物类型', 'mineraltype']
+  };
+
+  function normalizeHeader(h) {
+    return String(h || '')
+      .replace(/[\s\u00a0]/g, '')
+      .replace(/[（(].*?[)）]/g, '')
+      .replace(/[%％]/g, '')
+      .replace(/[₀₁₂₃₄₅₆₇₈₉]/g, function (c) {
+        return '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(c)];
+      })
+      .replace(/[_\-\/]/g, '')
+      .replace(/(WT|WTPCT|PCT|PPM|PPB)$/gi, '')
+      .toUpperCase();
+  }
+
+  function canonicalOxide(h) {
+    var n = normalizeHeader(h);
+    for (var i = 0; i < OXIDES.length; i++) {
+      var ox = OXIDES[i];
+      if (normalizeHeader(ox.key) === n || normalizeHeader(ox.label) === n) return ox.key;
+    }
+    var map = {
+      'SIO2': 'SiO2', 'TIO2': 'TiO2', 'AL2O3': 'Al2O3', 'CR2O3': 'Cr2O3',
+      'FE2O3': 'Fe2O3', 'FEO': 'FeO', 'FEOT': 'FeO', 'MNO': 'MnO', 'MGO': 'MgO',
+      'CAO': 'CaO', 'NA2O': 'Na2O', 'K2O': 'K2O', 'P2O5': 'P2O5', 'NIO': 'NiO',
+      'ZNO': 'ZnO', 'SRO': 'SrO', 'BAO': 'BaO', 'ZRO2': 'ZrO2', 'NB2O5': 'Nb2O5',
+      'V2O3': 'V2O3', 'WO3': 'WO3', 'SNO2': 'SnO2', 'COO': 'CoO', 'B2O3': 'B2O3',
+      'LI2O': 'Li2O', 'F': 'F', 'CL': 'Cl',
+      '二氧化硅': 'SiO2', '二氧化钛': 'TiO2', '三氧化二铝': 'Al2O3', '氧化铝': 'Al2O3',
+      '三氧化二铬': 'Cr2O3', '氧化铬': 'Cr2O3', '三氧化二铁': 'Fe2O3', '氧化铁': 'Fe2O3',
+      '氧化亚铁': 'FeO', '全铁': 'FeO', '氧化锰': 'MnO', '氧化镁': 'MgO',
+      '氧化钙': 'CaO', '氧化钠': 'Na2O', '氧化钾': 'K2O', '五氧化二磷': 'P2O5',
+      '氧化镍': 'NiO', '氧化锌': 'ZnO', '氧化锶': 'SrO', '氧化钡': 'BaO',
+      '氧化锆': 'ZrO2', '五氧化二铌': 'Nb2O5', '三氧化二钒': 'V2O3',
+      '三氧化钨': 'WO3', '二氧化锡': 'SnO2', '氧化钴': 'CoO',
+      '三氧化二硼': 'B2O3', '氧化锂': 'Li2O', '氟': 'F', '氯': 'Cl'
+    };
+    return map[n] || null;
+  }
+
+  function splitCSVLine(line, delim) {
+    var out = [], cur = '', q = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (q) {
+        if (ch === '"') {
+          if (line[i + 1] === '"') { cur += '"'; i++; }
+          else q = false;
+        } else cur += ch;
+      } else {
+        if (ch === '"') q = true;
+        else if (ch === delim) { out.push(cur); cur = ''; }
+        else cur += ch;
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  function parseBatch(text, defaultMineral) {
+    var lines = String(text || '').split(/\r?\n/).filter(function (l) { return l.trim() !== ''; });
+    if (lines.length < 2) throw new Error('批量数据至少需要表头和一行数据。');
+    var first = lines[0];
+    var delim = first.indexOf('\t') >= 0 ? '\t' : (first.indexOf(';') >= 0 ? ';' : ',');
+    var headers = splitCSVLine(first, delim).map(function (h) { return h.trim(); });
+    var rows = lines.slice(1).map(function (l) { return splitCSVLine(l, delim).map(function (c) { return c.trim(); }); });
+
+    var sampleIdx = -1, mineralIdx = -1, oxideIdx = {};
+    headers.forEach(function (h, i) {
+      var nh = normalizeHeader(h);
+      if (sampleIdx < 0 && HEADER_ALIASES.sample.some(function (a) { return normalizeHeader(a) === nh; })) sampleIdx = i;
+      if (mineralIdx < 0 && HEADER_ALIASES.mineral.some(function (a) { return normalizeHeader(a) === nh; })) mineralIdx = i;
+      var ox = canonicalOxide(h);
+      if (ox && oxideIdx[ox] === undefined) oxideIdx[ox] = i;
+    });
+    if (sampleIdx < 0) sampleIdx = 0;
+
+    return rows.map(function (cells, r) {
+      var ox = {};
+      for (var key in oxideIdx) ox[key] = toNumber(cells[oxideIdx[key]]);
+      var mineralId = defaultMineral;
+      if (mineralIdx >= 0 && cells[mineralIdx]) mineralId = guessMineral(cells[mineralIdx]) || defaultMineral;
+      return {
+        sample: cells[sampleIdx] || ('Row-' + (r + 1)),
+        mineralId: mineralId,
+        data: ox
+      };
+    });
+  }
+
+  function guessMineral(s) {
+    var t = String(s || '').toLowerCase();
+    var table = [
+      ['olivine', ['橄榄石', 'olivine', 'ol']],
+      ['opx', ['斜方辉石', 'opx', 'orthopyroxene']],
+      ['cpx', ['单斜辉石', 'cpx', 'clinopyroxene', '辉石']],
+      ['amphibole', ['角闪石', 'amphibole', 'amp', 'hornblende']],
+      ['biotite', ['黑云母', 'biotite', 'bt']],
+      ['muscovite', ['白云母', 'muscovite', 'ms']],
+      ['chlorite', ['绿泥石', 'chlorite', 'chl']],
+      ['garnet', ['石榴石', 'garnet', 'grt']],
+      ['plagioclase', ['斜长石', 'plagioclase', 'pl']],
+      ['alkali_feldspar', ['碱性长石', '钾长石', 'alkali feldspar', 'kfs']],
+      ['spinel', ['尖晶石', 'spinel', 'spl']],
+      ['magnetite', ['磁铁矿', 'magnetite', 'mag']],
+      ['ilmenite', ['钛铁矿', 'ilmenite', 'ilm']],
+      ['titanite', ['榍石', 'titanite', 'sph']],
+      ['epidote', ['绿帘石', 'epidote', 'ep']],
+      ['tourmaline', ['电气石', 'tourmaline', 'tur']],
+      ['apatite', ['磷灰石', 'apatite', 'ap']],
+      ['zircon', ['锆石', 'zircon', 'zrn']]
+    ];
+    for (var i = 0; i < table.length; i++) {
+      var names = table[i][1];
+      for (var j = 0; j < names.length; j++) if (t.indexOf(names[j]) >= 0) return table[i][0];
+    }
+    return null;
+  }
+
+  function templateCSV(mineralId) {
+    var mineral = MINERALS[mineralId] || MINERALS.cpx;
+    var cols = ['Sample', 'Mineral'].concat(COMMON_OXIDE_KEYS);
+    return cols.join(',') + '\n' + 'S-1,' + mineral.label + ',' + COMMON_OXIDE_KEYS.map(function () { return ''; }).join(',');
+  }
+
+  return {
+    OXIDES: OXIDES,
+    OXIDE_BY_KEY: OXIDE_BY_KEY,
+    COMMON_OXIDE_KEYS: COMMON_OXIDE_KEYS,
+    ALL_OXIDE_KEYS: ALL_OXIDE_KEYS,
+    MINERALS: MINERALS,
+    MINERAL_ORDER: MINERAL_ORDER,
+    calculate: calculate,
+    parseBatch: parseBatch,
+    guessMineral: guessMineral,
+    sampleFor: sampleFor,
+    templateCSV: templateCSV,
+    toNumber: toNumber,
+    CHARGE: CHARGE
+  };
+});
+
+</script>
+<script>
+(function () {
+  'use strict';
+
+  var E = window.MineralEngine;
+  if (!E) { alert('计算引擎加载失败。'); return; }
+
+  var $ = function (sel) { return document.querySelector(sel); };
+  var $$ = function (sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); };
+
+  var state = {
+    mineralId: 'cpx',
+    values: {},
+    feMode: 'auto',
+    showAll: false,
+    lastResult: null,
+    batchItems: [],
+    batchResults: []
+  };
+
+  var MINERAL_GROUPS = {};
+  E.MINERAL_ORDER.forEach(function (id) {
+    var m = E.MINERALS[id];
+    if (!MINERAL_GROUPS[m.group]) MINERAL_GROUPS[m.group] = [];
+    MINERAL_GROUPS[m.group].push(m);
+  });
+
+  var EXTRA_OXIDES = {
+    tourmaline: ['B2O3', 'Li2O'],
+    spinel: ['V2O3'],
+    magnetite: ['V2O3'],
+    ilmenite: ['V2O3']
+  };
+
+  var ION_ORDER = [
+    'Si', 'Ti', 'Al', 'Cr', 'V', 'Fe3', 'Fe2', 'Mn', 'Mg',
+    'Ca', 'Na', 'K', 'P', 'Ni', 'Zn', 'Sr', 'Ba', 'Zr', 'Nb',
+    'W', 'Sn', 'Co', 'B', 'Li', 'OH'
+  ];
+
+  /* ---------------- 工具 ---------------- */
+
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function chemLabel(key) {
+    return esc(key).replace(/(\d+)/g, '<sub>$1</sub>');
+  }
+
+  function ionHTML(el) {
+    if (el === 'Fe3') return 'Fe<sup>3+</sup>';
+    if (el === 'Fe2') return 'Fe<sup>2+</sup>';
+    return esc(el);
+  }
+
+  function fmtNum(v, digits) {
+    if (typeof v !== 'number' || !isFinite(v)) return '—';
+    var d = (digits === undefined || digits === null) ? 3 : digits;
+    if (Math.abs(v) < Math.pow(10, -d) / 2) return (0).toFixed(d);
+    return v.toFixed(d);
+  }
+
+  function fmtParam(p) {
+    return fmtNum(p.value, p.digits) + (p.unit ? '<span class="unit">' + esc(p.unit) + '</span>' : '');
+  }
+
+  function toast(msg) {
+    var el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.classList.remove('show'); }, 2200);
+  }
+
+  function download(filename, text, mime) {
+    var blob = new Blob([text], { type: (mime || 'text/plain') + ';charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+  }
+
+  function csvEscape(v) {
+    var s = String(v === null || v === undefined ? '' : v);
+    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  /* ---------------- 初始化 ---------------- */
+
+  function buildMineralSelect() {
+    var sel = $('#mineralSelect');
+    sel.innerHTML = '';
+    Object.keys(MINERAL_GROUPS).forEach(function (g) {
+      var og = document.createElement('optgroup');
+      og.label = g;
+      MINERAL_GROUPS[g].forEach(function (m) {
+        var opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.label + ' · ' + m.en;
+        og.appendChild(opt);
+      });
+      sel.appendChild(og);
+    });
+    sel.value = state.mineralId;
+  }
+
+  function visibleOxideKeys() {
+    var keys = state.showAll ? E.ALL_OXIDE_KEYS.slice() : E.COMMON_OXIDE_KEYS.slice();
+    var extra = EXTRA_OXIDES[state.mineralId] || [];
+    extra.forEach(function (k) { if (keys.indexOf(k) === -1) keys.push(k); });
+    return keys;
+  }
+
+  function renderOxideGrid() {
+    var grid = $('#oxideGrid');
+    grid.innerHTML = '';
+    visibleOxideKeys().forEach(function (key) {
+      var ox = E.OXIDE_BY_KEY[key];
+      if (!ox) return;
+      var wrap = document.createElement('div');
+      wrap.className = 'ox';
+      var label = document.createElement('label');
+      label.setAttribute('for', 'ox-' + key);
+      label.innerHTML = chemLabel(key);
+      var input = document.createElement('input');
+      input.id = 'ox-' + key;
+      input.type = 'text';
+      input.inputMode = 'decimal';
+      input.autocomplete = 'off';
+      input.dataset.key = key;
+      input.setAttribute('aria-label', key + ' wt%');
+      var v = state.values[key];
+      input.value = (v === undefined || v === null || v === 0 || v === '') ? '' : v;
+      input.addEventListener('input', function () {
+        state.values[key] = input.value;
+        updateTotal();
+        scheduleCalc();
+      });
+      input.addEventListener('focus', function () { input.select(); });
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+      grid.appendChild(wrap);
+    });
+  }
+
+  function setValues(data) {
+    state.values = {};
+    Object.keys(data || {}).forEach(function (k) {
+      if (data[k] !== null && data[k] !== undefined && data[k] !== '') state.values[k] = data[k];
+    });
+    renderOxideGrid();
+    updateTotal();
+  }
+
+  function updateTotal() {
+    var total = 0;
+    Object.keys(state.values).forEach(function (k) {
+      if (E.OXIDE_BY_KEY[k]) total += E.toNumber(state.values[k]);
+    });
+    $('#wtTotal').textContent = total.toFixed(2);
+    var hint = $('#sumHint');
+    var txt = '等待输入';
+    var cls = 'bad';
+    if (total <= 0) { txt = ''; }
+    else if (total < 98) { txt = '偏低（可能未测 H₂O/CO₂）'; cls = 'bad'; }
+    else if (total > 101.5) { txt = '偏高，请检查'; cls = 'bad'; }
+    else { txt = '正常'; cls = 'ok'; }
+    hint.textContent = txt;
+    hint.className = cls;
+  }
+
+  function updateBasisHint() {
+    var m = E.MINERALS[state.mineralId];
+    $('#basisHint').value = m.oxygen + ' O · ' + m.hint.replace(/ · \d+ O$/, '');
+  }
+
+  var calcTimer = null;
+  function scheduleCalc() {
+    clearTimeout(calcTimer);
+    calcTimer = setTimeout(function () {
+      var has = Object.keys(state.values).some(function (k) { return E.toNumber(state.values[k]) > 0; });
+      if (has) calculate();
+    }, 380);
+  }
+
+  /* ---------------- 单样品计算与渲染 ---------------- */
+
+  function calculate() {
+    var m = E.MINERALS[state.mineralId];
+    try {
+      var r = E.calculate(state.mineralId, state.values, { fe3Mode: state.feMode });
+      state.lastResult = r;
+      renderResult(r);
+      saveState();
+    } catch (err) {
+      renderError(err.message || String(err));
+    }
+  }
+
+  function renderError(msg) {
+    $('#resultPanel').innerHTML =
+      '<div class="result-empty"><div class="glyph">!</div>' +
+      '<div>' + esc(msg) + '</div></div>';
+  }
+
+  function renderResult(r) {
+    var panel = $('#resultPanel');
+    var fePct = r.FeT > 0 ? 100 * r.Fe3 / r.FeT : 0;
+    var badgeClass = fePct > 0 ? '' : 'amber';
+    var html = '';
+
+    html += '<div class="result-head">';
+    html += '  <div>';
+    html += '    <div class="result-title"><h2>' + esc(r.name) + '</h2>';
+    html += '      <span class="badge">' + esc(r.mineralLabel) + '</span>';
+    html += '      <span class="badge ' + badgeClass + '">Fe³⁺/ΣFe ' + fePct.toFixed(1) + '%</span>';
+    html += '    </div>';
+    html += '    <div class="result-sub">' + esc(r.subtitle || '') + (r.subtitle ? ' · ' : '') + '氧基准 ' + r.oxygen + ' O · 样品 ' + esc($('#sampleName').value || '未命名') + '</div>';
+    html += '  </div>';
+    html += '  <div class="result-actions">';
+    html += '    <button class="btn small" id="copyResultBtn" type="button">复制结果</button>';
+    html += '    <button class="btn small" id="printResultBtn" type="button">打印</button>';
+    html += '  </div>';
+    html += '</div>';
+
+    html += '<div class="formula-box">';
+    html += '  <div class="formula-label">结构式 · Formula</div>';
+    html += '  <div class="formula">' + r.formula.html + '</div>';
+    html += '</div>';
+
+    html += '<div class="params">';
+    r.params.forEach(function (p) {
+      html += '<div class="param"><div class="k">' + esc(p.label) + '</div><div class="v">' + fmtParam(p) + '</div></div>';
+    });
+    html += '</div>';
+
+    html += '<div class="section"><h3>晶体化学位置</h3>';
+    html += '<table class="sites"><thead><tr><th>位置</th><th>占位</th><th>Σ</th><th>离子（apfu）</th></tr></thead><tbody>';
+    r.sites.forEach(function (s) {
+      var ions = [];
+      ION_ORDER.forEach(function (el) {
+        if ((s.ions[el] || 0) > 0.0005) ions.push(ionHTML(el) + '<sub>' + s.ions[el].toFixed(3) + '</sub>');
+      });
+      Object.keys(s.ions).forEach(function (el) {
+        if (ION_ORDER.indexOf(el) === -1 && s.ions[el] > 0.0005) ions.push(ionHTML(el) + '<sub>' + s.ions[el].toFixed(3) + '</sub>');
+      });
+      html += '<tr>';
+      html += '<td class="site-name">' + esc(s.label) + '<div class="site-desc">' + esc(s.desc) + '</div></td>';
+      html += '<td>' + (s.cap === null ? '—' : s.cap) + '</td>';
+      html += '<td class="sum">' + s.sum.toFixed(3) + '</td>';
+      html += '<td class="ions">' + (ions.join('') || '—') + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+
+    if (r.warnings && r.warnings.length) {
+      html += '<div class="warnings"><ul>';
+      r.warnings.forEach(function (w) { html += '<li>' + esc(w) + '</li>'; });
+      html += '</ul></div>';
+    }
+
+    if (r.notes && r.notes.length) {
+      html += '<div class="notes"><ul>';
+      r.notes.forEach(function (n) { html += '<li>' + esc(n) + '</li>'; });
+      html += '</ul></div>';
+    }
+
+    html += '<details class="trace"><summary>计算过程与归一化数据</summary><div class="trace-body">';
+    html += '<table class="details"><tbody>';
+    html += '<tr><td>氧基准</td><td>' + r.oxygen + ' O（实际计算用 ' + r.O_per.toFixed(3) + ' O）</td></tr>';
+    html += '<tr><td>归一化系数</td><td>' + r.scale.toFixed(6) + '</td></tr>';
+    html += '<tr><td>阳离子总数</td><td>' + r.cationSum.toFixed(3) + ' apfu</td></tr>';
+    html += '<tr><td>Fe 分配</td><td>Fe³⁺ = ' + r.Fe3.toFixed(3) + '，Fe²⁺ = ' + r.Fe2.toFixed(3) + '（' + feModeLabel(r.feMode) + '）</td></tr>';
+    if (r.OH > 0.001) html += '<tr><td>结构 OH（按 O 基准）</td><td>' + r.OH.toFixed(3) + '</td></tr>';
+    if (r.ctx && r.ctx.h2oMol > 0) html += '<tr><td>补入 H₂O</td><td>' + (r.ctx.h2oMol * 18.015).toFixed(2) + ' wt%（化学计量）</td></tr>';
+    html += '<tr><td>电荷误差</td><td>' + r.chargeError.toFixed(4) + '</td></tr>';
+    html += '</tbody></table>';
+
+    html += '<h3 style="margin-top:12px;">氧化物 → 摩尔数</h3>';
+    html += '<table class="details"><thead><tr><th>氧化物</th><th>wt%</th><th>摩尔数</th><th>O 贡献</th></tr></thead><tbody>';
+    r.oxideDetails.forEach(function (d) {
+      html += '<tr><td>' + chemLabel(d.key) + '</td><td>' + d.wt.toFixed(2) + '</td><td>' + d.mol.toFixed(5) + '</td><td>' + d.o.toFixed(5) + '</td></tr>';
+    });
+    html += '</tbody></table></div></details>';
+
+    panel.innerHTML = html;
+
+    var copyBtn = $('#copyResultBtn');
+    if (copyBtn) copyBtn.addEventListener('click', copyResult);
+    var printBtn = $('#printResultBtn');
+    if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
+  }
+
+  function feModeLabel(mode) {
+    var map = { auto: '自动', charge: '电荷平衡', allFe2: '全部 Fe²⁺', input: '按输入 Fe₂O₃', pyroxene: '辉石化学计量', garnet: '石榴石化学计量', spinel: '尖晶石化学计量', ilmenite: '钛铁矿化学计量', epidote: '绿帘石 Al 不足' };
+    return map[mode] || mode;
+  }
+
+  function copyResult() {
+    var r = state.lastResult;
+    if (!r) return;
+    var lines = [];
+    lines.push('样品: ' + ($('#sampleName').value || '未命名'));
+    lines.push('矿物: ' + r.mineralLabel);
+    lines.push('分类: ' + r.name);
+    lines.push('结构式: ' + r.formula.text);
+    lines.push('Fe3+/ΣFe: ' + (r.FeT > 0 ? (100 * r.Fe3 / r.FeT).toFixed(2) : '0.00') + '%');
+    lines.push('参数:');
+    r.params.forEach(function (p) { lines.push('  ' + p.label + ' = ' + fmtNum(p.value, p.digits) + (p.unit ? ' ' + p.unit : '')); });
+    if (r.warnings.length) lines.push('提示: ' + r.warnings.join('；'));
+    var text = lines.join('\n');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast('结果已复制到剪贴板'); }, function () { fallbackCopy(text); });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); toast('结果已复制'); } catch (e) { toast('复制失败，请手动选择'); }
+    ta.remove();
+  }
+
+  /* ---------------- 批量 ---------------- */
+
+  function batchCalculate() {
+    var text = $('#batchText').value;
+    if (!text.trim()) { toast('请先粘贴批量数据'); return; }
+    var rows;
+    try {
+      rows = E.parseBatch(text, state.mineralId);
+    } catch (err) {
+      toast(err.message || '批量数据解析失败');
+      return;
+    }
+    state.batchItems = [];
+    state.batchResults = [];
+    rows.forEach(function (row) {
+      var item = { sample: row.sample, mineralId: row.mineralId, data: row.data, result: null, error: null };
+      try {
+        item.result = E.calculate(row.mineralId, row.data, { fe3Mode: state.feMode });
+        state.batchResults.push(item.result);
+      } catch (err) {
+        item.error = err.message || String(err);
+      }
+      state.batchItems.push(item);
+    });
+    renderBatch();
+  }
+
+  function renderBatch() {
+    var items = state.batchItems;
+    var wrap = $('#batchTableWrap');
+    var summary = $('#batchSummary');
+    var count = $('#batchCount');
+    if (!items.length) {
+      wrap.innerHTML = '<div class="empty-mini">计算结果会显示在这里。</div>';
+      summary.textContent = '';
+      count.textContent = '尚未计算';
+      $('#batchExportBtn').disabled = true;
+      return;
+    }
+    var ok = items.filter(function (x) { return x.result; }).length;
+    var bad = items.length - ok;
+    count.textContent = items.length + ' 个样品';
+    summary.textContent = '成功 ' + ok + ' 个' + (bad ? '，失败 ' + bad + ' 个' : '');
+
+    var html = '<table class="batch"><thead><tr>';
+    html += '<th>#</th><th>样品</th><th>矿物</th><th>分类</th><th>结构式</th><th>Mg#</th><th>Fe³⁺/ΣFe</th><th>主要参数</th>';
+    html += '</tr></thead><tbody>';
+    items.forEach(function (item, i) {
+      if (item.error) {
+        html += '<tr><td>' + (i + 1) + '</td><td>' + esc(item.sample) + '</td><td>' + esc((E.MINERALS[item.mineralId] || {}).label || item.mineralId) + '</td><td colspan="5" style="color:#b91c1c;">' + esc(item.error) + '</td></tr>';
+        return;
+      }
+      var r = item.result;
+      var mg = r.params.find(function (p) { return p.label.indexOf('Mg#') === 0; });
+      var fe = r.params.find(function (p) { return p.label.indexOf('Fe3+') === 0; });
+      var main = r.params.slice(0, 3).map(function (p) { return p.label + ' ' + fmtNum(p.value, p.digits) + (p.unit ? p.unit : ''); }).join(' · ');
+      html += '<tr data-batch-index="' + i + '" style="cursor:pointer;" title="点击载入到单样品计算">';
+      html += '<td>' + (i + 1) + '</td>';
+      html += '<td>' + esc(item.sample) + '</td>';
+      html += '<td>' + esc(r.mineralLabel) + '</td>';
+      html += '<td>' + esc(r.name) + '</td>';
+      html += '<td class="formula-cell" title="' + esc(r.formula.text) + '">' + r.formula.html + '</td>';
+      html += '<td>' + (mg ? fmtNum(mg.value, mg.digits) : '—') + '</td>';
+      html += '<td>' + (fe ? fmtNum(fe.value, fe.digits) + '%' : (r.FeT > 0 ? (100 * r.Fe3 / r.FeT).toFixed(1) + '%' : '—')) + '</td>';
+      html += '<td>' + esc(main) + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+    $('#batchExportBtn').disabled = !state.batchResults.length;
+
+    $$('#batchTableWrap tr[data-batch-index]').forEach(function (tr) {
+      tr.addEventListener('click', function () {
+        var idx = Number(tr.dataset.batchIndex);
+        var item = items[idx];
+        if (!item || !item.result) return;
+        state.mineralId = item.mineralId;
+        $('#mineralSelect').value = state.mineralId;
+        $('#sampleName').value = item.sample;
+        setValues(item.data);
+        updateBasisHint();
+        switchTab('single');
+        calculate();
+      });
+    });
+  }
+
+  function exportBatchCSV() {
+    if (!state.batchResults.length) return;
+    var labels = [];
+    state.batchResults.forEach(function (r) {
+      r.params.forEach(function (p) { if (labels.indexOf(p.label) === -1) labels.push(p.label); });
+    });
+    var header = ['Sample', 'Mineral', 'Name', 'Formula', 'O', 'Fe3+', 'Fe2+', 'Fe3+/Fe(%)'].concat(labels).concat(['Warnings']);
+    var lines = [header.map(csvEscape).join(',')];
+    state.batchItems.forEach(function (item) {
+      if (!item.result) {
+        var errRow = [item.sample, (E.MINERALS[item.mineralId] || {}).label || item.mineralId, 'ERROR', item.error || ''];
+        while (errRow.length < header.length - 1) errRow.push('');
+        errRow.push('');
+        lines.push(errRow.map(csvEscape).join(','));
+        return;
+      }
+      var r = item.result;
+      var row = [item.sample, r.mineralLabel, r.name, r.formula.text, r.oxygen, fmtNum(r.Fe3, 3), fmtNum(r.Fe2, 3), (r.FeT > 0 ? (100 * r.Fe3 / r.FeT).toFixed(2) : '0.00')];
+      labels.forEach(function (lab) {
+        var p = r.params.find(function (x) { return x.label === lab; });
+        row.push(p ? fmtNum(p.value, p.digits) : '');
+      });
+      row.push((r.warnings || []).join('；'));
+      lines.push(row.map(csvEscape).join(','));
+    });
+    download('矿物计算结果_' + new Date().toISOString().slice(0, 10) + '.csv', '\ufeff' + lines.join('\r\n'), 'text/csv');
+    toast('已导出 CSV（Excel 可直接打开）');
+  }
+
+  function loadBatchDemo() {
+    var lines = [
+      'Sample,Mineral,SiO2,TiO2,Al2O3,Cr2O3,FeO,Fe2O3,MnO,MgO,CaO,Na2O,K2O,P2O5',
+      'PL52F-1,单斜辉石,50.9985,0.789901,2.60428,0,7.21763,0,0.223868,15.0213,20.8393,0.39793,0,0',
+      'PL52F-1,橄榄石,37.8353,0,0,0,24.4077,0,0.438392,37.1075,0.016889,0,0,0',
+      '#4,角闪石,46.405,1.686,7.39,0.045,14.493,0,0.252,13.346,11.077,1.774,0.142,0',
+      'PL52F-1,斜长石,50.3879,0.02782,30.968,0,0.641908,0,0,0.039238,13.193,3.86193,0.10943,0.025718',
+      '07HT76-4-1,石榴石,39.818,0,18.546,0,5.061,0,0.648,0.001,36.887,0,0.035,0',
+      'PL54C,尖晶石,0.105478,0.386907,63.8171,0.091939,18.0735,0,0.093632,16.7608,0,0,0,0'
+    ];
+    $('#batchText').value = lines.join('\n');
+    batchCalculate();
+    toast('已载入批量示例');
+  }
+
+  function loadBatchFile(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      $('#batchText').value = String(reader.result || '');
+      batchCalculate();
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  /* ---------------- 交互 ---------------- */
+
+  function switchTab(name) {
+    var single = name === 'single';
+    $('#tabSingle').classList.toggle('active', single);
+    $('#tabBatch').classList.toggle('active', !single);
+    $('#tabSingle').setAttribute('aria-selected', String(single));
+    $('#tabBatch').setAttribute('aria-selected', String(!single));
+    $('#paneSingle').classList.toggle('active', single);
+    $('#paneBatch').classList.toggle('active', !single);
+  }
+
+  function onMineralChange() {
+    state.mineralId = $('#mineralSelect').value;
+    var sample = E.sampleFor(state.mineralId);
+    $('#sampleName').value = sample.name;
+    setValues(sample.data);
+    updateBasisHint();
+    calculate();
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem('mineralEmpState', JSON.stringify({
+        mineralId: state.mineralId,
+        values: state.values,
+        feMode: state.feMode,
+        showAll: state.showAll
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
+  function restoreState() {
+    try {
+      var raw = localStorage.getItem('mineralEmpState');
+      if (!raw) return false;
+      var s = JSON.parse(raw);
+      if (!s || !E.MINERALS[s.mineralId]) return false;
+      state.mineralId = s.mineralId;
+      state.feMode = s.feMode || 'auto';
+      state.showAll = !!s.showAll;
+      state.values = s.values || {};
+      $('#mineralSelect').value = state.mineralId;
+      $('#feMode').value = state.feMode;
+      $('#showAllOxides').checked = state.showAll;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function init() {
+    buildMineralSelect();
+
+    var restored = restoreState();
+    if (!restored) {
+      state.mineralId = 'cpx';
+      var sample = E.sampleFor(state.mineralId);
+      $('#sampleName').value = sample.name;
+      state.values = sample.data;
+    } else {
+      $('#sampleName').value = E.sampleFor(state.mineralId).name;
+    }
+
+    $('#mineralSelect').value = state.mineralId;
+    renderOxideGrid();
+    updateBasisHint();
+    updateTotal();
+
+    $('#mineralSelect').addEventListener('change', onMineralChange);
+    $('#feMode').addEventListener('change', function () {
+      state.feMode = $('#feMode').value;
+      scheduleCalc();
+    });
+    $('#showAllOxides').addEventListener('change', function () {
+      state.showAll = $('#showAllOxides').checked;
+      renderOxideGrid();
+      updateTotal();
+      scheduleCalc();
+    });
+    $('#calcBtn').addEventListener('click', calculate);
+    $('#demoBtn').addEventListener('click', function () {
+      var sample = E.sampleFor(state.mineralId);
+      $('#sampleName').value = sample.name;
+      setValues(sample.data);
+      calculate();
+      toast('已载入示例数据');
+    });
+    $('#clearBtn').addEventListener('click', function () {
+      setValues({});
+      state.lastResult = null;
+      $('#resultPanel').innerHTML = '<div class="result-empty"><div class="glyph">◈</div><div>已清空。输入氧化物含量后点击“计算结构式”。</div></div>';
+      saveState();
+    });
+    $('#openMethod').addEventListener('click', function () { $('#methodModal').classList.add('open'); });
+    $('#closeMethod').addEventListener('click', function () { $('#methodModal').classList.remove('open'); });
+    $('#methodModal').addEventListener('click', function (e) { if (e.target === $('#methodModal')) $('#methodModal').classList.remove('open'); });
+    $('#printBtn').addEventListener('click', function () { window.print(); });
+
+    $('#tabSingle').addEventListener('click', function () { switchTab('single'); });
+    $('#tabBatch').addEventListener('click', function () { switchTab('batch'); });
+
+    $('#batchCalcBtn').addEventListener('click', batchCalculate);
+    $('#batchDemoBtn').addEventListener('click', loadBatchDemo);
+    $('#batchExportBtn').addEventListener('click', exportBatchCSV);
+    $('#batchTemplateBtn').addEventListener('click', function () {
+      download('批量计算模板.csv', '\ufeff' + E.templateCSV(state.mineralId), 'text/csv');
+    });
+    $('#batchFileBtn').addEventListener('click', function () { $('#batchFile').click(); });
+    $('#batchFile').addEventListener('change', function (e) {
+      if (e.target.files && e.target.files[0]) loadBatchFile(e.target.files[0]);
+      e.target.value = '';
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); calculate(); }
+    });
+
+    calculate();
+
+    if (window.location && window.location.hash === '#batch') {
+      switchTab('batch');
+      loadBatchDemo();
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+</script>
+</body>
+</html>

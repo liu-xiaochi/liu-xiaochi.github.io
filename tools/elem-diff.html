@@ -1,0 +1,2478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ElemDiff Web：离线可用的元素扩散正演、剖面反演与封闭温度计算器">
+<title>ElemDiff Web — 元素扩散模拟器</title>
+<style>:root {
+  --bg: #eef2f7;
+  --panel: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #dbe3ee;
+  --accent: #0f766e;
+  --accent-2: #2563eb;
+  --danger: #b91c1c;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 500px at 10% -10%, #dbeafe 0%, transparent 60%),
+    radial-gradient(900px 400px at 100% 0%, #ccfbf1 0%, transparent 55%),
+    var(--bg);
+  color: var(--ink);
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+
+header.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px 14px;
+  background: linear-gradient(120deg, #0b1f3a 0%, #123b5d 55%, #0f766e 100%);
+  color: #f8fafc;
+  box-shadow: 0 6px 24px rgba(2, 6, 23, 0.25);
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.logo {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  font-size: 22px;
+}
+.brand h1 { margin: 0; font-size: 21px; letter-spacing: 0.4px; }
+.brand h1 span { color: #5eead4; font-weight: 500; }
+.brand p { margin: 3px 0 0; color: #cbd5e1; font-size: 12px; }
+.header-actions { display: flex; gap: 8px; }
+
+nav.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 24px 0;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.tab {
+  appearance: none;
+  border: 1px solid transparent;
+  background: rgba(255,255,255,0.55);
+  color: #334155;
+  padding: 9px 18px;
+  border-radius: 10px 10px 0 0;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+.tab:hover { background: #fff; }
+.tab.active {
+  background: #fff;
+  color: var(--accent);
+  font-weight: 700;
+  border-color: var(--line);
+  border-bottom-color: #fff;
+  box-shadow: 0 -2px 8px rgba(15,23,42,0.04);
+}
+
+main {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 24px 24px;
+}
+.panel { display: none; }
+.panel.active {
+  display: grid;
+  grid-template-columns: 390px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.panel.about-panel.active { display: block; }
+
+.controls {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  max-height: calc(100vh - 170px);
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  scrollbar-color: #94a3b8 #e2e8f0;
+  scrollbar-width: thin;
+}
+.controls::-webkit-scrollbar { width: 8px; }
+.controls::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 0 0 12px;
+  padding: 10px 12px 12px;
+  background: #fbfdff;
+}
+fieldset:last-child { margin-bottom: 0; }
+legend {
+  padding: 0 6px;
+  color: #0f766e;
+  font-weight: 700;
+  font-size: 13px;
+}
+.field { margin: 7px 0; }
+.field label {
+  display: block;
+  color: #475569;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.field .hint { color: #94a3b8; font-weight: 400; }
+input[type="number"], input[type="text"], select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  outline: none;
+  transition: 0.15s ease;
+}
+input:focus, select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56,189,248,0.18);
+}
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+.note {
+  color: #64748b;
+  font-size: 11.5px;
+  line-height: 1.55;
+  margin: 6px 0 0;
+  padding: 7px 9px;
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+
+button {
+  appearance: none;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.15s ease;
+  font-family: inherit;
+}
+button:hover { border-color: #94a3b8; background: #f8fafc; }
+button.primary {
+  background: linear-gradient(120deg, #0f766e, #0d9488);
+  border-color: #0f766e;
+  color: #fff;
+  font-weight: 700;
+}
+button.primary:hover { filter: brightness(1.06); }
+button.ghost {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.28);
+  color: #f8fafc;
+}
+button.ghost:hover { background: rgba(255,255,255,0.20); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.view {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px 12px;
+  min-width: 0;
+}
+.view-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.view-head h2 { margin: 0; font-size: 16px; }
+.view-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: min(58vh, 540px);
+  min-height: 340px;
+  margin-top: 6px;
+}
+canvas { width: 100%; height: 100%; display: block; }
+.info {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #334155;
+  font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow: auto;
+  max-height: 170px;
+}
+
+.file-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.file-row input[type="file"] { display: none; }
+.file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px dashed #94a3b8;
+  border-radius: 8px;
+  color: #0f766e;
+  background: #f0fdfa;
+  cursor: pointer;
+  font-size: 13px;
+}
+.file-label:hover { border-color: #0f766e; }
+.file-name { color: #64748b; font-size: 12px; min-height: 18px; }
+
+.about {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 26px 34px;
+  line-height: 1.8;
+  max-width: 980px;
+  margin: 0 auto;
+}
+.about h2 { margin: 0 0 10px; color: #0f766e; font-size: 20px; }
+.about h3 { margin: 22px 0 6px; font-size: 15px; color: #123b5d; }
+.about p, .about li { color: #334155; }
+.about code {
+  background: #f1f5f9;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-family: Consolas, monospace;
+  color: #b91c1c;
+}
+.about .formula {
+  background: #f8fafc;
+  border-left: 3px solid #0f766e;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-family: Consolas, monospace;
+  overflow-x: auto;
+}
+
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  max-width: 420px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.28);
+  font-size: 13px;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: 0.2s ease;
+  z-index: 50;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { background: #991b1b; }
+
+footer {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 4px 24px 28px;
+  color: #94a3b8;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 980px) {
+  .panel.active { grid-template-columns: 1fr; }
+  .controls { max-height: none; }
+  header.app-header { padding: 14px 16px; }
+  nav.tabs, main, footer { padding-left: 16px; padding-right: 16px; }
+  .canvas-wrap { height: 380px; }
+}
+@media (max-width: 620px) {
+  .brand p { display: none; }
+  .brand h1 { font-size: 18px; }
+  .tab { padding: 8px 12px; font-size: 13px; }
+  .grid2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="brand">
+    <div class="logo">◈</div>
+    <div>
+      <h1>ElemDiff <span>Web</span></h1>
+      <p>元素扩散 · 剖面反演 · 封闭温度 &nbsp;|&nbsp; 单文件离线版</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button id="btn-demo" class="ghost">一键示例</button>
+    <button id="btn-about" class="ghost">关于</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab active" data-tab="forward" role="tab">正演</button>
+  <button class="tab" data-tab="inverse" role="tab">反演</button>
+  <button class="tab" data-tab="closure" role="tab">封闭温度</button>
+  <button class="tab" data-tab="about" role="tab">说明</button>
+</nav>
+
+<main>
+  <!-- ================= 正演 ================= -->
+  <section id="tab-forward" class="panel active">
+    <aside class="controls">
+      <fieldset>
+        <legend>1. 几何与网格</legend>
+        <div class="field">
+          <label for="f-geometry">几何</label>
+          <select id="f-geometry">
+            <option value="sphere" selected>球体 (sphere)</option>
+            <option value="cylinder">圆柱 (cylinder)</option>
+            <option value="plane">平面 (plane)</option>
+          </select>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="f-radius">外半径 <span class="hint">µm</span></label>
+            <input id="f-radius" type="number" step="any" value="120">
+          </div>
+          <div class="field">
+            <label for="f-interface">晶体/熔体界面 <span class="hint">µm，0=单层</span></label>
+            <input id="f-interface" type="number" step="any" value="0">
+          </div>
+          <div class="field">
+            <label for="f-ncells">晶体区网格数</label>
+            <input id="f-ncells" type="number" step="1" min="4" value="200">
+          </div>
+          <div class="field">
+            <label for="f-nouter">熔体区网格数</label>
+            <input id="f-nouter" type="number" step="1" min="4" value="100">
+          </div>
+        </div>
+        <p class="note">界面为 0 表示单层。双层时界面必须位于 0 与外半径之间，界面处满足 C晶体 = Kd·C熔体，通量连续。</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>2. 扩散系数 D = D0·exp(−Ea/RT)·(C/Cref)^m</legend>
+        <div class="grid2">
+          <div class="field">
+            <label for="f-d0">晶体 D0 <span class="hint">m²/s</span></label>
+            <input id="f-d0" type="text" value="1.52e-6">
+          </div>
+          <div class="field">
+            <label for="f-ea">晶体 Ea <span class="hint">kJ/mol</span></label>
+            <input id="f-ea" type="number" step="any" value="273">
+          </div>
+          <div class="field">
+            <label for="f-m">成分指数 m <span class="hint">0=与 C 无关</span></label>
+            <input id="f-m" type="number" step="any" value="0">
+          </div>
+          <div class="field">
+            <label for="f-kd">分配系数 Kd <span class="hint">C晶体/C熔体</span></label>
+            <input id="f-kd" type="number" step="any" value="8">
+          </div>
+          <div class="field">
+            <label for="f-d0m">熔体 D0 <span class="hint">m²/s</span></label>
+            <input id="f-d0m" type="text" value="1e-5">
+          </div>
+          <div class="field">
+            <label for="f-eam">熔体 Ea <span class="hint">kJ/mol</span></label>
+            <input id="f-eam" type="number" step="any" value="150">
+          </div>
+        </div>
+        <p class="note">双层模型使用熔体参数；单层模型忽略。D0 可写科学计数法，如 1.52e-6。</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>3. 温度历史</legend>
+        <div class="field">
+          <label for="f-thermal">模式</label>
+          <select id="f-thermal">
+            <option value="isothermal" selected>恒温</option>
+            <option value="linear">线性冷却</option>
+            <option value="asymptotic">1/T 线性冷却</option>
+          </select>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="f-t0">初始温度 T0 <span class="hint">°C</span></label>
+            <input id="f-t0" type="number" step="any" value="650">
+          </div>
+          <div class="field">
+            <label for="f-t1">结束温度 T1 <span class="hint">°C</span></label>
+            <input id="f-t1" type="number" step="any" value="450">
+          </div>
+          <div class="field">
+            <label for="f-duration">总时长 <span class="hint">ka</span></label>
+            <input id="f-duration" type="number" step="any" value="100">
+          </div>
+        </div>
+        <p class="note">恒温时忽略 T1。线性冷却：T 随时间线性变化；1/T 线性：1/T(K) 随时间线性变化。</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>4. 初始条件与边界</legend>
+        <div class="field">
+          <label for="f-initial">初始分布</label>
+          <select id="f-initial">
+            <option value="uniform" selected>均匀</option>
+            <option value="step">阶梯（左侧高、右侧低）</option>
+            <option value="plateau">台地（中间高、两侧低）</option>
+          </select>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="f-c0">均匀浓度</label>
+            <input id="f-c0" type="number" step="any" value="120">
+          </div>
+          <div class="field">
+            <label for="f-left">左侧浓度</label>
+            <input id="f-left" type="number" step="any" value="120">
+          </div>
+          <div class="field">
+            <label for="f-right">右侧浓度</label>
+            <input id="f-right" type="number" step="any" value="20">
+          </div>
+          <div class="field">
+            <label for="f-plateau">台地浓度</label>
+            <input id="f-plateau" type="number" step="any" value="120">
+          </div>
+          <div class="field">
+            <label for="f-x1">x1 <span class="hint">µm</span></label>
+            <input id="f-x1" type="number" step="any" value="60">
+          </div>
+          <div class="field">
+            <label for="f-x2">x2 <span class="hint">µm</span></label>
+            <input id="f-x2" type="number" step="any" value="100">
+          </div>
+          <div class="field">
+            <label for="f-outerbc">外边界</label>
+            <select id="f-outerbc">
+              <option value="dirichlet" selected>固定浓度</option>
+              <option value="neumann">零通量</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-outerval">外边界浓度</label>
+            <input id="f-outerval" type="number" step="any" value="20">
+          </div>
+          <div class="field">
+            <label for="f-innerbc">平面左边界</label>
+            <select id="f-innerbc">
+              <option value="neumann" selected>零通量</option>
+              <option value="dirichlet">固定浓度</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-innerval">左边界浓度</label>
+            <input id="f-innerval" type="number" step="any" value="0">
+          </div>
+        </div>
+        <p class="note">球/柱在 r=0 处自动零通量；平面几何才使用左边界设置。</p>
+      </fieldset>
+    </aside>
+
+    <section class="view">
+      <div class="view-head">
+        <h2>浓度剖面</h2>
+        <div class="view-actions">
+          <button id="f-run" class="primary">▶ 运行正演</button>
+          <button id="f-csv">导出 CSV</button>
+          <button id="f-png">导出 PNG</button>
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="f-canvas"></canvas></div>
+      <pre id="f-info" class="info">点击“运行正演”开始。默认示例：120 µm 石英球，650 °C，100 ka。</pre>
+    </section>
+  </section>
+
+  <!-- ================= 反演 ================= -->
+  <section id="tab-inverse" class="panel">
+    <aside class="controls">
+      <fieldset>
+        <legend>1. 数据</legend>
+        <div class="file-row">
+          <label class="file-label" for="i-file">＋ 载入 CSV / TXT</label>
+          <input id="i-file" type="file" accept=".csv,.txt,.dat">
+          <button id="i-sample">载入内置示例</button>
+        </div>
+        <div id="i-filename" class="file-name">尚未载入数据</div>
+        <div class="grid2">
+          <div class="field">
+            <label for="i-xunit">距离单位</label>
+            <select id="i-xunit">
+              <option value="um" selected>µm</option>
+              <option value="mm">mm</option>
+              <option value="cm">cm</option>
+              <option value="m">m</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="i-kind">剖面类型</label>
+            <select id="i-kind">
+              <option value="step" selected>阶梯 (step)</option>
+              <option value="plateau">台地 (plateau)</option>
+            </select>
+          </div>
+        </div>
+        <p class="note">CSV 至少两列：距离、浓度；第三列可放 1σ 误差。列名可为 distance/x、concentration/c、sigma/error。Excel 请先另存为 CSV。</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>2. 拟合与时间换算</legend>
+        <div class="grid2">
+          <div class="field">
+            <label for="i-t">温度 T <span class="hint">°C</span></label>
+            <input id="i-t" type="number" step="any" value="650">
+          </div>
+          <div class="field">
+            <label for="i-d0">D0 <span class="hint">m²/s</span></label>
+            <input id="i-d0" type="text" value="1.52e-6">
+          </div>
+          <div class="field">
+            <label for="i-ea">Ea <span class="hint">kJ/mol</span></label>
+            <input id="i-ea" type="number" step="any" value="273">
+          </div>
+        </div>
+        <div class="view-actions" style="margin-top:8px">
+          <button id="i-run" class="primary" style="flex:1">▶ 拟合剖面</button>
+          <button id="i-csv">导出拟合 CSV</button>
+        </div>
+        <p class="note">拟合得到 Dt（m²）。若 T、D0、Ea 有效，会同时给出扩散时间及 1σ 误差。</p>
+      </fieldset>
+    </aside>
+
+    <section class="view">
+      <div class="view-head">
+        <h2>剖面拟合</h2>
+        <div class="view-actions"><span id="i-badge" class="hint" style="color:#64748b;font-size:12px"></span></div>
+      </div>
+      <div class="canvas-wrap"><canvas id="i-canvas"></canvas></div>
+      <pre id="i-info" class="info">载入数据后点击“拟合剖面”。也可以先点“载入内置示例”体验。</pre>
+    </section>
+  </section>
+
+  <!-- ================= 封闭温度 ================= -->
+  <section id="tab-closure" class="panel">
+    <aside class="controls">
+      <fieldset>
+        <legend>Dodson 封闭温度</legend>
+        <div class="field">
+          <label for="c-geometry">几何</label>
+          <select id="c-geometry">
+            <option value="sphere" selected>球体 (A=55)</option>
+            <option value="cylinder">圆柱 (A=27)</option>
+            <option value="plane">平面 (A=9.5)</option>
+          </select>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="c-ea">活化能 Ea <span class="hint">kJ/mol</span></label>
+            <input id="c-ea" type="number" step="any" value="273">
+          </div>
+          <div class="field">
+            <label for="c-d0">指前因子 D0 <span class="hint">m²/s</span></label>
+            <input id="c-d0" type="text" value="1.52e-6">
+          </div>
+          <div class="field">
+            <label for="c-radius">特征半径 a <span class="hint">µm</span></label>
+            <input id="c-radius" type="number" step="any" value="120">
+          </div>
+          <div class="field">
+            <label for="c-rate">冷却速率 <span class="hint">°C/Ma</span></label>
+            <input id="c-rate" type="number" step="any" value="10">
+          </div>
+        </div>
+        <button id="c-run" class="primary" style="width:100%;margin-top:8px">▶ 计算 Tc</button>
+        <p class="note">Tc = Ea / [R ln(A R Tc² D0 / (Ea a² |dT/dt|))]。几何因子 A：球 55、圆柱 27、平面 9.5。</p>
+      </fieldset>
+      <fieldset>
+        <legend>当前结果</legend>
+        <pre id="c-info" class="info" style="margin:0;max-height:none">尚未计算。</pre>
+      </fieldset>
+    </aside>
+
+    <section class="view">
+      <div class="view-head"><h2>Tc 与冷却速率</h2></div>
+      <div class="canvas-wrap"><canvas id="c-canvas"></canvas></div>
+      <pre id="c-extra" class="info">三种几何的 Tc–冷却速率曲线；竖线为当前输入。</pre>
+    </section>
+  </section>
+
+  <!-- ================= 说明 ================= -->
+  <section id="tab-about" class="panel about-panel">
+    <article class="about">
+      <h2>ElemDiff Web 0.1</h2>
+      <p>这是一个<strong>单文件、离线可用</strong>的元素扩散计算器。它把 Python 版 ElemDiff 的核心功能移植到浏览器：不需要安装 Python，不需要服务器，双击 HTML 就能运行。所有计算都在本机浏览器内完成，数据不会上传。</p>
+
+      <h3>三个工作页</h3>
+      <ul>
+        <li><strong>正演</strong>：一维球/柱/平面有限体积扩散，支持 D(T,C)、恒温/线性冷却/1/T 冷却、固定浓度或零通量边界，以及晶体-熔体双层界面（Kd）。</li>
+        <li><strong>反演</strong>：从实测阶梯/台地剖面拟合 Dt 和初始几何，给出 R²、RMSE、约化 χ² 与 1σ 误差；可换算扩散时间。</li>
+        <li><strong>封闭温度</strong>：Dodson (1973) 公式，球/柱/平面三种几何因子。</li>
+      </ul>
+
+      <h3>控制方程</h3>
+      <div class="formula">∂C/∂t = (1/r^γ) ∂/∂r [ r^γ D ∂C/∂r ]，γ = 0（平面）/ 1（圆柱）/ 2（球体）</div>
+      <p>离散采用单元中心有限体积，界面传导率 <code>G = A / (Δr_L/(2D_L) + Δr_R/(2D_R))</code>；时间推进为 Backward Euler，非线性 D(C) 用 Picard 迭代，步长由剖面相对变化自适应控制。</p>
+
+      <h3>双层界面</h3>
+      <div class="formula">C晶体 = Kd · C熔体，D_c ∂C_c/∂r = D_m ∂C_m/∂r</div>
+      <p>消去界面浓度后得到等效传导率 <code>G_int = a c / (a + c/Kd)</code>，其中 <code>a = D_c A/δ_c</code>，<code>c = D_m A/δ_m</code>。这样界面两侧浓度成 Kd 比例、通量连续，闭边界下总质量守恒。</p>
+
+      <h3>反演公式</h3>
+      <div class="formula">阶梯：C = C_L + (C_R−C_L)/2 · erfc((x−x0)/(2√Dt))<br>台地：C = C_out + (C_in−C_out)/2 · [erf((x−x1)/(2√Dt)) − erf((x−x2)/(2√Dt))]</div>
+      <p>用 Nelder–Mead 多初值最小二乘拟合，误差由数值 Jacobian 的线性化协方差估计。反演使用无限介质解析解；当扩散长度接近颗粒半径时，应回到正演页用数值模型核对。</p>
+
+      <h3>封闭温度</h3>
+      <div class="formula">Tc = Ea / [ R · ln( A · R · Tc² · D0 / (Ea · a² · |dT/dt|) ) ]</div>
+      <p>A 为几何因子：球 55、圆柱 27、平面 9.5。公式对 Tc 隐式，程序用阻尼不动点迭代，失败时在 50–5000 K 内扫描二分。</p>
+
+      <h3>单位</h3>
+      <p>长度 µm；时间 ka；D0 m²/s；Ea kJ/mol；温度 °C；浓度任意一致单位。内部换算为 m、s、K、J/mol。</p>
+
+      <h3>与文件夹资料的关系</h3>
+      <ul>
+        <li>DIFF-CL（Ganguly &amp; Tirone, 1999）：封闭温度、冷却年龄、几何因子。</li>
+        <li>Hesse (2012) 有限体积程序：球/柱/平面离散、晶体-熔体界面、质量守恒。</li>
+        <li>Diffuser（吴黎光, 2022）、Lubbers notebook：阶梯/台地剖面与 Dt 拟合。</li>
+        <li>DFENS（Mutch et al.）：扩散计时与参数不确定性的思路。</li>
+        <li>Dodson (1973)：Tc 公式与 A = 55/27/9.5。</li>
+      </ul>
+
+      <h3>局限</h3>
+      <ul>
+        <li>一维对称几何，颗粒内温度均匀；双层界面固定，不模拟晶体生长/溶解。</li>
+        <li>D 只依赖 T 和局部浓度，不含压力、fO₂、各向异性、多组分耦合。</li>
+        <li>反演用无限介质解析解；误差为线性化 1σ，不是完整后验。</li>
+        <li>暂不支持 Excel 直接读取（可另存为 CSV），也不支持 2D/3D。</li>
+      </ul>
+
+      <h3>验证</h3>
+      <p>Python 版与浏览器版使用同一套方程和步长策略。已对照 Crank 解析解检查半空间/球体剖面，检查闭边界质量守恒、双层界面平衡、Dt 反演恢复和 Dodson Tc。Python 测试：<code>python -m unittest discover -s tests -v</code>（9 项通过）。</p>
+
+      <h3>参考文献</h3>
+      <p>Crank (1975); Dodson (1973); Ganguly &amp; Tirone (1999); Hesse et al. (2012); Matthews et al. (2012); Mutch et al. (2022).</p>
+    </article>
+  </section>
+</main>
+
+<footer>
+  <span>ElemDiff Web · 单文件离线版 · 计算在本机浏览器完成</span>
+  <span>Python 版与设计说明见同目录 README.md / 设计说明.md</span>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script>/* ElemDiff Web core — 纯 JavaScript，无 DOM 依赖。
+ * 与 Python 版 elemdiff 使用相同的控制方程、界面条件和时间推进策略。
+ */
+(function (global) {
+  "use strict";
+
+  const R_GAS = 8.31446261815324;
+  const SEC_YEAR = 365.25 * 24 * 3600;
+  const SEC_MA = 1e6 * SEC_YEAR;
+
+  function clamp(x, a, b) { return Math.min(b, Math.max(a, x)); }
+
+  function median(values) {
+    if (!values.length) return NaN;
+    const a = Array.from(values).sort((p, q) => p - q);
+    const m = Math.floor(a.length / 2);
+    return a.length % 2 ? a[m] : 0.5 * (a[m - 1] + a[m]);
+  }
+
+  function norm(v) {
+    let s = 0;
+    for (let i = 0; i < v.length; i++) s += v[i] * v[i];
+    return Math.sqrt(s);
+  }
+
+  /* ---------------- 温度历史 ---------------- */
+
+  function thermalT(th, t) {
+    if (th.mode === "isothermal") return th.t0;
+    if (th.mode === "linear") {
+      if (!(th.duration > 0)) return th.t0;
+      const frac = clamp(t / th.duration, 0, 1);
+      return th.t0 + (th.tEnd - th.t0) * frac;
+    }
+    if (th.mode === "asymptotic") {
+      const t0k = th.t0 + 273.15;
+      if (!(th.eta > 0)) return th.t0;
+      return 1 / (1 / t0k + th.eta * Math.max(t, 0)) - 273.15;
+    }
+    if (th.mode === "table") {
+      return interpolate(th.tableT, th.tableTemp, t);
+    }
+    return th.t0;
+  }
+
+  function thermalDTDT(th, t) {
+    if (th.mode === "isothermal") return 0;
+    if (th.mode === "linear") {
+      if (!(th.duration > 0)) return 0;
+      return (th.tEnd - th.t0) / th.duration;
+    }
+    if (th.mode === "asymptotic") {
+      if (!(th.eta > 0)) return 0;
+      const tk = thermalT(th, t) + 273.15;
+      return -th.eta * tk * tk;
+    }
+    if (th.mode === "table") {
+      // 简单有限差分
+      const h = Math.max(1, 0.001 * (th.duration || 1));
+      return (thermalT(th, t + h) - thermalT(th, t - h)) / (2 * h);
+    }
+    return 0;
+  }
+
+  function interpolate(xs, ys, x) {
+    if (x <= xs[0]) return ys[0];
+    if (x >= xs[xs.length - 1]) return ys[ys.length - 1];
+    for (let i = 0; i < xs.length - 1; i++) {
+      if (x <= xs[i + 1]) {
+        const f = (x - xs[i]) / (xs[i + 1] - xs[i]);
+        return ys[i] + f * (ys[i + 1] - ys[i]);
+      }
+    }
+    return ys[ys.length - 1];
+  }
+
+  /* ---------------- 扩散系数 ---------------- */
+
+  function diffusionScalar(layer, tempC, conc) {
+    const tk = tempC + 273.15;
+    if (!(tk > 0)) return 0;
+    let d = layer.d0 * Math.exp(-layer.ea / (R_GAS * tk));
+    const m = layer.m || 0;
+    if (m !== 0) {
+      const c = Math.max(conc === undefined ? 1 : conc, 1e-30);
+      d *= Math.pow(c / (layer.cref || 1), m);
+    }
+    return d;
+  }
+
+  function dArray(layer, tempC, C) {
+    const out = new Float64Array(C.length);
+    if (!(layer.m || 0)) {
+      const d = diffusionScalar(layer, tempC, 1);
+      out.fill(d);
+    } else {
+      for (let i = 0; i < C.length; i++) out[i] = diffusionScalar(layer, tempC, C[i]);
+    }
+    return out;
+  }
+
+  /* ---------------- 网格 ---------------- */
+
+  function makeMesh(r0, r1, n, gamma) {
+    if (n < 1 || !(r1 > r0)) throw new Error("网格参数无效");
+    const faces = new Float64Array(n + 1);
+    const centers = new Float64Array(n);
+    const widths = new Float64Array(n);
+    const volumes = new Float64Array(n);
+    const areas = new Float64Array(n + 1);
+    for (let i = 0; i <= n; i++) faces[i] = r0 + (r1 - r0) * i / n;
+    for (let i = 0; i < n; i++) {
+      centers[i] = 0.5 * (faces[i] + faces[i + 1]);
+      widths[i] = faces[i + 1] - faces[i];
+    }
+    for (let i = 0; i <= n; i++) {
+      const r = faces[i];
+      areas[i] = gamma === 0 ? 1 : (gamma === 1 ? r : r * r);
+    }
+    for (let i = 0; i < n; i++) {
+      const a = faces[i], b = faces[i + 1];
+      if (gamma === 0) volumes[i] = b - a;
+      else if (gamma === 1) volumes[i] = 0.5 * (b * b - a * a);
+      else volumes[i] = (b * b * b - a * a * a) / 3;
+    }
+    if (gamma > 0 && Math.abs(faces[0]) < 1e-15) areas[0] = 0;
+    let drMin = Infinity;
+    for (let i = 0; i < n; i++) drMin = Math.min(drMin, widths[i]);
+    return { r0, r1, n, gamma, faces, centers, widths, volumes, areas, drMin };
+  }
+
+  function buildMesh(sc) {
+    const gamma = sc.geometry === "plane" ? 0 : (sc.geometry === "cylinder" ? 1 : 2);
+    const two = sc.interface > 0 && sc.melt;
+    let inner, outer = null, interfaceArea = 0, interfaceRadius = 0;
+    if (two) {
+      if (!(sc.interface > 0 && sc.interface < sc.radius)) {
+        throw new Error("界面必须位于 0 与外半径之间");
+      }
+      inner = makeMesh(0, sc.interface, sc.nCells, gamma);
+      outer = makeMesh(sc.interface, sc.radius, sc.nCellsOuter, gamma);
+      interfaceArea = gamma > 0 ? Math.pow(sc.interface, gamma) : 1;
+      interfaceRadius = sc.interface;
+    } else {
+      inner = makeMesh(0, sc.radius, sc.nCells, gamma);
+    }
+    const nIn = inner.n;
+    const nOut = outer ? outer.n : 0;
+    const n = nIn + nOut;
+    const r = new Float64Array(n);
+    const volumes = new Float64Array(n);
+    const layerIndex = new Int8Array(n);
+    r.set(inner.centers, 0); volumes.set(inner.volumes, 0);
+    if (outer) {
+      r.set(outer.centers, nIn); volumes.set(outer.volumes, nIn);
+      layerIndex.fill(1, nIn);
+    }
+    const drMin = outer ? Math.min(inner.drMin, outer.drMin) : inner.drMin;
+    return {
+      inner, outer, interfaceArea, interfaceRadius, r, volumes, layerIndex,
+      nIn, nOut, n, gamma, drMin
+    };
+  }
+
+  /* ---------------- 初始条件 ---------------- */
+
+  function initialValue(ic, r) {
+    const out = new Float64Array(r.length);
+    if (ic.mode === "uniform") {
+      out.fill(ic.value);
+    } else if (ic.mode === "step") {
+      for (let i = 0; i < r.length; i++) out[i] = r[i] < ic.x1 ? ic.left : ic.right;
+    } else if (ic.mode === "plateau") {
+      for (let i = 0; i < r.length; i++) {
+        out[i] = (r[i] >= ic.x1 && r[i] <= ic.x2) ? ic.plateau : ic.left;
+      }
+    } else if (ic.mode === "table") {
+      for (let i = 0; i < r.length; i++) out[i] = interpolate(ic.x, ic.c, r[i]);
+    } else {
+      throw new Error("未知初始条件: " + ic.mode);
+    }
+    return out;
+  }
+
+  /* ---------------- 矩阵组装 ---------------- */
+
+  function addLayer(mesh, d, offset, leftBC, rightBC, diag, lower, upper, b) {
+    const n = mesh.n;
+    for (let f = 1; f < n; f++) {
+      const g = mesh.areas[f] /
+        (mesh.widths[f - 1] / (2 * d[f - 1]) + mesh.widths[f] / (2 * d[f]));
+      diag[offset + f - 1] += g;
+      diag[offset + f] += g;
+      upper[offset + f - 1] -= g;
+      lower[offset + f - 1] -= g;
+    }
+    if (leftBC && leftBC.kind === "dirichlet" && mesh.areas[0] > 0) {
+      const gb = 2 * mesh.areas[0] * d[0] / mesh.widths[0];
+      diag[offset] += gb;
+      b[offset] += gb * leftBC.value;
+    }
+    if (rightBC && rightBC.kind === "dirichlet" && mesh.areas[n] > 0) {
+      const gb = 2 * mesh.areas[n] * d[n - 1] / mesh.widths[n - 1];
+      diag[offset + n - 1] += gb;
+      b[offset + n - 1] += gb * rightBC.value;
+    }
+  }
+
+  function assemble(sc, mesh, tempC, C) {
+    const n = mesh.n;
+    const diag = new Float64Array(n);
+    const lower = new Float64Array(Math.max(n - 1, 0));
+    const upper = new Float64Array(Math.max(n - 1, 0));
+    const b = new Float64Array(n);
+
+    if (!mesh.outer) {
+      const d = dArray(sc.crystal, tempC, C);
+      addLayer(mesh.inner, d, 0, sc.innerBC, sc.outerBC, diag, lower, upper, b);
+    } else {
+      const dIn = dArray(sc.crystal, tempC, C.subarray(0, mesh.nIn));
+      const dOut = dArray(sc.melt, tempC, C.subarray(mesh.nIn));
+      addLayer(mesh.inner, dIn, 0, sc.innerBC, null, diag, lower, upper, b);
+      addLayer(mesh.outer, dOut, mesh.nIn, null, sc.outerBC, diag, lower, upper, b);
+
+      const area = mesh.interfaceArea;
+      const dc = 0.5 * mesh.inner.widths[mesh.inner.n - 1];
+      const dm = 0.5 * mesh.outer.widths[0];
+      const a = dIn[dIn.length - 1] * area / dc;
+      const c = dOut[0] * area / dm;
+      const kd = sc.kd;
+      const gif = a * c / (a + c / kd);
+      const i = mesh.nIn - 1, j = mesh.nIn;
+      diag[i] += gif / kd;
+      upper[i] -= gif;
+      lower[i] -= gif / kd;
+      diag[j] += gif;
+    }
+    return { diag, lower, upper, b };
+  }
+
+  function matvec(K, v) {
+    const n = K.diag.length;
+    const out = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      let s = K.diag[i] * v[i];
+      if (i > 0) s += K.lower[i - 1] * v[i - 1];
+      if (i < n - 1) s += K.upper[i] * v[i + 1];
+      out[i] = s;
+    }
+    return out;
+  }
+
+  function solveTri(lower, diag, upper, rhs) {
+    const n = diag.length;
+    const b = new Float64Array(n);
+    const d = new Float64Array(n);
+    const c = new Float64Array(n);
+    b.set(diag); d.set(rhs);
+    for (let i = 0; i < n - 1; i++) c[i] = upper[i];
+    for (let i = 1; i < n; i++) {
+      const m = lower[i - 1] / b[i - 1];
+      b[i] -= m * c[i - 1];
+      d[i] -= m * d[i - 1];
+    }
+    const x = new Float64Array(n);
+    x[n - 1] = d[n - 1] / b[n - 1];
+    for (let i = n - 2; i >= 0; i--) x[i] = (d[i] - c[i] * x[i + 1]) / b[i];
+    return x;
+  }
+
+  /* ---------------- 时间推进 ---------------- */
+
+  function implicitStep(sc, mesh, C, dt, tempMid, Kold, bold, theta) {
+    const n = C.length;
+    const diagV = new Float64Array(n);
+    for (let i = 0; i < n; i++) diagV[i] = mesh.volumes[i] / dt;
+
+    let Citer = C.slice();
+    let Knew = Kold, bnew = bold, Cnew = C;
+    const KCold = matvec(Kold, C);
+    const scale = Math.max(norm(C), 1e-30);
+    for (let iter = 0; iter < 12; iter++) {
+      Knew = assemble(sc, mesh, tempMid, Citer);
+      bnew = Knew.b;
+      const aDiag = new Float64Array(n);
+      const aLower = new Float64Array(Math.max(n - 1, 0));
+      const aUpper = new Float64Array(Math.max(n - 1, 0));
+      const rhs = new Float64Array(n);
+      for (let i = 0; i < n; i++) {
+        aDiag[i] = diagV[i] + theta * Knew.diag[i];
+        rhs[i] = diagV[i] * C[i] - (1 - theta) * KCold[i]
+          + (1 - theta) * bold[i] + theta * bnew[i];
+      }
+      for (let i = 0; i < n - 1; i++) {
+        aLower[i] = theta * Knew.lower[i];
+        aUpper[i] = theta * Knew.upper[i];
+      }
+      Cnew = solveTri(aLower, aDiag, aUpper, rhs);
+      let minv = Infinity;
+      for (let i = 0; i < n; i++) if (Cnew[i] < minv) minv = Cnew[i];
+      if (minv < 0) {
+        let oldMin = Infinity;
+        for (let i = 0; i < n; i++) if (C[i] < oldMin) oldMin = C[i];
+        if (oldMin >= -1e-12) for (let i = 0; i < n; i++) if (Cnew[i] < 0) Cnew[i] = 0;
+      }
+      let diff = 0;
+      for (let i = 0; i < n; i++) {
+        const e = Cnew[i] - Citer[i];
+        diff += e * e;
+      }
+      if (Math.sqrt(diff) / scale < 1e-7) break;
+      const mix = new Float64Array(n);
+      for (let i = 0; i < n; i++) mix[i] = 0.5 * Citer[i] + 0.5 * Cnew[i];
+      Citer = mix;
+    }
+    return { C: Cnew, K: Knew, b: bnew };
+  }
+
+  function proposeDt(sc, t, target, dtPrev) {
+    const dtCap = sc.dtMax > 0 ? sc.dtMax : sc.duration / 100;
+    const grad = Math.abs(thermalDTDT(sc.thermal, t + 0.5 * Math.max(dtPrev, 0)));
+    const dtTherm = grad > 1e-15 ? 5 / grad : Infinity;
+    let dt = Math.min(dtCap, dtTherm, Math.max(target - t, 0));
+    if (!isFinite(dt) || dt <= 0) dt = Math.max(target - t, 0);
+    return dt;
+  }
+
+  function simulate(sc, saveTimes) {
+    const mesh = buildMesh(sc);
+    let C = initialValue(sc.initial, mesh.r);
+    const duration = sc.duration;
+    if (!(duration > 0)) throw new Error("总时长必须为正");
+
+    let times;
+    if (saveTimes && saveTimes.length) {
+      times = Array.from(saveTimes).filter(Number.isFinite)
+        .map(x => clamp(x, 0, duration));
+    } else {
+      const nOut = Math.max(2, sc.nOutput || 6);
+      times = [];
+      for (let i = 0; i < nOut; i++) times.push(duration * i / (nOut - 1));
+    }
+    times.push(0, duration);
+    times = Array.from(new Set(times.map(x => Number(x)))).sort((a, b) => a - b);
+
+    const cHistory = [C.slice()];
+    const tHistory = [0];
+    const THistory = [thermalT(sc.thermal, 0)];
+
+    let t = 0, dtPrev = 0, nextSave = 1, steps = 0, attemptsTotal = 0;
+    const dtUsed = [];
+    const K0 = assemble(sc, mesh, thermalT(sc.thermal, 0), C);
+    let K = K0, b = K0.b;
+    const mass0 = (() => {
+      let s = 0;
+      for (let i = 0; i < mesh.n; i++) s += mesh.volumes[i] * C[i];
+      return s;
+    })();
+    const norm0 = Math.max(norm(C), 1e-30);
+    const maxChange = sc.maxChange || 0.02;
+    const maxSteps = sc.maxSteps || 200000;
+
+    while (t < duration - 1e-12 * Math.max(duration, 1)) {
+      if (steps >= maxSteps) throw new Error("超过最大步数，请增大 dt_max 或减少网格数");
+      const target = nextSave < times.length ? times[nextSave] : duration;
+      let dt = proposeDt(sc, t, target, dtPrev);
+      const remaining = duration - t;
+      dt = Math.min(dt, remaining);
+      if (!(dt > 0)) break;
+
+      let accepted = false, Cnew = C, Knew = K, bnew = b, change = 0;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        attemptsTotal++;
+        const tempMid = thermalT(sc.thermal, t + 0.5 * dt);
+        const res = implicitStep(sc, mesh, C, dt, tempMid, K, b, sc.theta || 1);
+        Cnew = res.C; Knew = res.K; bnew = res.b;
+        let diff = 0;
+        for (let i = 0; i < C.length; i++) {
+          const e = Cnew[i] - C[i];
+          diff += e * e;
+        }
+        change = Math.sqrt(diff) / norm0;
+        if (change <= maxChange || dt <= (sc.dtMin || 1e-8) || attempt === 7) {
+          accepted = true;
+          break;
+        }
+        dt *= 0.5;
+      }
+      if (!accepted) throw new Error("时间步无法收敛，请检查参数");
+
+      t += dt;
+      C = Cnew; K = Knew; b = bnew;
+      steps++;
+      dtUsed.push(dt);
+      dtPrev = dt;
+      if (change < 0.2 * maxChange) {
+        dtPrev = Math.min(dtPrev * 1.5,
+          sc.dtMax > 0 ? sc.dtMax : duration / 20);
+      }
+
+      while (nextSave < times.length && t >= times[nextSave] - 1e-9 * Math.max(duration, 1)) {
+        cHistory.push(C.slice());
+        tHistory.push(t);
+        THistory.push(thermalT(sc.thermal, t));
+        nextSave++;
+      }
+    }
+
+    if (tHistory[tHistory.length - 1] < duration - 1e-9 * Math.max(duration, 1)) {
+      cHistory.push(C.slice());
+      tHistory.push(t);
+      THistory.push(thermalT(sc.thermal, t));
+    }
+    while (tHistory.length < times.length) {
+      cHistory.push(C.slice());
+      tHistory.push(t);
+      THistory.push(thermalT(sc.thermal, t));
+    }
+
+    const timesArr = tHistory.slice(0, times.length);
+    timesArr[timesArr.length - 1] = duration;
+    const cArr = cHistory.slice(0, times.length).map(a => Array.from(a));
+    let massEnd = 0;
+    const last = cHistory[Math.min(cHistory.length - 1, times.length - 1)];
+    for (let i = 0; i < mesh.n; i++) massEnd += mesh.volumes[i] * last[i];
+    const closed = sc.outerBC.kind === "neumann" &&
+      (sc.geometry !== "plane" || sc.innerBC.kind === "neumann");
+    const relMass = closed ? Math.abs(massEnd - mass0) / Math.max(Math.abs(mass0), 1e-30) : null;
+
+    return {
+      times: timesArr,
+      r: Array.from(mesh.r),
+      c: cArr,
+      temperatures: THistory.slice(0, times.length),
+      diagnostics: {
+        steps,
+        attempts: attemptsTotal,
+        dtMin: dtUsed.length ? Math.min(...dtUsed) : 0,
+        dtMax: dtUsed.length ? Math.max(...dtUsed) : 0,
+        massInitial: mass0,
+        massFinal: massEnd,
+        closedSystem: closed,
+        relativeMassError: relMass,
+        nCells: mesh.n,
+        drMin: mesh.drMin,
+        geometry: sc.geometry,
+        gamma: mesh.gamma,
+        interfaceRadius: mesh.interfaceRadius
+      }
+    };
+  }
+
+  /* ---------------- 解析解 ---------------- */
+
+  function erf(x) {
+    const sign = x < 0 ? -1 : 1;
+    const ax = Math.abs(x);
+    const t = 1 / (1 + 0.3275911 * ax);
+    const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t
+      - 0.284496736) * t + 0.254829592) * t * Math.exp(-ax * ax);
+    return sign * y;
+  }
+
+  function erfc(x) { return 1 - erf(x); }
+
+  function stepProfile(x, dt, cl, cr, x0) {
+    if (!(dt > 0)) return x.map(v => v < x0 ? cl : cr);
+    const s = 2 * Math.sqrt(dt);
+    return x.map(v => cl + 0.5 * (cr - cl) * erfc((v - x0) / s));
+  }
+
+  function plateauProfile(x, dt, cOut, cIn, x1, x2) {
+    if (!(dt > 0)) return x.map(v => (v >= x1 && v <= x2) ? cIn : cOut);
+    const s = 2 * Math.sqrt(dt);
+    return x.map(v => cOut + 0.5 * (cIn - cOut) *
+      (erf((v - x1) / s) - erf((v - x2) / s)));
+  }
+
+  /* ---------------- 反演 ---------------- */
+
+  function estimateInitial(x, c) {
+    const n = x.length;
+    const idx = Array.from({ length: n }, (_, i) => i).sort((i, j) => x[i] - x[j]);
+    const xs = idx.map(i => x[i]);
+    const cs = idx.map(i => c[i]);
+    const span = xs[n - 1] - xs[0];
+    const k = Math.max(3, Math.floor(n / 5));
+    const left = median(cs.slice(0, k));
+    const right = median(cs.slice(n - k));
+    let rng = Math.max(...c) - Math.min(...c);
+    if (!(rng > 0)) rng = Math.max(Math.abs(mean(c)), 1);
+    const mid = 0.5 * (left + right);
+    let x0 = xs[0], best = Infinity;
+    for (let i = 0; i < n; i++) {
+      const d = Math.abs(cs[i] - mid);
+      if (d < best) { best = d; x0 = xs[i]; }
+    }
+    const lo = Math.min(left, right), hi = Math.max(left, right);
+    let width = 0.3 * span;
+    if (hi > lo) {
+      const c10 = lo + 0.1 * (hi - lo), c90 = lo + 0.9 * (hi - lo);
+      let x10 = xs[0], x90 = xs[0], b10 = Infinity, b90 = Infinity;
+      for (let i = 0; i < n; i++) {
+        const d10 = Math.abs(cs[i] - c10), d90 = Math.abs(cs[i] - c90);
+        if (d10 < b10) { b10 = d10; x10 = xs[i]; }
+        if (d90 < b90) { b90 = d90; x90 = xs[i]; }
+      }
+      width = Math.abs(x90 - x10);
+    }
+    if (!(width > 0)) width = 0.3 * span;
+    let above = [];
+    for (let i = 0; i < n; i++) if (cs[i] >= mid) above.push(i);
+    let xStart, xEnd;
+    if (above.length >= 2) {
+      xStart = xs[above[0]];
+      xEnd = xs[above[above.length - 1]];
+    } else {
+      xStart = xs[0] + 0.25 * span;
+      xEnd = xs[n - 1] - 0.25 * span;
+    }
+    let dtEst = Math.pow(width / 2.56, 2);
+    dtEst = Math.max(dtEst, Math.pow(span / 500, 2));
+    return { span, left, right, x0, xStart, xEnd, dtEst, rng };
+  }
+
+  function mean(v) {
+    let s = 0;
+    for (let i = 0; i < v.length; i++) s += v[i];
+    return s / v.length;
+  }
+
+  function modelProfile(x, p, kind) {
+    if (kind === "step") {
+      return stepProfile(x, Math.pow(10, p[0]), p[1], p[2], p[3]);
+    }
+    return plateauProfile(x, Math.pow(10, p[0]), p[1], p[2], p[3], p[4]);
+  }
+
+  function sseFor(x, c, sigma, p, kind) {
+    const m = modelProfile(x, p, kind);
+    let s = 0;
+    for (let i = 0; i < x.length; i++) {
+      const e = (m[i] - c[i]) / sigma[i];
+      s += e * e;
+    }
+    return s;
+  }
+
+  function nelderMead(f, x0, steps, lower, upper, maxIter) {
+    const n = x0.length;
+    const project = p => p.map((v, j) => clamp(v, lower[j], upper[j]));
+    let simplex = [project(x0.slice())];
+    for (let j = 0; j < n; j++) {
+      const p = x0.slice();
+      p[j] += steps[j];
+      if (p[j] > upper[j] || p[j] === x0[j]) p[j] = x0[j] - steps[j];
+      simplex.push(project(p));
+    }
+    let vals = simplex.map(f);
+    for (let iter = 0; iter < (maxIter || 600); iter++) {
+      const order = vals.map((v, i) => i).sort((a, b) => vals[a] - vals[b]);
+      simplex = order.map(i => simplex[i]);
+      vals = order.map(i => vals[i]);
+      if (Math.abs(vals[n] - vals[0]) <= 1e-12 * (Math.abs(vals[0]) + 1e-12)) break;
+      const centroid = new Array(n).fill(0);
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) centroid[j] += simplex[i][j] / n;
+      }
+      const worst = simplex[n];
+      const xr = project(centroid.map((v, j) => v + (v - worst[j])));
+      const fr = f(xr);
+      if (fr < vals[0]) {
+        const xe = project(centroid.map((v, j) => v + 2 * (v - worst[j])));
+        const fe = f(xe);
+        if (fe < fr) { simplex[n] = xe; vals[n] = fe; }
+        else { simplex[n] = xr; vals[n] = fr; }
+      } else if (fr < vals[n - 1]) {
+        simplex[n] = xr; vals[n] = fr;
+      } else {
+        let xc;
+        if (fr < vals[n]) {
+          xc = project(centroid.map((v, j) => v + 0.5 * (xr[j] - v)));
+        } else {
+          xc = project(centroid.map((v, j) => v + 0.5 * (worst[j] - v)));
+        }
+        const fc = f(xc);
+        if (fc < Math.min(fr, vals[n])) {
+          simplex[n] = xc; vals[n] = fc;
+        } else {
+          for (let i = 1; i <= n; i++) {
+            simplex[i] = project(simplex[i].map((v, j) => simplex[0][j] + 0.5 * (v - simplex[0][j])));
+            vals[i] = f(simplex[i]);
+          }
+        }
+      }
+    }
+    const order = vals.map((v, i) => i).sort((a, b) => vals[a] - vals[b]);
+    return { x: simplex[order[0]].slice(), fun: vals[order[0]] };
+  }
+
+  function invMatrix(A) {
+    const n = A.length;
+    const M = A.map((row, i) => row.concat(Array.from({ length: n }, (_, j) => i === j ? 1 : 0)));
+    for (let col = 0; col < n; col++) {
+      let pivot = col;
+      for (let r = col + 1; r < n; r++) if (Math.abs(M[r][col]) > Math.abs(M[pivot][col])) pivot = r;
+      if (Math.abs(M[pivot][col]) < 1e-300) return null;
+      [M[col], M[pivot]] = [M[pivot], M[col]];
+      const pv = M[col][col];
+      for (let j = 0; j < 2 * n; j++) M[col][j] /= pv;
+      for (let r = 0; r < n; r++) {
+        if (r === col) continue;
+        const f = M[r][col];
+        if (f === 0) continue;
+        for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[col][j];
+      }
+    }
+    return M.map(row => row.slice(n));
+  }
+
+  function fitProfile(xIn, cIn, sigmaIn, kind, opts) {
+    kind = (kind || "step").toLowerCase();
+    if (kind !== "step" && kind !== "plateau") throw new Error("未知剖面类型");
+    const x = Array.from(xIn).map(Number);
+    const c = Array.from(cIn).map(Number);
+    if (x.length !== c.length) throw new Error("x 与 c 长度不一致");
+    if (x.length < 4) throw new Error("至少需要 4 个数据点");
+    let sigma = sigmaIn ? Array.from(sigmaIn).map(Number) : new Array(x.length).fill(1);
+    const keep = [];
+    for (let i = 0; i < x.length; i++) {
+      if (Number.isFinite(x[i]) && Number.isFinite(c[i]) &&
+        Number.isFinite(sigma[i]) && sigma[i] > 0) keep.push(i);
+    }
+    if (keep.length < 4) throw new Error("有效数据点不足 4 个");
+    keep.sort((a, b) => x[a] - x[b]);
+    const xs = keep.map(i => x[i]);
+    const cs = keep.map(i => c[i]);
+    const ss = keep.map(i => sigma[i]);
+    const est = estimateInitial(xs, cs);
+    const span = est.span, rng = est.rng;
+    const loC = Math.min(...cs) - 2 * rng, hiC = Math.max(...cs) + 2 * rng;
+    const loX = Math.min(...xs) - 0.5 * span, hiX = Math.max(...xs) + 0.5 * span;
+    const logLo = Math.log10(Math.max(Math.pow(span / 2000, 2), 1e-30));
+    const logHi = Math.log10(Math.pow(50 * span, 2));
+
+    function logGuesses() {
+      const out = [];
+      const center = Math.log10(est.dtEst);
+      for (let i = 0; i < 5; i++) {
+        out.push(clamp(center - 2 + 3.5 * i / 4, logLo, logHi));
+      }
+      return out;
+    }
+
+    let guesses = [], lower, upper, steps;
+    if (kind === "step") {
+      lower = [logLo, loC, loC, loX];
+      upper = [logHi, hiC, hiC, hiX];
+      const x0s = [];
+      for (let i = 0; i < 4; i++) {
+        x0s.push(clamp(est.x0 + (i - 1.5) * 0.1667 * span, loX, hiX));
+      }
+      for (const lg of logGuesses()) {
+        for (const xg of x0s) guesses.push([lg, est.left, est.right, xg]);
+      }
+      steps = [0.5, Math.max(0.05 * rng, 1e-6), Math.max(0.05 * rng, 1e-6), 0.05 * span];
+    } else {
+      lower = [logLo, loC, loC, loX, loX];
+      upper = [logHi, hiC, hiC, hiX, hiX];
+      const cOut0 = Math.min(est.left, est.right);
+      const cIn0 = Math.max(...cs);
+      const width0 = Math.max(est.xEnd - est.xStart, 0.1 * span);
+      for (const lg of logGuesses()) {
+        for (let i = 0; i < 3; i++) {
+          const x1g = clamp(est.xStart + (i - 1) * 0.1 * span, loX, hiX);
+          for (const wg of [width0, 0.5 * span, 1.5 * width0]) {
+            guesses.push([lg, cOut0, cIn0, x1g, clamp(x1g + wg, loX, hiX)]);
+          }
+        }
+      }
+      steps = [0.5, Math.max(0.05 * rng, 1e-6), Math.max(0.05 * rng, 1e-6), 0.05 * span, 0.05 * span];
+    }
+
+    const nStarts = Math.min(guesses.length, (opts && opts.nStarts) || 24);
+    let best = null;
+    for (let i = 0; i < nStarts; i++) {
+      const p0 = guesses[i].map((v, j) => clamp(v, lower[j] + 1e-12, upper[j] - 1e-12));
+      const res = nelderMead(p => sseFor(xs, cs, ss, p, kind), p0, steps, lower, upper, 700);
+      if (!best || res.fun < best.fun) best = res;
+    }
+    if (!best) throw new Error("所有拟合初值均失败");
+
+    const p = best.x;
+    const model = modelProfile(xs, p, kind);
+    let sse = 0, sst = 0, chi2 = 0;
+    for (let i = 0; i < xs.length; i++) {
+      const e = cs[i] - model[i];
+      sse += e * e;
+      const t = cs[i] - mean(cs);
+      sst += t * t;
+      chi2 += Math.pow(e / ss[i], 2);
+    }
+    const dof = Math.max(xs.length - p.length, 1);
+    const r2 = sst > 0 ? 1 - sse / sst : 0;
+    const rmse = Math.sqrt(sse / xs.length);
+    const chi2Red = chi2 / dof;
+
+    // 数值 Jacobian（加权残差）
+    const jac = [];
+    for (let i = 0; i < xs.length; i++) jac.push(new Array(p.length).fill(0));
+    for (let j = 0; j < p.length; j++) {
+      const h = 1e-5 * Math.max(1, Math.abs(p[j]));
+      const pp = p.slice(), pm = p.slice();
+      pp[j] = Math.min(upper[j], p[j] + h);
+      pm[j] = Math.max(lower[j], p[j] - h);
+      const mp = modelProfile(xs, pp, kind);
+      const mm = modelProfile(xs, pm, kind);
+      for (let i = 0; i < xs.length; i++) {
+        jac[i][j] = ((mp[i] - mm[i]) / (pp[j] - pm[j])) / ss[i];
+      }
+    }
+    const jtj = [];
+    for (let a = 0; a < p.length; a++) {
+      jtj.push(new Array(p.length).fill(0));
+      for (let b = 0; b < p.length; b++) {
+        let s = 0;
+        for (let i = 0; i < xs.length; i++) s += jac[i][a] * jac[i][b];
+        jtj[a][b] = s;
+      }
+    }
+    const inv = invMatrix(jtj);
+    const errs = new Array(p.length).fill(NaN);
+    if (inv) {
+      const factor = Math.max(chi2 / dof, 1e-30);
+      for (let a = 0; a < p.length; a++) errs[a] = Math.sqrt(Math.max(inv[a][a] * factor, 0));
+    }
+
+    const names = kind === "step"
+      ? ["log10_dt", "c_left", "c_right", "x0"]
+      : ["log10_dt", "c_out", "c_in", "x1", "x2"];
+    const params = {}, errors = {};
+    names.forEach((name, i) => { params[name] = p[i]; errors[name] = errs[i]; });
+
+    return {
+      kind, log10Dt: p[0], dt: Math.pow(10, p[0]), params, errors,
+      x: xs, c: cs, sigma: ss, model,
+      r2, rmse, chi2Reduced: chi2Red, dof,
+      success: true, nStarts,
+      dtError: Number.isFinite(errs[0])
+        ? Math.abs(Math.pow(10, p[0]) * Math.LN10 * errs[0])
+        : NaN
+    };
+  }
+
+  /* ---------------- 封闭温度 ---------------- */
+
+  const GEOMETRY_FACTOR = { plane: 9.5, cylinder: 27, sphere: 55 };
+
+  function tcResidual(Tk, ea, d0, radius, rate, A) {
+    if (!(Tk > 0) || !(ea > 0) || !(rate > 0) || !(radius > 0) || !(d0 > 0)) return NaN;
+    const arg = A * R_GAS * Tk * Tk * d0 / (ea * radius * radius * rate);
+    if (!(arg > 1)) return NaN;
+    return Tk - ea / (R_GAS * Math.log(arg));
+  }
+
+  function dodsonTc(ea, d0, radius, rate, geometry) {
+    geometry = geometry || "sphere";
+    const A = GEOMETRY_FACTOR[geometry];
+    if (!A) throw new Error("未知几何: " + geometry);
+    if (!(ea > 0 && d0 > 0 && radius > 0 && rate > 0)) {
+      throw new Error("Ea、D0、radius、cooling_rate 必须为正");
+    }
+    let Tk = ea / (R_GAS * 30);
+    let converged = false;
+    for (let i = 0; i < 300; i++) {
+      const arg = A * R_GAS * Tk * Tk * d0 / (ea * radius * radius * rate);
+      if (!(arg > 1)) { Tk *= 0.9; continue; }
+      const Tn = ea / (R_GAS * Math.log(arg));
+      if (!isFinite(Tn) || Tn <= 0) break;
+      if (Math.abs(Tn - Tk) < 1e-8 * Math.max(Tk, 1)) { Tk = Tn; converged = true; break; }
+      Tk = 0.5 * Tk + 0.5 * Tn;
+    }
+    if (!converged) {
+      const roots = [];
+      let prevT = 50, prevV = tcResidual(prevT, ea, d0, radius, rate, A);
+      for (let i = 1; i <= 2000; i++) {
+        const T = 50 + 4950 * i / 2000;
+        const v = tcResidual(T, ea, d0, radius, rate, A);
+        if (isFinite(prevV) && isFinite(v) && prevV * v <= 0) {
+          let lo = prevT, hi = T;
+          for (let k = 0; k < 100; k++) {
+            const mid = 0.5 * (lo + hi);
+            const fm = tcResidual(mid, ea, d0, radius, rate, A);
+            if (!isFinite(fm)) break;
+            if (prevV * fm <= 0) hi = mid; else lo = mid;
+          }
+          roots.push(0.5 * (lo + hi));
+        }
+        prevT = T; prevV = v;
+      }
+      if (!roots.length) throw new Error("找不到封闭温度解，请检查参数");
+      Tk = Math.max(...roots);
+    }
+    const tc = Tk - 273.15;
+    if (!(tc > -273.15 && tc < 5000)) throw new Error("封闭温度超出合理范围");
+    return tc;
+  }
+
+  function tcCurve(ea, d0, radius, ratesPerMa, geometry) {
+    return Array.from(ratesPerMa).map(r => dodsonTc(ea, d0, radius, r / SEC_MA, geometry));
+  }
+
+  const api = {
+    R_GAS, SEC_YEAR, SEC_MA, GEOMETRY_FACTOR,
+    thermalT, thermalDTDT, diffusionScalar, buildMesh, initialValue,
+    assemble, solveTri, simulate,
+    erf, erfc, stepProfile, plateauProfile,
+    fitProfile, dodsonTc, tcCurve
+  };
+  global.ElemCore = api;
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>/* ElemDiff Web UI — 单文件版界面与 Canvas 绘图。 */
+(function () {
+  "use strict";
+
+  const Core = window.ElemCore;
+  const $ = id => document.getElementById(id);
+  const SEC_YEAR = Core.SEC_YEAR;
+  const SEC_MA = Core.SEC_MA;
+  const R_GAS = Core.R_GAS;
+  const PALETTE = ["#0f766e", "#2563eb", "#db2777", "#d97706", "#7c3aed", "#0891b2", "#65a30d", "#dc2626"];
+  const state = { forwardSolution: null, forwardScenario: null, fitData: null, fitResult: null };
+
+  /* ---------------- 通用工具 ---------------- */
+
+  function num(id, name) {
+    const raw = $(id).value.trim();
+    if (!raw) throw new Error((name || id) + " 不能为空");
+    const v = Number(raw);
+    if (!Number.isFinite(v)) throw new Error((name || id) + " 不是有效数字：" + raw);
+    return v;
+  }
+
+  function intNum(id, name) {
+    return Math.round(num(id, name));
+  }
+
+  function formatNum(v, digits) {
+    if (!Number.isFinite(v)) return "—";
+    const a = Math.abs(v);
+    if (a !== 0 && (a >= 1e5 || a < 1e-3)) {
+      return v.toExponential(digits === undefined ? 3 : digits);
+    }
+    return String(Number(v.toPrecision(digits === undefined ? 5 : digits)));
+  }
+
+  function formatTime(seconds) {
+    const s = Math.abs(seconds);
+    if (s < 60) return formatNum(seconds, 3) + " s";
+    if (s < 3600) return formatNum(seconds / 60, 3) + " min";
+    if (s < 86400) return formatNum(seconds / 3600, 3) + " h";
+    if (s < SEC_YEAR) return formatNum(seconds / 86400, 3) + " d";
+    if (s < 1e3 * SEC_YEAR) return formatNum(seconds / SEC_YEAR, 3) + " a";
+    if (s < 1e6 * SEC_YEAR) return formatNum(seconds / (1e3 * SEC_YEAR), 3) + " ka";
+    return formatNum(seconds / SEC_MA, 3) + " Ma";
+  }
+
+  function formatLength(m) {
+    const a = Math.abs(m);
+    if (a < 1e-6) return formatNum(m * 1e9, 3) + " nm";
+    if (a < 1e-3) return formatNum(m * 1e6, 3) + " µm";
+    if (a < 1) return formatNum(m * 1e3, 3) + " mm";
+    return formatNum(m, 3) + " m";
+  }
+
+  let toastTimer = null;
+  function toast(message, isError) {
+    const el = $("toast");
+    el.textContent = message;
+    el.classList.toggle("error", !!isError);
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 3800);
+  }
+
+  function downloadText(filename, text, mime) {
+    const blob = new Blob(["\ufeff" + text], { type: mime || "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  function downloadCanvas(canvasId, filename) {
+    const canvas = $(canvasId);
+    canvas.toBlob(blob => {
+      if (!blob) { toast("图片导出失败", true); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }, "image/png");
+  }
+
+  /* ---------------- CSV 解析 ---------------- */
+
+  function parseNumber(v) {
+    const s = String(v).trim().replace(/,/g, "");
+    if (!s) return NaN;
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  function splitDelimited(line, delim) {
+    return line.split(delim).map(s => s.trim().replace(/^"|"$/g, ""));
+  }
+
+  function pickColumn(header, candidates) {
+    if (!header) return -1;
+    const norm = header.map((h, i) => ({ key: String(h).trim().toLowerCase(), i }));
+    for (const cand of candidates) {
+      for (const item of norm) if (item.key === cand) return item.i;
+    }
+    for (const cand of candidates) {
+      for (const item of norm) {
+        const tokens = item.key.split(/[^0-9a-zA-Z\u4e00-\u9fff]+/).filter(Boolean);
+        if (tokens.includes(cand)) return item.i;
+        if (cand.length > 1 && item.key.includes(cand)) return item.i;
+      }
+    }
+    return -1;
+  }
+
+  function parseProfileText(text) {
+    const clean = text.replace(/^\uFEFF/, "");
+    const lines = clean.split(/\r?\n/).map(l => l.trim())
+      .filter(l => l && !l.startsWith("#") && !l.startsWith("//"));
+    if (!lines.length) throw new Error("文件为空");
+    const first = lines[0];
+    const counts = {
+      ",": (first.match(/,/g) || []).length,
+      "\t": (first.match(/\t/g) || []).length,
+      ";": (first.match(/;/g) || []).length
+    };
+    let delim = ",";
+    if (counts["\t"] >= counts[","] && counts["\t"] > 0) delim = "\t";
+    else if (counts[";"] > counts[","]) delim = ";";
+    const rows = lines.map(l => splitDelimited(l, delim));
+    let start = -1;
+    for (let i = 0; i < rows.length; i++) {
+      const good = rows[i].filter(v => Number.isFinite(parseNumber(v))).length;
+      if (good >= 2) { start = i; break; }
+    }
+    if (start < 0) throw new Error("没有找到至少包含两个数值的行");
+    const header = start > 0 ? rows[start - 1] : null;
+    const dataRows = rows.slice(start).filter(r => r.filter(v => Number.isFinite(parseNumber(v))).length >= 2);
+    if (!dataRows.length) throw new Error("没有有效数据行");
+
+    let xcol = pickColumn(header, ["x", "distance", "dist", "position", "位置", "距离", "um", "µm"]);
+    let ccol = pickColumn(header, ["c", "conc", "concentration", "浓度", "含量", "ppm", "wt"]);
+    let scol = pickColumn(header, ["sigma", "error", "err", "std", "uncertainty", "误差", "标准差"]);
+    if (xcol < 0) xcol = 0;
+    if (ccol < 0) ccol = 1;
+    if (scol < 0 && dataRows[0].length >= 3) scol = 2;
+    const x = [], c = [], sigma = [];
+    for (const row of dataRows) {
+      const xv = parseNumber(row[xcol]);
+      const cv = parseNumber(row[ccol]);
+      if (!Number.isFinite(xv) || !Number.isFinite(cv)) continue;
+      x.push(xv); c.push(cv);
+      const sv = scol >= 0 ? parseNumber(row[scol]) : NaN;
+      sigma.push(Number.isFinite(sv) && sv > 0 ? sv : NaN);
+    }
+    if (x.length < 4) throw new Error("有效数据点少于 4 个");
+    const hasSigma = sigma.every(v => Number.isFinite(v) && v > 0);
+    return { x, c, sigma: hasSigma ? sigma : null };
+  }
+
+  function builtinData() {
+    // 与“示例数据/阶梯剖面_合成.csv”同参数：Dt=2.5e-10 m²，x0=85 µm，120/18，σ=1.5
+    let seed = 7;
+    function rand() {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 4294967296;
+    }
+    const x = [], c = [];
+    for (let i = 0; i < 48; i++) {
+      const xum = 10 + 180 * i / 47;
+      const base = Core.stepProfile([xum * 1e-6], 2.5e-10, 120, 18, 85e-6)[0];
+      const u1 = Math.max(rand(), 1e-12), u2 = rand();
+      const noise = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2) * 1.5;
+      x.push(xum * 1e-6);
+      c.push(base + noise);
+    }
+    return { x, c, sigma: new Array(x.length).fill(1.5) };
+  }
+
+  /* ---------------- Canvas 绘图 ---------------- */
+
+  const FONT = '"Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif';
+
+  function prepareCanvas(canvas) {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width < 60 || rect.height < 60) return null;
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(320, Math.floor(rect.width));
+    const h = Math.max(260, Math.floor(rect.height));
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    return { ctx, w, h };
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.lineTo(x + w - rr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+    ctx.lineTo(x + w, y + h - rr);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+    ctx.lineTo(x + rr, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+    ctx.lineTo(x, y + rr);
+    ctx.quadraticCurveTo(x, y, x + rr, y);
+    ctx.closePath();
+  }
+
+  function niceTicks(min, max, count) {
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) return [min];
+    const span = max - min;
+    const raw = span / Math.max(2, count);
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const norm = raw / mag;
+    let step;
+    if (norm <= 1) step = 1;
+    else if (norm <= 2) step = 2;
+    else if (norm <= 2.5) step = 2.5;
+    else if (norm <= 5) step = 5;
+    else step = 10;
+    step *= mag;
+    const out = [];
+    let v = Math.ceil(min / step) * step;
+    for (let i = 0; i < 200 && v <= max + step * 1e-9; i++) {
+      out.push(Number(v.toPrecision(12)));
+      v += step;
+    }
+    return out;
+  }
+
+  function logTicks(min, max) {
+    const lo = Math.floor(min), hi = Math.ceil(max);
+    const out = [];
+    for (let e = lo; e <= hi; e++) {
+      for (const m of [1, 2, 5]) {
+        const v = m * Math.pow(10, e);
+        if (v >= Math.pow(10, min) * 0.999 && v <= Math.pow(10, max) * 1.001) out.push(v);
+      }
+    }
+    return out;
+  }
+
+  function formatTick(v) {
+    if (v === 0) return "0";
+    const a = Math.abs(v);
+    if (a >= 1e5 || a < 1e-3) return v.toExponential(1).replace("e+", "e");
+    return String(Number(v.toPrecision(4)));
+  }
+
+  function formatLogTick(v) {
+    const e = Math.round(Math.log10(v));
+    if (Math.abs(v - Math.pow(10, e)) < 1e-9 * Math.max(v, 1)) {
+      if (e >= -3 && e <= 5) return String(Number(v.toPrecision(3)));
+      return "1e" + e;
+    }
+    return String(Number(v.toPrecision(3)));
+  }
+
+  function drawChart(canvasId, spec) {
+    const canvas = $(canvasId);
+    if (!canvas) return;
+    const prep = prepareCanvas(canvas);
+    if (!prep) return;
+    const ctx = prep.ctx, w = prep.w, h = prep.h;
+    const m = { l: 78, r: 26, t: 48, b: 60 };
+    const plotW = Math.max(40, w - m.l - m.r);
+    const plotH = Math.max(40, h - m.t - m.b);
+
+    const series = spec.series || [];
+    const xsAll = [], ysAll = [];
+    for (const s of series) {
+      if (!s.x) continue;
+      for (let i = 0; i < s.x.length; i++) {
+        if (!Number.isFinite(s.x[i]) || !Number.isFinite(s.y[i])) continue;
+        if (spec.xLog && !(s.x[i] > 0)) continue;
+        xsAll.push(s.x[i]); ysAll.push(s.y[i]);
+        if (s.yerr && Number.isFinite(s.yerr[i])) {
+          ysAll.push(s.y[i] - s.yerr[i], s.y[i] + s.yerr[i]);
+        }
+      }
+    }
+    for (const a of (spec.annotations || [])) {
+      if (Number.isFinite(a.x)) xsAll.push(a.x);
+    }
+    if (!xsAll.length) {
+      ctx.fillStyle = "#64748b";
+      ctx.font = "14px " + FONT;
+      ctx.textAlign = "center";
+      ctx.fillText("暂无数据", w / 2, h / 2);
+      return;
+    }
+
+    let xmin = Math.min(...xsAll), xmax = Math.max(...xsAll);
+    let ymin = Math.min(...ysAll), ymax = Math.max(...ysAll);
+    const expand = (a, b) => {
+      if (!Number.isFinite(a) || !Number.isFinite(b)) return [0, 1];
+      if (a === b) {
+        const d = Math.abs(a) > 1e-30 ? Math.abs(a) * 0.1 : 1;
+        return [a - d, b + d];
+      }
+      const d = (b - a) * 0.06;
+      return [a - d, b + d];
+    };
+    let xlo, xhi;
+    if (spec.xLog) {
+      xlo = Math.log10(xmin); xhi = Math.log10(xmax);
+      if (xlo === xhi) { xlo -= 0.2; xhi += 0.2; }
+      const pad = (xhi - xlo) * 0.03;
+      xlo -= pad; xhi += pad;
+    } else {
+      [xlo, xhi] = expand(xmin, xmax);
+    }
+    [ymin, ymax] = expand(ymin, ymax);
+
+    const xPos = v => {
+      if (spec.xLog) return m.l + (Math.log10(v) - xlo) / (xhi - xlo) * plotW;
+      return m.l + (v - xlo) / (xhi - xlo) * plotW;
+    };
+    const yPos = v => m.t + (ymax - v) / (ymax - ymin) * plotH;
+
+    // 背景
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(m.l, m.t, plotW, plotH);
+
+    const xTicks = spec.xLog ? logTicks(xlo, xhi) : niceTicks(xlo, xhi, 6);
+    const yTicks = niceTicks(ymin, ymax, 5);
+
+    // 网格
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.fillStyle = "#475569";
+    ctx.font = "12px " + FONT;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    for (const t of xTicks) {
+      const x = xPos(t);
+      if (x < m.l - 1 || x > m.l + plotW + 1) continue;
+      ctx.beginPath(); ctx.moveTo(x, m.t); ctx.lineTo(x, m.t + plotH); ctx.stroke();
+      ctx.fillText(spec.xLog ? formatLogTick(t) : formatTick(t), x, m.t + plotH + 8);
+    }
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    for (const t of yTicks) {
+      const y = yPos(t);
+      if (y < m.t - 1 || y > m.t + plotH + 1) continue;
+      ctx.beginPath(); ctx.moveTo(m.l, y); ctx.lineTo(m.l + plotW, y); ctx.stroke();
+      ctx.fillText(formatTick(t), m.l - 10, y);
+    }
+
+    // 边框
+    ctx.strokeStyle = "#94a3b8";
+    ctx.strokeRect(m.l, m.t, plotW, plotH);
+
+    // 轴标签
+    ctx.fillStyle = "#334155";
+    ctx.font = "13px " + FONT;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText(spec.xLabel || "", m.l + plotW / 2, m.t + plotH + 34);
+    ctx.save();
+    ctx.translate(18, m.t + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(spec.yLabel || "", 0, 0);
+    ctx.restore();
+
+    if (spec.title) {
+      ctx.fillStyle = "#0f172a";
+      ctx.font = "600 15px " + FONT;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(spec.title, w / 2, 24);
+    }
+
+    // 裁剪绘图区
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(m.l, m.t, plotW, plotH);
+    ctx.clip();
+
+    // 竖直线
+    for (const a of (spec.annotations || [])) {
+      if (!Number.isFinite(a.x)) continue;
+      if (spec.xLog && !(a.x > 0)) continue;
+      const x = xPos(a.x);
+      if (x < m.l || x > m.l + plotW) continue;
+      ctx.save();
+      ctx.strokeStyle = a.color || "#94a3b8";
+      ctx.lineWidth = a.width || 1.2;
+      ctx.setLineDash(a.dash || [5, 4]);
+      ctx.beginPath(); ctx.moveTo(x, m.t); ctx.lineTo(x, m.t + plotH); ctx.stroke();
+      ctx.restore();
+      if (a.label) {
+        ctx.fillStyle = a.color || "#64748b";
+        ctx.font = "11px " + FONT;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText(a.label, Math.min(x + 4, m.l + plotW - 48), m.t + 6);
+      }
+    }
+
+    // 数据系列
+    for (const s of series) {
+      if (!s.x || !s.y) continue;
+      const color = s.color || "#0f766e";
+      if (s.type === "points") {
+        for (let i = 0; i < s.x.length; i++) {
+          const xv = s.x[i], yv = s.y[i];
+          if (!Number.isFinite(xv) || !Number.isFinite(yv)) continue;
+          if (spec.xLog && !(xv > 0)) continue;
+          const x = xPos(xv), y = yPos(yv);
+          if (s.yerr && Number.isFinite(s.yerr[i])) {
+            const e = s.yerr[i];
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, yPos(yv - e));
+            ctx.lineTo(x, yPos(yv + e));
+            ctx.moveTo(x - 3, yPos(yv - e));
+            ctx.lineTo(x + 3, yPos(yv - e));
+            ctx.moveTo(x - 3, yPos(yv + e));
+            ctx.lineTo(x + 3, yPos(yv + e));
+            ctx.stroke();
+          }
+          ctx.fillStyle = "#ffffff";
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.arc(x, y, s.radius || 3.2, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+        }
+      } else {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = s.width || 1.8;
+        ctx.setLineDash(s.dash || []);
+        ctx.beginPath();
+        let started = false;
+        for (let i = 0; i < s.x.length; i++) {
+          const xv = s.x[i], yv = s.y[i];
+          if (!Number.isFinite(xv) || !Number.isFinite(yv)) continue;
+          if (spec.xLog && !(xv > 0)) continue;
+          const x = xPos(xv), y = yPos(yv);
+          if (!started) { ctx.moveTo(x, y); started = true; }
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    ctx.restore();
+
+    // 图例
+    const items = series.filter(s => s.label && s.type !== "hidden");
+    if (items.length && spec.legend !== false) {
+      ctx.font = "12px " + FONT;
+      const lineH = 18;
+      let maxText = 0;
+      for (const it of items) maxText = Math.max(maxText, ctx.measureText(it.label).width);
+      const boxW = maxText + 42;
+      const boxH = items.length * lineH + 12;
+      let bx = spec.legendPos === "topright" ? m.l + plotW - boxW - 12 : m.l + 12;
+      let by = m.t + 12;
+      if (bx < m.l + 6) bx = m.l + 6;
+      ctx.fillStyle = "rgba(255,255,255,0.90)";
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 1;
+      roundRect(ctx, bx, by, boxW, boxH, 8);
+      ctx.fill(); ctx.stroke();
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      items.forEach((it, i) => {
+        const y = by + 6 + lineH * i + lineH / 2;
+        ctx.strokeStyle = it.color || "#0f766e";
+        ctx.fillStyle = it.color || "#0f766e";
+        if (it.type === "points") {
+          ctx.beginPath(); ctx.arc(bx + 16, y, 3.2, 0, Math.PI * 2); ctx.fill();
+        } else {
+          ctx.lineWidth = 2.2;
+          ctx.setLineDash(it.dash || []);
+          ctx.beginPath(); ctx.moveTo(bx + 9, y); ctx.lineTo(bx + 25, y); ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        ctx.fillStyle = "#334155";
+        ctx.font = "12px " + FONT;
+        ctx.fillText(it.label, bx + 32, y);
+      });
+    }
+  }
+
+  /* ---------------- 正演 ---------------- */
+
+  function readForwardScenario() {
+    const geometry = $("f-geometry").value;
+    const radius = num("f-radius", "外半径") * 1e-6;
+    const iface = num("f-interface", "界面") * 1e-6;
+    if (!(radius > 0)) throw new Error("外半径必须为正");
+    if (iface < 0) throw new Error("界面位置不能为负");
+    if (iface > 0 && iface >= radius) throw new Error("界面必须小于外半径");
+    const nCells = intNum("f-ncells", "晶体区网格数");
+    const nCellsOuter = intNum("f-nouter", "熔体区网格数");
+    if (nCells < 4) throw new Error("晶体区网格数至少为 4");
+    if (iface > 0 && nCellsOuter < 4) throw new Error("熔体区网格数至少为 4");
+    const duration = num("f-duration", "总时长") * 1e3 * SEC_YEAR;
+    if (!(duration > 0)) throw new Error("总时长必须为正");
+    const t0 = num("f-t0", "初始温度");
+    const t1 = num("f-t1", "结束温度");
+    const thMode = $("f-thermal").value;
+    let eta = 0;
+    if (thMode === "asymptotic" && Math.abs(t1 - t0) > 1e-9) {
+      eta = (1 / (t1 + 273.15) - 1 / (t0 + 273.15)) / duration;
+    }
+    const thermal = { mode: thMode, t0, tEnd: t1, duration, eta };
+
+    const initMode = $("f-initial").value;
+    const initial = {
+      mode: initMode,
+      value: num("f-c0", "均匀浓度"),
+      left: num("f-left", "左侧浓度"),
+      right: num("f-right", "右侧浓度"),
+      plateau: num("f-plateau", "台地浓度"),
+      x1: num("f-x1", "x1") * 1e-6,
+      x2: num("f-x2", "x2") * 1e-6
+    };
+    const crystal = {
+      d0: num("f-d0", "晶体 D0"),
+      ea: num("f-ea", "晶体 Ea") * 1e3,
+      m: num("f-m", "成分指数"),
+      cref: 1
+    };
+    if (!(crystal.d0 > 0)) throw new Error("晶体 D0 必须为正");
+    if (!(crystal.ea >= 0)) throw new Error("晶体 Ea 不能为负");
+    let melt = null;
+    if (iface > 0) {
+      melt = {
+        d0: num("f-d0m", "熔体 D0"),
+        ea: num("f-eam", "熔体 Ea") * 1e3,
+        m: 0, cref: 1
+      };
+      if (!(melt.d0 > 0)) throw new Error("熔体 D0 必须为正");
+    }
+    return {
+      geometry, radius, interface: iface, nCells, nCellsOuter,
+      crystal, melt, kd: num("f-kd", "分配系数 Kd"),
+      thermal, duration, initial,
+      outerBC: { kind: $("f-outerbc").value, value: num("f-outerval", "外边界浓度") },
+      innerBC: { kind: $("f-innerbc").value, value: num("f-innerval", "左边界浓度") },
+      theta: 1, maxChange: 0.02, nOutput: 7
+    };
+  }
+
+  function drawForward() {
+    const sol = state.forwardSolution;
+    if (!sol) return;
+    const sc = state.forwardScenario;
+    const series = [];
+    const times = sol.times;
+    const n = sol.c.length;
+    for (let i = 0; i < n; i++) {
+      series.push({
+        type: "line",
+        x: sol.r.map(r => r * 1e6),
+        y: sol.c[i],
+        color: PALETTE[i % PALETTE.length],
+        label: i === 0 ? "初始" : formatTime(times[i]),
+        width: i === n - 1 ? 2.6 : 1.5,
+        dash: i === 0 ? [5, 4] : []
+      });
+    }
+    const annotations = [];
+    if (sc && sc.interface > 0) {
+      annotations.push({
+        x: sc.interface * 1e6, color: "#64748b", dash: [4, 4], label: "界面"
+      });
+    }
+    drawChart("f-canvas", {
+      series, annotations,
+      xLabel: "距离 r (µm)",
+      yLabel: "浓度 C",
+      title: sc && sc.interface > 0 ? "双层扩散剖面" : "扩散剖面",
+      legendPos: "topleft"
+    });
+  }
+
+  function runForward() {
+    try {
+      const sc = readForwardScenario();
+      const tStart = performance.now();
+      const sol = Core.simulate(sc);
+      const elapsed = performance.now() - tStart;
+      state.forwardSolution = sol;
+      state.forwardScenario = sc;
+      drawForward();
+      const d = sol.diagnostics;
+      const lines = [
+        "几何: " + sc.geometry + "    单元数: " + d.nCells + "    步数: " + d.steps,
+        "总时长: " + formatTime(sc.duration) + "    用时: " + elapsed.toFixed(0) + " ms",
+        "输出时刻: " + sol.times.map(formatTime).join(", "),
+        "初始总量: " + formatNum(d.massInitial) + "    末态总量: " + formatNum(d.massFinal)
+      ];
+      if (d.relativeMassError !== null && d.relativeMassError !== undefined) {
+        lines.push("相对质量误差: " + d.relativeMassError.toExponential(2));
+      } else {
+        lines.push("边界开放，质量不守恒（正常）");
+      }
+      $("f-info").textContent = lines.join("\n");
+      toast("正演完成，用时 " + elapsed.toFixed(0) + " ms");
+    } catch (err) {
+      console.error(err);
+      toast("正演失败：" + err.message, true);
+    }
+  }
+
+  function exportForwardCSV() {
+    const sol = state.forwardSolution;
+    if (!sol) { toast("请先运行一次正演", true); return; }
+    const rows = ["time_s,time_a,r_um,concentration,temperature_C"];
+    for (let i = 0; i < sol.times.length; i++) {
+      for (let j = 0; j < sol.r.length; j++) {
+        rows.push([
+          sol.times[i],
+          sol.times[i] / SEC_YEAR,
+          sol.r[j] * 1e6,
+          sol.c[i][j],
+          sol.temperatures[i]
+        ].join(","));
+      }
+    }
+    downloadText("elemdiff_forward.csv", rows.join("\n"));
+    toast("已导出正演 CSV");
+  }
+
+  /* ---------------- 反演 ---------------- */
+
+  function setFitData(data, label) {
+    state.fitData = data;
+    state.fitResult = null;
+    $("i-filename").textContent = label + "  ·  " + data.x.length + " 个点";
+    $("i-badge").textContent = "";
+    drawFitPreview();
+  }
+
+  function drawFitPreview() {
+    const data = state.fitData;
+    if (!data) return;
+    drawChart("i-canvas", {
+      series: [{
+        type: "points", x: data.x.map(v => v * 1e6), y: data.c,
+        yerr: data.sigma || undefined, color: "#0f172a", label: "数据"
+      }],
+      xLabel: "距离 x (µm)", yLabel: "浓度 C", title: "实测剖面", legendPos: "topright"
+    });
+  }
+
+  function drawFitResult() {
+    const fit = state.fitResult;
+    if (!fit) return;
+    const xm = fit.x.map(v => v * 1e6);
+    const series = [
+      {
+        type: "points", x: xm, y: fit.c,
+        yerr: fit.sigma || undefined, color: "#0f172a", label: "数据"
+      },
+      {
+        type: "line", x: xm, y: fit.model, color: "#dc2626", label: "拟合", width: 2.4
+      }
+    ];
+    const p = fit.params;
+    let initial;
+    if (fit.kind === "step") {
+      initial = Core.stepProfile(fit.x, 0, p.c_left, p.c_right, p.x0);
+    } else {
+      initial = Core.plateauProfile(fit.x, 0, p.c_out, p.c_in, p.x1, p.x2);
+    }
+    series.push({
+      type: "line", x: xm, y: initial, color: "#94a3b8", label: "初始条件",
+      width: 1.2, dash: [5, 4]
+    });
+    drawChart("i-canvas", {
+      series,
+      xLabel: "距离 x (µm)",
+      yLabel: "浓度 C",
+      title: "log10(Dt) = " + fit.log10Dt.toFixed(2) + " ± "
+        + (fit.errors.log10_dt || 0).toFixed(2) + "   R² = " + fit.r2.toFixed(4),
+      legendPos: "topright"
+    });
+  }
+
+  function fitInfoText(fit) {
+    const errLog = fit.errors.log10_dt;
+    const lines = [
+      "拟合类型: " + fit.kind,
+      "log10(Dt) = " + fit.log10Dt.toFixed(3) + " ± " + (Number.isFinite(errLog) ? errLog.toFixed(3) : "—") + "   (Dt: m²)",
+      "Dt = " + formatNum(fit.dt) + " ± " + formatNum(fit.dtError) + " m²",
+      "R² = " + fit.r2.toFixed(4) + "   RMSE = " + formatNum(fit.rmse),
+      "约化 χ² = " + formatNum(fit.chi2Reduced) + "   dof = " + fit.dof,
+      ""
+    ];
+    const names = Object.keys(fit.params);
+    for (const k of names) {
+      const e = fit.errors[k];
+      lines.push(k + " = " + formatNum(fit.params[k], 6)
+        + " ± " + (Number.isFinite(e) ? formatNum(e, 3) : "—"));
+    }
+    try {
+      const T = num("i-t", "温度");
+      const d0 = num("i-d0", "D0");
+      const ea = num("i-ea", "Ea") * 1e3;
+      const D = d0 * Math.exp(-ea / (R_GAS * (T + 273.15)));
+      if (D > 0) {
+        const t = fit.dt / D;
+        const te = fit.dtError / D;
+        lines.push("");
+        lines.push("D(" + T + " °C) = " + formatNum(D) + " m²/s");
+        lines.push("扩散时间 t = " + formatTime(t) + " ± " + formatTime(te));
+      }
+    } catch (_) {
+      // 缺少 T/D0/Ea 时不换算
+    }
+    return lines.join("\n");
+  }
+
+  function runFit() {
+    if (!state.fitData) {
+      toast("请先载入数据，或点“载入内置示例”", true);
+      return;
+    }
+    try {
+      const kind = $("i-kind").value;
+      const fit = Core.fitProfile(
+        state.fitData.x, state.fitData.c, state.fitData.sigma, kind,
+        { nStarts: 24 }
+      );
+      state.fitResult = fit;
+      drawFitResult();
+      $("i-info").textContent = fitInfoText(fit);
+      $("i-badge").textContent = "R² = " + fit.r2.toFixed(4);
+      toast("拟合完成");
+    } catch (err) {
+      console.error(err);
+      toast("拟合失败：" + err.message, true);
+    }
+  }
+
+  function exportFitCSV() {
+    const fit = state.fitResult;
+    if (!fit) { toast("请先进行拟合", true); return; }
+    const rows = ["x_um,observed,model,residual,sigma"];
+    for (let i = 0; i < fit.x.length; i++) {
+      rows.push([
+        fit.x[i] * 1e6, fit.c[i], fit.model[i],
+        fit.c[i] - fit.model[i], fit.sigma[i]
+      ].join(","));
+    }
+    downloadText("elemdiff_fit.csv", rows.join("\n"));
+    toast("已导出拟合 CSV");
+  }
+
+  /* ---------------- 封闭温度 ---------------- */
+
+  function runClosure(showToast) {
+    try {
+      const geometry = $("c-geometry").value;
+      const eaK = num("c-ea", "活化能") * 1e3;
+      const d0 = num("c-d0", "D0");
+      const radius = num("c-radius", "特征半径") * 1e-6;
+      const ratePerMa = num("c-rate", "冷却速率");
+      const rate = ratePerMa / SEC_MA;
+      const tc = Core.dodsonTc(eaK, d0, radius, rate, geometry);
+      const rates = [];
+      for (let i = 0; i < 70; i++) rates.push(Math.pow(10, -1 + 4 * i / 69));
+      const geoms = [
+        ["sphere", "球体 (A=55)", "#dc2626", "-"],
+        ["cylinder", "圆柱 (A=27)", "#2563eb", "--"],
+        ["plane", "平面 (A=9.5)", "#0f766e", ":"]
+      ];
+      const series = geoms.map(([g, label, color, dash]) => ({
+        type: "line", x: rates, y: Core.tcCurve(eaK, d0, radius, rates, g),
+        color, label, width: 2.2, dash: dash === "-" ? [] : (dash === "--" ? [6, 4] : [2, 3])
+      }));
+      drawChart("c-canvas", {
+        series, xLog: true,
+        xLabel: "冷却速率 (°C/Ma)", yLabel: "封闭温度 Tc (°C)",
+        title: "Tc 与冷却速率",
+        annotations: [{ x: ratePerMa, color: "#475569", dash: [4, 4], label: "当前" }],
+        legendPos: "topleft"
+      });
+      $("c-info").textContent =
+        "几何: " + geometry + "（A=" + Core.GEOMETRY_FACTOR[geometry] + "）\n"
+        + "Ea = " + (eaK / 1e3).toFixed(1) + " kJ/mol\n"
+        + "D0 = " + formatNum(d0) + " m²/s\n"
+        + "a = " + (radius * 1e6).toFixed(2) + " µm\n"
+        + "冷却速率 = " + ratePerMa + " °C/Ma\n\n"
+        + "Dodson 封闭温度 Tc = " + tc.toFixed(2) + " °C";
+      $("c-extra").textContent =
+        "球体: " + Core.dodsonTc(eaK, d0, radius, rate, "sphere").toFixed(1) + " °C    "
+        + "圆柱: " + Core.dodsonTc(eaK, d0, radius, rate, "cylinder").toFixed(1) + " °C    "
+        + "平面: " + Core.dodsonTc(eaK, d0, radius, rate, "plane").toFixed(1) + " °C";
+      if (showToast !== false) toast("Tc = " + tc.toFixed(2) + " °C");
+    } catch (err) {
+      console.error(err);
+      toast("封闭温度计算失败：" + err.message, true);
+    }
+  }
+
+  /* ---------------- 界面交互 ---------------- */
+
+  function activate(name) {
+    document.querySelectorAll(".tab").forEach(b => {
+      b.classList.toggle("active", b.dataset.tab === name);
+    });
+    document.querySelectorAll(".panel").forEach(p => {
+      p.classList.toggle("active", p.id === "tab-" + name);
+    });
+    setTimeout(() => {
+      if (name === "forward") drawForward();
+      else if (name === "inverse") {
+        if (state.fitResult) drawFitResult(); else drawFitPreview();
+      } else if (name === "closure") runClosure(false);
+    }, 40);
+  }
+
+  function setFieldVisible(id, visible) {
+    const el = $(id);
+    if (!el) return;
+    const field = el.closest(".field");
+    if (field) field.style.display = visible ? "" : "none";
+  }
+
+  function refreshForwardVisibility() {
+    const init = $("f-initial").value;
+    setFieldVisible("f-c0", init === "uniform");
+    setFieldVisible("f-left", init !== "uniform");
+    setFieldVisible("f-right", init === "step");
+    setFieldVisible("f-plateau", init === "plateau");
+    setFieldVisible("f-x1", init !== "uniform");
+    setFieldVisible("f-x2", init === "plateau");
+
+    const th = $("f-thermal").value;
+    setFieldVisible("f-t1", th !== "isothermal");
+
+    const plane = $("f-geometry").value === "plane";
+    setFieldVisible("f-innerbc", plane);
+    setFieldVisible("f-innerval", plane && $("f-innerbc").value === "dirichlet");
+    setFieldVisible("f-outerval", $("f-outerbc").value === "dirichlet");
+
+    const two = Number($("f-interface").value) > 0;
+    setFieldVisible("f-nouter", two);
+    setFieldVisible("f-d0m", two);
+    setFieldVisible("f-eam", two);
+    setFieldVisible("f-kd", two);
+  }
+
+  function loadBuiltin() {
+    const data = builtinData();
+    setFitData(data, "内置合成示例（Dt=2.5e-10 m²，σ=1.5）");
+    $("i-kind").value = "step";
+    $("i-info").textContent = "已载入内置示例，点击“拟合剖面”。";
+    toast("已载入内置示例");
+  }
+
+  function runDemo() {
+    try {
+      runForward();
+      loadBuiltin();
+      runFit();
+      runClosure();
+      activate("forward");
+      toast("示例已生成：正演、反演、Tc 都已完成");
+    } catch (err) {
+      toast("示例运行失败：" + err.message, true);
+    }
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => activate(btn.dataset.tab));
+    });
+    $("btn-about").addEventListener("click", () => activate("about"));
+    $("btn-demo").addEventListener("click", runDemo);
+
+    $("f-run").addEventListener("click", runForward);
+    $("f-csv").addEventListener("click", exportForwardCSV);
+    $("f-png").addEventListener("click", () => downloadCanvas("f-canvas", "elemdiff_forward.png"));
+    ["f-initial", "f-thermal", "f-geometry", "f-interface", "f-outerbc", "f-innerbc"].forEach(id => {
+      $(id).addEventListener("change", refreshForwardVisibility);
+    });
+
+    $("i-file").addEventListener("change", event => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const raw = parseProfileText(String(reader.result));
+          const unit = $("i-xunit").value;
+          const factor = unit === "m" ? 1 : (unit === "cm" ? 1e-2 : (unit === "mm" ? 1e-3 : 1e-6));
+          const data = {
+            x: raw.x.map(v => v * factor),
+            c: raw.c,
+            sigma: raw.sigma
+          };
+          setFitData(data, file.name);
+          $("i-info").textContent = "已载入 " + file.name + "，点击“拟合剖面”。";
+          toast("已载入数据");
+        } catch (err) {
+          console.error(err);
+          toast("载入失败：" + err.message, true);
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    });
+
+    $("i-sample").addEventListener("click", loadBuiltin);
+    $("i-run").addEventListener("click", runFit);
+    $("i-csv").addEventListener("click", exportFitCSV);
+    $("c-run").addEventListener("click", runClosure);
+
+    document.addEventListener("keydown", event => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault();
+        runForward();
+      }
+    });
+
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if ($("tab-forward").classList.contains("active")) drawForward();
+        else if ($("tab-inverse").classList.contains("active")) {
+          if (state.fitResult) drawFitResult(); else drawFitPreview();
+        } else if ($("tab-closure").classList.contains("active")) runClosure(false);
+      }, 160);
+    });
+
+    refreshForwardVisibility();
+    // 首屏先跑一次默认正演，打开页面就能看到结果
+    setTimeout(() => {
+      runForward();
+      loadBuiltin();
+    }, 80);
+
+    // 便于调试/二次开发：在控制台可查看当前状态
+    window.ElemDiff = { Core, state, runForward, runFit, runClosure, activate };
+  });
+})();
+</script>
+</body>
+</html>

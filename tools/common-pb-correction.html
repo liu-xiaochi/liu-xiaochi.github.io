@@ -1,0 +1,2665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>普通 Pb 校正 · 网页版</title>
+<style>
+:root{
+  --bg:#eef2f7; --card:#fff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
+  --brand:#1f4e79; --brand2:#2563eb; --ok:#15803d; --warn:#b45309; --bad:#b91c1c;
+  --chip:#f1f5f9; --shadow:0 1px 2px rgba(15,23,42,.05),0 8px 24px -16px rgba(15,23,42,.18);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Segoe UI","Microsoft YaHei",system-ui,-apple-system,"PingFang SC",sans-serif;
+  background:var(--bg); color:var(--ink); font-size:14px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+header{background:linear-gradient(135deg,#15314d 0%,#1f4e79 55%,#2a5f8f 100%);color:#fff;padding:18px 0 0}
+.wrap{max-width:1440px;margin:0 auto;padding:0 22px}
+.brand{display:flex;align-items:center;gap:13px}
+.logo{width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,.15);
+  display:grid;place-items:center;font-weight:700;font-size:15px;letter-spacing:.5px;
+  border:1px solid rgba(255,255,255,.18)}
+h1{font-size:21px;margin:0;font-weight:600;letter-spacing:.3px}
+.sub{opacity:.72;font-size:12px;margin-top:2px}
+.badges{margin-left:auto;display:flex;gap:8px;font-size:12px;align-items:center}
+.badge{padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.12)}
+.tabs{display:flex;gap:2px;margin-top:18px}
+.tab{padding:10px 20px;border:0;background:transparent;color:rgba(255,255,255,.7);
+  border-radius:10px 10px 0 0;cursor:pointer;font-size:14px;font-family:inherit;transition:.15s}
+.tab:hover{color:#fff;background:rgba(255,255,255,.07)}
+.tab.active{background:var(--bg);color:var(--brand);font-weight:600}
+main{padding:20px 0 46px;min-height:60vh}
+.panel{display:none;animation:fade .18s ease}
+.panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 17px;
+  box-shadow:var(--shadow);margin-bottom:14px}
+.card h2{font-size:14px;margin:0 0 12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card h2 .num{width:20px;height:20px;border-radius:6px;background:var(--brand);color:#fff;
+  font-size:11px;display:grid;place-items:center;font-weight:700}
+.card h2 .hint{margin-left:auto;font-size:12px;color:var(--muted);font-weight:400}
+
+.controls{display:grid;grid-template-columns:1.1fr 1.2fr .85fr;gap:14px;align-items:start}
+.controls .card{margin-bottom:0;height:100%}
+@media (max-width:1100px){.controls{grid-template-columns:1fr}}
+
+.drop{border:1.5px dashed #cbd5e1;border-radius:11px;padding:16px 12px;text-align:center;
+  cursor:pointer;transition:.15s;background:#fbfdff}
+.drop:hover,.drop.hover{border-color:var(--brand2);background:#eff6ff}
+.drop .big{font-size:13px;font-weight:600;color:var(--brand)}
+.drop .small{font-size:12px;color:var(--muted);margin-top:3px}
+.drop .file{font-size:12px;color:var(--brand2);margin-top:6px;word-break:break-all}
+
+.field{display:flex;align-items:center;gap:8px;margin-top:9px}
+.field label{font-size:12.5px;color:var(--muted);white-space:nowrap;min-width:74px}
+select,input[type=text],input[type=number]{
+  height:33px;border:1px solid var(--line);border-radius:8px;padding:0 9px;font-size:13px;
+  font-family:inherit;background:#fff;color:var(--ink);width:100%;outline:none;transition:.15s
+}
+select:focus,input:focus{border-color:var(--brand2);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+input[type=number]{font-variant-numeric:tabular-nums}
+select:disabled,input:disabled{background:#f8fafc;color:#94a3b8}
+
+.methods{display:grid;gap:7px}
+.method{display:flex;gap:9px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;
+  cursor:pointer;align-items:flex-start;transition:.12s}
+.method:hover{border-color:#c7d2fe;background:#fafbff}
+.method.on{border-color:var(--brand2);background:#eff6ff;box-shadow:0 0 0 1px var(--brand2) inset}
+.method input{margin:2px 0 0}
+.method .t{font-size:12.8px;font-weight:600}
+.method .d{font-size:11.5px;color:var(--muted);margin-top:1px}
+
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1}
+.btn{height:36px;padding:0 15px;border-radius:9px;border:1px solid var(--line);background:#fff;
+  cursor:pointer;font-size:13px;font-family:inherit;color:var(--ink);transition:.12s;white-space:nowrap}
+.btn:hover{border-color:#94a3b8;background:#f8fafc}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.btn.primary:hover{background:#173d5f;border-color:#173d5f}
+.btn.accent{background:var(--brand2);border-color:var(--brand2);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{height:30px;font-size:12px;padding:0 11px}
+
+.progress{width:100%;height:8px;margin-top:10px;border-radius:99px;overflow:hidden;background:#e2e8f0;display:none}
+.progress.on{display:block}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2563eb,#38bdf8);transition:width .15s}
+.status{font-size:12.5px;color:var(--muted);margin-top:8px;min-height:18px}
+.status.ok{color:var(--ok)} .status.err{color:var(--bad)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+.kpi .v{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--brand)}
+.kpi .l{font-size:11.5px;color:var(--muted);margin-top:2px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+
+.tablewrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px}
+thead th{position:sticky;top:0;background:#f1f5f9;color:#334155;z-index:2;font-weight:600;
+  padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:center}
+tbody td{padding:5px 8px;border-bottom:1px solid #f1f5f9;white-space:nowrap;text-align:center;
+  font-variant-numeric:tabular-nums}
+tbody tr:nth-child(even){background:#fbfcfe}
+tbody tr:hover{background:#eff6ff}
+tbody tr.bad{background:#fef2f2} tbody tr.bad:hover{background:#fee2e2}
+tbody tr.warn{background:#fffbeb} tbody tr.warn:hover{background:#fef3c7}
+td.left{text-align:left}
+.pager{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.pager .btn{height:28px;font-size:12px;padding:0 10px}
+.pager .sp{margin-left:auto}
+
+.charts{display:grid;grid-template-columns:1.35fr 1fr;gap:14px}
+@media (max-width:1000px){.charts{grid-template-columns:1fr}}
+canvas{display:block;width:100%;border-radius:8px}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:1px}
+
+pre.log{background:#0f172a;color:#cbd5e1;border-radius:10px;padding:12px;font-size:12px;
+  max-height:220px;overflow:auto;margin:0;font-family:Consolas,"Cascadia Mono",monospace;white-space:pre-wrap}
+pre.log .ok{color:#4ade80} pre.log .er{color:#f87171}
+
+.grid2{display:grid;grid-template-columns:340px 1fr;gap:16px}
+@media (max-width:980px){.grid2{grid-template-columns:1fr}}
+.resbox{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:14px}
+.bigage{font-size:34px;font-weight:650;color:var(--brand);font-variant-numeric:tabular-nums;line-height:1.1}
+.bigage small{font-size:14px;color:var(--muted);font-weight:400}
+.kv{width:100%;font-size:12.5px;border-collapse:collapse}
+.kv td{padding:4px 0;border-bottom:1px dashed #e2e8f0}
+.kv td:first-child{color:var(--muted);width:46%}
+.kv td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+
+.help h3{font-size:14px;margin:18px 0 8px;color:var(--brand)}
+.help p,.help li{font-size:13px;color:#334155}
+.help ul{padding-left:20px;margin:6px 0}
+.help code{background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:12px;
+  font-family:Consolas,monospace;color:#0f172a}
+.formula{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:12px 14px;
+  font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px;overflow:auto;line-height:1.7;
+  white-space:pre-wrap}
+.formula em{color:#7dd3fc;font-style:normal}
+.help table{font-size:12.5px}
+.help td,.help th{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left}
+.tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;background:#e0e7ff;color:#3730a3}
+footer{color:var(--muted);font-size:12px;text-align:center;padding:10px 0 26px}
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">Pb</div>
+      <div>
+        <h1>普通 Pb 校正</h1>
+        <div class="sub">LA-ICP-MS U-Pb / U-Th-Pb Common Pb Correction · 网页版</div>
+      </div>
+      <div class="badges">
+        <span class="badge">离线单文件</span>
+        <span class="badge">无数据上传</span>
+        <span class="badge" id="verBadge">v1.0.0</span>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="batch">批量校正</button>
+      <button class="tab" data-tab="single">单点计算</button>
+      <button class="tab" data-tab="help">方法说明</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ============================ 批量 ============================ -->
+  <section class="panel active" id="panel-batch">
+    <div class="controls">
+      <div class="card">
+        <h2><span class="num">1</span>数据</h2>
+        <div class="drop" id="drop">
+          <div class="big">点击选择文件，或拖拽到此处</div>
+          <div class="small">支持 .xlsx / .csv（.xls 请先在 Excel 中另存为 .xlsx）</div>
+          <div class="file" id="fileName"></div>
+          <input type="file" id="fileInput" accept=".xlsx,.xlsm,.csv,.txt" hidden>
+        </div>
+        <div class="field">
+          <label>工作表</label>
+          <select id="sheetSelect" disabled><option>请先选择文件</option></select>
+        </div>
+        <div class="field">
+          <label>识别结果</label>
+          <div class="status" id="fileInfo" style="margin:0">尚未读取数据</div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn sm" id="btnDemo">载入示例数据</button>
+          <button class="btn sm" id="btnTemplate">下载模板</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="num">2</span>方法与普通 Pb 组成</h2>
+        <div class="methods" id="methods">
+          <label class="method on">
+            <input type="radio" name="method" value="207" checked>
+            <span><span class="t">207Pb 法</span><span class="d">假设谐和；适合普通 Pb 较低的锆石、独居石</span></span>
+          </label>
+          <label class="method">
+            <input type="radio" name="method" value="total">
+            <span><span class="t">总 Pb 三维迭代法</span><span class="d">以 208/232 年龄为锚；适合高普通 Pb 独居石（需 Th、U）</span></span>
+          </label>
+          <label class="method">
+            <input type="radio" name="method" value="tw">
+            <span><span class="t">Tera-Wasserburg 截距法</span><span class="d">同组样品回归，取谐和线下交点；适合普通 Pb 变化大的样品群</span></span>
+          </label>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label>演化模型</label>
+          <select id="modelSelect">
+            <option value="sk">Stacey-Kramers 两阶段 (1975)</option>
+            <option value="fixed">固定组成（现今 / 自定义）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>取值方式</label>
+          <select id="modeSelect">
+            <option value="at_age">样品年龄时的模型组成（推荐）</option>
+            <option value="present">现今普通 Pb 组成</option>
+          </select>
+        </div>
+        <div class="row" id="customRow" style="margin-top:9px;display:none">
+          <div><label style="font-size:11.5px;color:var(--muted)">206/204</label>
+            <input type="number" id="r06" value="18.700" step="0.001"></div>
+          <div><label style="font-size:11.5px;color:var(--muted)">207/204</label>
+            <input type="number" id="r07" value="15.628" step="0.001"></div>
+          <div><label style="font-size:11.5px;color:var(--muted)">208/204</label>
+            <input type="number" id="r08" value="38.630" step="0.001"></div>
+        </div>
+        <div class="field">
+          <label>MC 次数</label>
+          <input type="number" id="mcCount" value="200" min="0" max="5000" step="50">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="num">3</span>运行</h2>
+        <button class="btn primary" id="btnRun" style="width:100%;height:40px" disabled>开始校正</button>
+        <div class="progress" id="progress"><i></i></div>
+        <div class="status" id="runStatus">请先载入数据</div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="btnXlsx" disabled>下载结果 xlsx</button>
+          <button class="btn" id="btnCsv" disabled>下载 CSV</button>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.6">
+          所有计算都在本机浏览器内完成，数据不会上传到任何服务器。
+        </div>
+      </div>
+    </div>
+
+    <div id="resultArea" class="hidden">
+      <div class="kpis" id="kpis"></div>
+
+      <div class="card">
+        <h2>样品汇总 <span class="hint" id="summaryHint"></span></h2>
+        <div class="tablewrap" style="max-height:300px"><table id="summaryTable"></table></div>
+      </div>
+
+      <div class="charts">
+        <div class="card">
+          <h2>Tera-Wasserburg 图 <span class="hint" id="twHint"></span></h2>
+          <canvas id="twCanvas"></canvas>
+          <div class="legend">
+            <span><i style="background:#64748b"></i>实测值</span>
+            <span><i style="background:#2563eb"></i>校正后</span>
+            <span><i style="background:#d68910;border-radius:2px"></i>普通 Pb 组成</span>
+            <span><i style="background:#dc2626;border-radius:2px"></i>回归交点年龄</span>
+          </div>
+        </div>
+        <div class="card">
+          <h2>年龄分布 <span class="hint" id="histHint"></span></h2>
+          <canvas id="histCanvas"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>校正结果 <span class="hint" id="tableHint"></span></h2>
+        <div class="tablewrap"><table id="resultTable"></table></div>
+        <div class="pager">
+          <button class="btn" id="prevPage">上一页</button>
+          <span id="pageInfo">1 / 1</span>
+          <button class="btn" id="nextPage">下一页</button>
+          <span class="sp">每页 100 行</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>运行日志</h2>
+        <pre class="log" id="log"></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ 单点 ============================ -->
+  <section class="panel" id="panel-single">
+    <div class="grid2">
+      <div class="card">
+        <h2>输入一个分析点</h2>
+        <div class="field"><label>206Pb/238U</label><input type="number" id="s_r68" value="0.0029859" step="any"></div>
+        <div class="field"><label>2σ 误差 (%)</label><input type="number" id="s_e68" value="8.31" step="any"></div>
+        <div class="field"><label>207Pb/235U</label><input type="number" id="s_r75" value="0.0273863" step="any"></div>
+        <div class="field"><label>2σ 误差 (%)</label><input type="number" id="s_e75" value="27.38" step="any"></div>
+        <div class="field"><label>Rho</label><input type="number" id="s_rho" value="0.64" step="any"></div>
+        <div class="field"><label>208Pb/232Th</label><input type="number" id="s_r208" value="0.000870179" step="any"></div>
+        <div class="field"><label>2σ 误差 (%)</label><input type="number" id="s_e208" value="5.32" step="any"></div>
+        <div class="field"><label>U (ppm)</label><input type="number" id="s_u" value="7521.24" step="any"></div>
+        <div class="field"><label>Th (ppm)</label><input type="number" id="s_th" value="55746.4" step="any"></div>
+        <div class="field"><label>方法</label>
+          <select id="s_method"><option value="207">207Pb 法</option><option value="total" selected>总 Pb 迭代法</option></select>
+        </div>
+        <button class="btn primary" id="btnCalc" style="width:100%;margin-top:12px">计 算</button>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.6">
+          Th/U 仅“总 Pb 迭代法”需要；Rho 可填 0。模型与取值方式沿用“批量校正”页的设置。
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="resbox">
+            <div class="bigage" id="singleAge">— <small>Ma</small></div>
+            <div style="font-size:12px;color:var(--muted);margin:4px 0 12px" id="singleFlags"></div>
+            <table class="kv" id="singleKv"></table>
+          </div>
+        </div>
+        <div class="card">
+          <h2>单点 Tera-Wasserburg 图</h2>
+          <canvas id="singleCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ 说明 ============================ -->
+  <section class="panel help" id="panel-help">
+    <div class="card">
+      <h2>三种方法</h2>
+      <table>
+        <tr><th>方法</th><th>适用对象</th><th>前提</th></tr>
+        <tr><td><b>207Pb 法</b></td><td>普通 Pb 较低的锆石、独居石（f206 &lt; 20%）</td><td>样品谐和；普通 Pb 组成已知</td></tr>
+        <tr><td><b>总 Pb 迭代法</b></td><td>普通 Pb 很高（30–90%）的独居石</td><td>有 208Pb/232Th 与 Th、U；以 208/232 年龄为锚</td></tr>
+        <tr><td><b>T-W 截距法</b></td><td>同一岩浆事件的样品群</td><td>同组同时代、普通 Pb 组成一致</td></tr>
+      </table>
+
+      <h3>207Pb 法（对应 09FW132 年龄.xls）</h3>
+      <div class="formula">
+r76_rad(t) = (e^(<em>λ235·t</em>) − 1) / [137.818·(e^(<em>λ238·t</em>) − 1)]
+f206       = (r76_meas − r76_rad) / (r76_common − r76_rad)
+(206/238)corr = (206/238)meas · (1 − f206)
+      </div>
+      <p>以测得的 206Pb/238U 年龄为起点，反算理论放射成因 207Pb/206Pb；实测多出来的部分就是普通 Pb。扣除后重算年龄，迭代到稳定。</p>
+
+      <h3>总 Pb 三维迭代法（对应 Mottram 表与 docx）</h3>
+      <div class="formula">
+Δ(207/235)   = (207/235)meas − (e^(<em>λ235·t</em>) − 1)
+(206/238)com = Δ / (137.818 · r76_common)
+(208/232)com = r86_common · (206/238)com · (<em>238U/232Th</em>)原子
+      </div>
+      <p>以 208Pb/232Th 年龄（对普通 Pb 最不敏感）为锚，求普通 206Pb，再用 Th/U 求普通 208Pb，迭代到 207/235 与 208/232 年龄一致。</p>
+
+      <h3>Tera-Wasserburg 截距法</h3>
+      <p>在 <code>238U/206Pb</code>—<code>207Pb/206Pb</code> 图上，作通过普通 Pb 组成点 <code>(0, 207/206c)</code> 的加权回归，与谐和线的下交点即年龄。按样品分组分别回归。</p>
+
+      <h3>普通 Pb 组成</h3>
+      <p>Stacey-Kramers (1975) 两阶段：4.57–3.70 Ga（μ=7.19，Th/U=4.62），3.70 Ga–现在（μ=9.74，Th/U=3.78），现今 18.700 / 15.628 / 38.630。注意 207 的演化使用 <code>235U/204Pb = μ/137.818</code>。</p>
+      <p>“样品年龄时的组成”比“现今组成”严格；0.42 Ga 时 207/206 会从 0.8356 变到 0.8643，对老样品不可忽略。</p>
+
+      <h3>误差</h3>
+      <p>所有年龄误差为 2σ。程序对 206Pb/238U 与 207Pb/235U 的对数误差按 Rho 联合抽样，每个 Monte-Carlo 试验完整走一遍迭代，取 1σ 标准差 × 2。Rho 定义与 Isoplot 相同：</p>
+      <div class="formula">ρ = (σ68² + σ75² − σ76²) / (2·σ68·σ75)</div>
+
+      <h3>判据</h3>
+      <ul>
+        <li><b>f206 &lt; 20%</b>：207 法可靠；</li>
+        <li><b>20–50%</b>：207 法对普通 Pb 组成假设敏感，结果仅供参考；</li>
+        <li><b>&gt; 50%</b>：建议改用总 Pb 迭代法或 T-W 截距法；</li>
+        <li><b>&gt; 100% 或 &lt; 0</b>：数据不自洽，自动标记“剔除”。</li>
+      </ul>
+
+      <h3>输入格式</h3>
+      <p>表头需出现在前 12 行内，至少含 <code>206Pb/238U</code> 与 <code>207Pb/235U</code>（或 <code>207Pb/206Pb</code>）。也接受 <code>238U/206Pb</code>（自动取倒数）、<code>208Pb/232Th Age (Ma)</code>（自动反算比值）。误差列支持 <code>2s%p</code>、<code>2s%</code>、<code>1sigma</code>、<code>2s ab</code> 等写法。</p>
+      <p>普通 Pb 组成的不确定度属于系统误差，未计入 2σ；f206 越高，结果对它越敏感。</p>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  普通 Pb 校正 · 网页版 &nbsp;|&nbsp; 与 Python 版 <code>pbcorr</code> 同源算法，已用项目内数据逐项校验
+</footer>
+
+<script>/*!
+ * 普通 Pb（Common Pb）校正 —— 核心计算模块
+ * 与 pbcorr（Python 版）逐式对应，纯 JS、无 DOM 依赖，可在 Node 中直接测试。
+ */
+(function (root) {
+  'use strict';
+
+  const VERSION = '1.0.0';
+  const L238 = 1.55125e-10;
+  const L235 = 9.8485e-10;
+  const L232 = 4.9475e-11;
+  const R18 = 137.818;          // 238U/235U
+  const MU238 = 238.02891;
+  const MTH232 = 232.03805;
+
+  const clamp = (x, a, b) => Math.min(Math.max(x, a), b);
+  const isNum = (v) => typeof v === 'number' && isFinite(v);
+
+  // ------------------------------------------------------------------
+  // 年龄方程
+  // ------------------------------------------------------------------
+  const age206 = (r) => Math.log1p(r) / L238 / 1e6;
+  const age235 = (r) => Math.log1p(r) / L235 / 1e6;
+  const age232 = (r) => Math.log1p(r) / L232 / 1e6;
+  const ratio206 = (t) => Math.expm1(L238 * t * 1e6);
+  const ratio235 = (t) => Math.expm1(L235 * t * 1e6);
+  const ratio232 = (t) => Math.expm1(L232 * t * 1e6);
+  const ratio76 = (t) => (t <= 0 ? NaN : ratio235(t) / (R18 * ratio206(t)));
+
+  function age76(R) {
+    const rmin = L235 / (R18 * L238);
+    if (!(R > rmin) || !isFinite(R)) return NaN;
+    let lo = 0, hi = 5000;
+    for (let i = 0; i < 60; i++) {
+      const m = 0.5 * (lo + hi);
+      if (ratio76(m) < R) lo = m; else hi = m;
+    }
+    return 0.5 * (lo + hi);
+  }
+
+  // ------------------------------------------------------------------
+  // 普通 Pb 演化模型
+  // ------------------------------------------------------------------
+  function SKModel(opt) {
+    opt = opt || {};
+    this.name = 'Stacey-Kramers (1975)';
+    this.t1 = opt.t1 ?? 4570;
+    this.mu1 = opt.mu1 ?? 7.19;
+    this.thu1 = opt.thu1 ?? 4.62;
+    this.t2 = opt.t2 ?? 3700;
+    this.mu2 = opt.mu2 ?? 9.74;
+    this.thu2 = opt.thu2 ?? 3.78;
+    this.i206 = opt.i206 ?? 9.307;
+    this.i207 = opt.i207 ?? 10.294;
+    this.i208 = opt.i208 ?? 29.487;
+    this._e238t1 = Math.exp(L238 * this.t1 * 1e6);
+    this._e235t1 = Math.exp(L235 * this.t1 * 1e6);
+    this._e232t1 = Math.exp(L232 * this.t1 * 1e6);
+    this._e238t2 = Math.exp(L238 * this.t2 * 1e6);
+    this._e235t2 = Math.exp(L235 * this.t2 * 1e6);
+    this._e232t2 = Math.exp(L232 * this.t2 * 1e6);
+  }
+
+  SKModel.prototype.ratios = function (tIn) {
+    const t = clamp(tIn, 0, this.t1);
+    const late = t >= this.t2;
+    const up = late ? t : this.t2;
+    const e238 = Math.exp(L238 * t * 1e6);
+    const e235 = Math.exp(L235 * t * 1e6);
+    const e232 = Math.exp(L232 * t * 1e6);
+
+    const d1_238 = this._e238t1 - Math.exp(L238 * up * 1e6);
+    const d1_235 = this._e235t1 - Math.exp(L235 * up * 1e6);
+    const d1_232 = this._e232t1 - Math.exp(L232 * up * 1e6);
+    const d2_238 = late ? 0 : this._e238t2 - e238;
+    const d2_235 = late ? 0 : this._e235t2 - e235;
+    const d2_232 = late ? 0 : this._e232t2 - e232;
+
+    return [
+      this.i206 + this.mu1 * d1_238 + this.mu2 * d2_238,
+      this.i207 + (this.mu1 / R18) * d1_235 + (this.mu2 / R18) * d2_235,
+      this.i208 + this.mu1 * this.thu1 * d1_232 + this.mu2 * this.thu2 * d2_232,
+    ];
+  };
+  SKModel.prototype.r76 = function (t) {
+    const r = this.ratios(t); return r[1] / r[0];
+  };
+  SKModel.prototype.r86 = function (t) {
+    const r = this.ratios(t); return r[2] / r[0];
+  };
+  SKModel.prototype.present = function () { return this.ratios(0); };
+  SKModel.prototype.describe = function () {
+    const p = this.present();
+    return this.name + '：现今 206/204=' + p[0].toFixed(3) +
+      '，207/204=' + p[1].toFixed(3) + '，208/204=' + p[2].toFixed(3) +
+      '；207/206=' + (p[1] / p[0]).toFixed(5) + '，208/206=' + (p[2] / p[0]).toFixed(5);
+  };
+
+  function FixedModel(p) {
+    p = p || {};
+    this.name = '固定组成';
+    this.r06 = p.r06 ?? 18.700;
+    this.r07 = p.r07 ?? 15.628;
+    this.r08 = p.r08 ?? 38.630;
+  }
+  FixedModel.prototype.ratios = function () { return [this.r06, this.r07, this.r08]; };
+  FixedModel.prototype.r76 = function () { return this.r07 / this.r06; };
+  FixedModel.prototype.r86 = function () { return this.r08 / this.r06; };
+  FixedModel.prototype.present = function () { return this.ratios(0); };
+  FixedModel.prototype.describe = function () {
+    return '固定组成：206/204=' + this.r06.toFixed(3) + '，207/204=' + this.r07.toFixed(3) +
+      '，208/204=' + this.r08.toFixed(3) + '；207/206=' + (this.r07 / this.r06).toFixed(5);
+  };
+
+  function buildModel(kind, p) {
+    return (kind === 'fixed') ? new FixedModel(p) : new SKModel();
+  }
+
+  // ------------------------------------------------------------------
+  // 误差与统计
+  // ------------------------------------------------------------------
+  function rhoToTw(s68, s75, rho) {
+    const cov = rho * s68 * s75;
+    const s76 = Math.sqrt(Math.max(s68 * s68 + s75 * s75 - 2 * cov, 0));
+    let rho76 = s76 > 0 ? (cov - s68 * s68) / (s68 * s76) : 0;
+    return { s76, rho76: clamp(rho76, -1, 1) };
+  }
+
+  function twToWetherill(s68, s76, rho76) {
+    const cov = rho76 * s68 * s76;
+    const s75 = Math.sqrt(Math.max(s68 * s68 + s76 * s76 + 2 * cov, 0));
+    let rho = s75 > 0 ? (s68 * s68 + cov) / (s68 * s75) : 0;
+    return { s75, rho: clamp(rho, -1, 1) };
+  }
+
+  function rhoFromErrors(s68, s75, s76) {
+    if (!(s68 > 0) || !(s75 > 0)) return 0;
+    return clamp((s68 * s68 + s75 * s75 - s76 * s76) / (2 * s68 * s75), -1, 1);
+  }
+
+  function lgamma(x) {
+    const c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+      -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    let y = x, tmp = x + 5.5;
+    tmp -= (x + 0.5) * Math.log(tmp);
+    let ser = 1.000000000190015;
+    for (let j = 0; j < 6; j++) { y += 1; ser += c[j] / y; }
+    return -tmp + Math.log(2.5066282746310005 * ser / x);
+  }
+
+  function chi2sf(x, dof) {
+    if (!(x > 0) || !(dof > 0)) return NaN;
+    const a = 0.5 * dof, xx = 0.5 * x;
+    if (xx < a + 1) {
+      let ap = a, s = 1 / a, delta = s;
+      for (let i = 0; i < 500; i++) {
+        ap += 1; delta *= xx / ap; s += delta;
+        if (Math.abs(delta) < Math.abs(s) * 1e-14) break;
+      }
+      const p = s * Math.exp(-xx + a * Math.log(xx) - lgamma(a));
+      return clamp(1 - p, 0, 1);
+    }
+    const tiny = 1e-300;
+    let b = xx + 1 - a, c = 1 / tiny, d = 1 / b, h = d;
+    for (let i = 1; i < 500; i++) {
+      const an = -i * (i - a);
+      b += 2; d = an * d + b;
+      if (Math.abs(d) < tiny) d = tiny;
+      c = b + an / c;
+      if (Math.abs(c) < tiny) c = tiny;
+      d = 1 / d;
+      const del = d * c; h *= del;
+      if (Math.abs(del - 1) < 1e-14) break;
+    }
+    const q = Math.exp(-xx + a * Math.log(xx) - lgamma(a)) * h;
+    return clamp(q, 0, 1);
+  }
+
+  function weightedMean(values, sigmas) {
+    let sw = 0, swx = 0, n = 0;
+    for (let i = 0; i < values.length; i++) {
+      const x = values[i], s = sigmas[i];
+      if (!isFinite(x) || !isFinite(s) || !(s > 0)) continue;
+      const w = 1 / (s * s);
+      sw += w; swx += w * x; n++;
+    }
+    if (n === 0) return { mean: NaN, sigma: NaN, mswd: NaN, prob: NaN, n: 0, chi2: NaN };
+    const mean = swx / sw;
+    if (n === 1) return { mean, sigma: Math.sqrt(1 / sw), mswd: NaN, prob: NaN, n, chi2: NaN };
+    let chi2 = 0;
+    for (let i = 0; i < values.length; i++) {
+      const x = values[i], s = sigmas[i];
+      if (!isFinite(x) || !isFinite(s) || !(s > 0)) continue;
+      chi2 += (x - mean) * (x - mean) / (s * s);
+    }
+    const dof = n - 1;
+    return { mean, sigma: Math.sqrt(1 / sw), mswd: chi2 / dof, prob: chi2sf(chi2, dof), n, chi2 };
+  }
+
+  // ------------------------------------------------------------------
+  // 随机数（可复现）
+  // ------------------------------------------------------------------
+  function RNG(seed) { this.s = (seed >>> 0) || 1; }
+  RNG.prototype.next = function () {
+    let t = (this.s += 0x6D2B79F5) >>> 0;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  RNG.prototype.normal = function () {
+    let u = 0, v = 0;
+    while (u === 0) u = this.next();
+    while (v === 0) v = this.next();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+
+  // ------------------------------------------------------------------
+  // 分析点
+  // ------------------------------------------------------------------
+  function num(v) {
+    if (v === null || v === undefined || v === '') return NaN;
+    if (typeof v === 'number') return isFinite(v) ? v : NaN;
+    const s = String(v).trim().replace(/,/g, '');
+    if (!s) return NaN;
+    const x = Number(s);
+    return isFinite(x) ? x : NaN;
+  }
+
+  function prepare(raw) {
+    const a = Object.assign({}, raw);
+    a.sample = a.sample === undefined || a.sample === null ? '' : String(a.sample);
+    a.grain = a.grain === undefined || a.grain === null ? '' : String(a.grain);
+    a.spot = a.spot === undefined || a.spot === null ? '' : String(a.spot);
+    a.comment = a.comment === undefined || a.comment === null ? '' : String(a.comment);
+    for (const k of ['u', 'th', 'pb', 'r68', 's68', 'r75', 's75', 'rho', 'r208', 's208']) {
+      a[k] = num(a[k]);
+    }
+    if (!isFinite(a.rho)) a.rho = 0;
+    if (!isFinite(a.s68)) a.s68 = 0;
+    if (!isFinite(a.s75)) a.s75 = 0;
+    if (!isFinite(a.s208)) a.s208 = 0;
+    if (!isFinite(a.r208)) a.r208 = NaN;
+    a.r76 = a.r75 / a.r68 / R18;
+    const t = rhoToTw(a.s68, a.s75, a.rho);
+    a.s76 = t.s76;
+    a.rho76 = t.rho76;
+    a.uTh = (a.th > 0 && a.u > 0) ? a.u / a.th : NaN;
+    a.thu_weight = (a.uTh > 0) ? 1 / a.uTh : NaN;
+    a.thuAtom = a.uTh * (MTH232 / MU238);
+    a.has207 = isFinite(a.r68) && isFinite(a.r75) && a.r68 > 0 && a.r75 > 0 &&
+      isFinite(a.s68) && isFinite(a.s75);
+    a.has208 = isFinite(a.r208) && a.r208 > 0 && isFinite(a.s208) && isFinite(a.thuAtom);
+    return a;
+  }
+
+  // ------------------------------------------------------------------
+  // 校正引擎
+  // ------------------------------------------------------------------
+  function engine207(r68, r75, model, mode) {
+    const r76 = r75 / r68 / R18;
+    let t = age206(r68);
+    let f = 0, r68c = r68, r76cModel = model.r76(0);
+    for (let i = 0; i < 60; i++) {
+      const rad = ratio76(t);
+      const rc = (mode === 'present') ? model.r76(0) : model.r76(t);
+      r76cModel = rc;
+      const den = rc - rad;
+      f = Math.abs(den) > 1e-12 ? (r76 - rad) / den : NaN;
+      if (!isFinite(f)) break;
+      r68c = r68 * (1 - f);
+      const tn = age206(r68c);
+      if (!isFinite(tn)) break;
+      if (Math.abs(tn - t) < 1e-7) { t = tn; break; }
+      t = tn;
+    }
+    const com68 = f * r68;
+    const com75 = com68 * r76cModel * R18;
+    const r75c = r75 - com75;
+    const r76cc = r68c !== 0 ? r75c / r68c / R18 : NaN;
+    return {
+      f206: f, com68, r68c, r75c, r76c: r76cc,
+      t68: age206(r68c), t75: age235(r75c), t76: age206(r68c),
+      r76cModel,
+    };
+  }
+
+  function engineTotal(r68, r75, r208, thuAtom, model, mode) {
+    let t = age232(r208);
+    for (let i = 0; i < 60; i++) {
+      const rc = (mode === 'present') ? model.r76(0) : model.r76(t);
+      const r86 = (mode === 'present') ? model.r86(0) : model.r86(t);
+      const com75 = r75 - ratio235(t);
+      const com68 = com75 / (rc * R18);
+      const com208 = r86 * com68 * thuAtom;
+      const tn = age232(r208 - com208);
+      if (!isFinite(tn)) break;
+      if (Math.abs(tn - t) < 1e-7) { t = tn; break; }
+      t = tn;
+    }
+    const rc = (mode === 'present') ? model.r76(0) : model.r76(t);
+    const r86 = (mode === 'present') ? model.r86(0) : model.r86(t);
+    const com75 = r75 - ratio235(t);
+    const com68 = com75 / (rc * R18);
+    const com208 = r86 * com68 * thuAtom;
+    const r68c = r68 - com68;
+    const r208c = r208 - com208;
+    const r75c = r75 - com75;
+    const r76cc = r68c !== 0 ? r75c / r68c / R18 : NaN;
+    return {
+      f206: com68 / r68, f208: com208 / r208, com68, com208,
+      r68c, r75c, r76c: r76cc, r208c,
+      t68: age206(r68c), t75: age235(r75c), t208: age232(r208c),
+      t76: age76(r76cc), r76cModel: rc,
+    };
+  }
+
+  function flagCommon(f206, t68, t75) {
+    const msgs = [];
+    if (!isFinite(f206) || !isFinite(t68)) return '无法计算';
+    if (f206 < 0) msgs.push('f206<0(普通Pb为负)');
+    else if (f206 > 1) msgs.push('f206>1(过度校正)');
+    else if (f206 > 0.5) msgs.push('普通Pb极高');
+    else if (f206 > 0.2) msgs.push('普通Pb较高');
+    if (typeof t75 === 'number' && isFinite(t75) && t68 > 0 &&
+      Math.abs(t68 - t75) / Math.max(t68, 1e-9) > 0.05) {
+      msgs.push('207/235与206/238不谐和');
+    }
+    return msgs.join(';');
+  }
+
+  function correctAnalysis(a, method, model, mode, nMc, seed) {
+    method = method || '207';
+    const res = {
+      analysis: a, method, ok: true, flags: '',
+      f206: NaN, f208: NaN, f206_2s: NaN, com68: NaN, com208: NaN,
+      r68c: NaN, r75c: NaN, r76c: NaN, r208c: NaN,
+      t68: NaN, t68_2s: NaN, t75: NaN, t75_2s: NaN,
+      t76: NaN, t76_2s: NaN, t208: NaN, t208_2s: NaN,
+      t_best: NaN, t_best_2s: NaN, r76c_model: NaN,
+    };
+    if (!a.has207) { res.ok = false; res.flags = '缺少 206/238 或 207/235'; return res; }
+    if (method === 'total' && !a.has208) {
+      res.ok = false; res.flags = '缺少 208/232 或 Th/U'; return res;
+    }
+
+    const n = Math.max(0, Math.floor(nMc || 0));
+    const total = n + 1;
+    const keys = (method === 'total')
+      ? ['f206', 'f208', 'com68', 'com208', 'r68c', 'r75c', 'r76c', 'r208c',
+        't68', 't75', 't76', 't208', 'r76cModel']
+      : ['f206', 'com68', 'r68c', 'r75c', 'r76c', 't68', 't75', 't76', 'r76cModel'];
+    const acc = {};
+    for (const k of keys) acc[k] = new Float64Array(total);
+
+    const rng = new RNG((seed === undefined || seed === null ? 20240101 : seed) >>> 0);
+    const rho = clamp(a.rho, -0.999, 0.999);
+    const sq = Math.sqrt(Math.max(1 - rho * rho, 0));
+
+    for (let i = 0; i < total; i++) {
+      let r68 = a.r68, r75 = a.r75, r208 = a.r208;
+      if (i > 0) {
+        const z1 = rng.normal(), z2 = rng.normal();
+        r68 = a.r68 * Math.exp(a.s68 * z1);
+        r75 = a.r75 * Math.exp(a.s75 * (rho * z1 + sq * z2));
+        r208 = a.r208 * Math.exp(a.s208 * rng.normal());
+      }
+      const out = (method === 'total')
+        ? engineTotal(r68, r75, r208, a.thuAtom, model, mode)
+        : engine207(r68, r75, model, mode);
+      for (const k of keys) acc[k][i] = out[k];
+    }
+
+    const pt = (k) => acc[k][0];
+    const err2 = (k) => {
+      if (total < 4) return NaN;
+      let s = 0, s2 = 0, m = 0;
+      for (let i = 1; i < total; i++) {
+        const v = acc[k][i];
+        if (!isFinite(v)) continue;
+        m++; s += v; s2 += v * v;
+      }
+      if (m < 3) return NaN;
+      const mean = s / m;
+      const varr = (s2 - m * mean * mean) / (m - 1);
+      if (!(varr > 0)) return NaN;
+      return 2 * Math.sqrt(varr);
+    };
+
+    res.f206 = pt('f206');
+    res.com68 = pt('com68');
+    res.r68c = pt('r68c');
+    res.r75c = pt('r75c');
+    res.r76c = pt('r76c');
+    res.t68 = pt('t68'); res.t68_2s = err2('t68');
+    res.t75 = pt('t75'); res.t75_2s = err2('t75');
+    res.t76 = pt('t76'); res.t76_2s = err2('t76');
+    res.r76c_model = pt('r76cModel');
+    res.f206_2s = err2('f206');
+    if (method === 'total') {
+      res.f208 = pt('f208'); res.com208 = pt('com208');
+      res.r208c = pt('r208c');
+      res.t208 = pt('t208'); res.t208_2s = err2('t208');
+      res.t_best = res.t208; res.t_best_2s = res.t208_2s;
+    } else {
+      res.t_best = res.t68; res.t_best_2s = res.t68_2s;
+    }
+
+    if (!isFinite(res.t_best)) {
+      res.ok = false; res.flags = '校正失败(结果非有限值)';
+    } else {
+      res.flags = flagCommon(res.f206, res.t68, method === '207' ? res.t75 : null);
+      if (method === 'total' && isFinite(res.t68) && res.t75 > 0 &&
+        Math.abs(res.t68 - res.t75) / res.t75 > 0.15) {
+        res.flags = [res.flags, '206/238与Th-Pb年龄不谐和'].filter(Boolean).join(';');
+      }
+      if (!(res.t_best > 0 && res.t_best < 4600)) {
+        res.flags = [res.flags, '年龄超出0–4600 Ma'].filter(Boolean).join(';');
+      }
+      res.ok = !/无法|过度|为负|超出/.test(res.flags);
+    }
+    return res;
+  }
+
+  // ------------------------------------------------------------------
+  // Tera-Wasserburg 截距法
+  // ------------------------------------------------------------------
+  let GRID = null;
+  function concordiaGrid(n) {
+    if (GRID) return GRID;
+    n = n || 2500;
+    const t = new Float64Array(n), X = new Float64Array(n), Y = new Float64Array(n);
+    const lo = Math.log(0.02), hi = Math.log(4600);
+    for (let i = 0; i < n; i++) {
+      const ti = Math.exp(lo + (hi - lo) * i / (n - 1));
+      t[i] = ti; X[i] = 1 / ratio206(ti); Y[i] = ratio76(ti);
+    }
+    GRID = { t, X, Y };
+    return GRID;
+  }
+
+  function twRoots(ms, y0) {
+    const g = concordiaGrid();
+    const out = new Float64Array(ms.length);
+    for (let j = 0; j < ms.length; j++) {
+      const m = ms[j];
+      let lo = -1;
+      let prev = y0 + m * g.X[0] - g.Y[0];
+      for (let i = 1; i < g.t.length; i++) {
+        const cur = y0 + m * g.X[i] - g.Y[i];
+        if (prev === 0 || prev * cur < 0) { lo = i - 1; break; }
+        prev = cur;
+      }
+      if (lo < 0) { out[j] = NaN; continue; }
+      let a = g.t[lo], b = g.t[lo + 1];
+      let ga = y0 + m * g.X[lo] - g.Y[lo];
+      for (let k = 0; k < 45; k++) {
+        const mid = 0.5 * (a + b);
+        const gm = y0 + m * (1 / ratio206(mid)) - ratio76(mid);
+        if (ga * gm <= 0) b = mid; else { a = mid; ga = gm; }
+      }
+      out[j] = 0.5 * (a + b);
+    }
+    return out;
+  }
+
+  function twIntersection(m, y0) { return twRoots([m], y0)[0]; }
+
+  function correctTw(list, model, mode, nMc, seed) {
+    const groups = new Map();
+    for (const a of list) {
+      if (!a.has207) continue;
+      const k = a.sample || '未命名';
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(a);
+    }
+    const rng = new RNG((seed === undefined || seed === null ? 20240101 : seed) >>> 0);
+    const fits = [], results = [];
+    for (const [sname, arr] of groups) {
+      const x = arr.map((a) => 1 / a.r68);
+      const y = arr.map((a) => a.r76);
+      const sx = arr.map((a) => a.s68 / a.r68);
+      const sy = arr.map((a) => a.s76 * a.r76);
+      const rho = arr.map((a) => a.rho76);
+
+      const ages68 = arr.map((a) => age206(a.r68)).sort((p, q) => p - q);
+      const tGuess = ages68[Math.floor(ages68.length / 2)];
+      let y0 = (mode === 'present') ? model.r76(0) : model.r76(tGuess);
+      let slope = NaN, slopeSig = NaN, mswd = NaN, prob = NaN, age = NaN;
+
+      for (let it = 0; it < 6; it++) {
+        const s = [], sig = [];
+        for (let i = 0; i < arr.length; i++) {
+          const si = (y[i] - y0) / x[i];
+          const varr = sy[i] * sy[i] + si * si * sx[i] * sx[i] - 2 * si * rho[i] * sx[i] * sy[i];
+          s.push(si);
+          sig.push(Math.sqrt(Math.max(varr, 1e-30)) / Math.abs(x[i]));
+        }
+        const wm = weightedMean(s, sig);
+        slope = wm.mean; slopeSig = wm.sigma; mswd = wm.mswd; prob = wm.prob;
+        if (isFinite(mswd) && mswd > 1) slopeSig *= Math.sqrt(mswd);
+        age = twIntersection(slope, y0);
+        if (!isFinite(age)) break;
+        const y0n = (mode === 'present') ? model.r76(0) : model.r76(age);
+        if (Math.abs(y0n - y0) < 1e-9) { y0 = y0n; break; }
+        y0 = y0n;
+      }
+
+      let age2s = NaN;
+      if (isFinite(slope) && isFinite(slopeSig) && slopeSig > 0 && nMc > 0) {
+        const ms = new Float64Array(nMc);
+        for (let i = 0; i < nMc; i++) ms[i] = slope + slopeSig * rng.normal();
+        const ages = twRoots(ms, y0).filter((v) => isFinite(v));
+        if (ages.length > 5) age2s = 2 * std(ages);
+      }
+
+      const flags = [];
+      if (!isFinite(age)) flags.push('与谐和线无交点');
+      if (isFinite(mswd) && mswd > 2.5) flags.push('MSWD=' + mswd.toFixed(1) + ' 离散偏大');
+      fits.push({ sample: sname, n: arr.length, age, age_2s: age2s, slope, slope_2s: slopeSig, y0, mswd, prob, flags: flags.join(';') });
+
+      for (const a of arr) {
+        const r = {
+          analysis: a, method: 'tw', ok: true, flags: 'T-W截距:' + (flags.join(';') || 'OK'),
+          f206: NaN, f208: NaN, f206_2s: NaN, com68: NaN, com208: NaN,
+          r68c: NaN, r75c: NaN, r76c: NaN, r208c: NaN,
+          t68: NaN, t68_2s: NaN, t75: NaN, t75_2s: NaN, t76: NaN, t76_2s: NaN,
+          t208: NaN, t208_2s: NaN, t_best: age, t_best_2s: age2s,
+          r76c_model: y0, slope, y0,
+        };
+        results.push(r);
+      }
+    }
+    return { results, fits };
+  }
+
+  function std(arr) {
+    const m = arr.reduce((p, c) => p + c, 0) / arr.length;
+    let s = 0;
+    for (const v of arr) s += (v - m) * (v - m);
+    return Math.sqrt(s / (arr.length - 1));
+  }
+
+  // ------------------------------------------------------------------
+  // 批量与汇总
+  // ------------------------------------------------------------------
+  function runCorrection(list, method, model, mode, nMc, seed, onProgress) {
+    method = method || '207';
+    if (method === 'tw') return correctTw(list, model, mode, nMc, seed);
+    const results = [];
+    for (let i = 0; i < list.length; i++) {
+      const s = (seed === undefined || seed === null) ? 20240101 : seed + i;
+      results.push(correctAnalysis(list[i], method, model, mode, nMc, s));
+      if (onProgress && (i % 25 === 0)) onProgress(i + 1, list.length);
+    }
+    return { results, fits: [] };
+  }
+
+  function summarize(results, method) {
+    const groups = new Map();
+    for (const r of results) {
+      if (!r.ok || !isFinite(r.t_best) || !isFinite(r.t_best_2s) || !(r.t_best_2s > 0)) continue;
+      const k = r.analysis.sample || '未命名';
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(r);
+    }
+    const rows = [];
+    for (const [k, arr] of groups) {
+      const wm = weightedMean(arr.map((r) => r.t_best), arr.map((r) => r.t_best_2s / 2));
+      let sigma = wm.sigma;
+      if (isFinite(wm.mswd) && wm.mswd > 1) sigma *= Math.sqrt(wm.mswd);
+      rows.push({
+        sample: k, n: wm.n, age: wm.mean, age_2s: 2 * sigma,
+        age_2s_uncorrected: 2 * wm.sigma, mswd: wm.mswd, prob: wm.prob, method,
+      });
+    }
+    rows.sort((a, b) => (a.sample < b.sample ? -1 : a.sample > b.sample ? 1 : 0));
+    return rows;
+  }
+
+  root.PBCORR = {
+    VERSION,
+    L238, L235, L232, R18,
+    age206, age235, age232, age76,
+    ratio206, ratio235, ratio232, ratio76,
+    SKModel, FixedModel, buildModel,
+    rhoToTw, twToWetherill, rhoFromErrors,
+    weightedMean, chi2sf,
+    RNG, prepare, correctAnalysis, correctTw, runCorrection, summarize,
+    twIntersection, twRoots, concordiaGrid,
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>/*!
+ * 普通 Pb 校正 —— 浏览器端 xlsx / csv 读写（纯 JS，无第三方库）
+ * 依赖：现代浏览器的 DecompressionStream('deflate-raw')（Chrome/Edge 103+、Firefox 113+、Safari 16.4+）
+ */
+(function (root) {
+  'use strict';
+
+  const PBC = root.PBCORR;
+  const R18 = 137.818;
+
+  // ==================================================================
+  // ZIP
+  // ==================================================================
+  async function unzip(buffer) {
+    const u8 = new Uint8Array(buffer);
+    const dv = new DataView(buffer);
+    let eocd = -1;
+    const min = Math.max(0, u8.length - 65558);
+    for (let i = u8.length - 22; i >= min; i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error('不是有效的 .xlsx（ZIP 结构缺失）');
+    const count = dv.getUint16(eocd + 10, true);
+    let off = dv.getUint32(eocd + 16, true);
+    const dec = new TextDecoder('utf-8');
+    const entries = new Map();
+    for (let k = 0; k < count; k++) {
+      if (dv.getUint32(off, true) !== 0x02014b50) break;
+      const method = dv.getUint16(off + 10, true);
+      const compSize = dv.getUint32(off + 20, true);
+      const nameLen = dv.getUint16(off + 28, true);
+      const extraLen = dv.getUint16(off + 30, true);
+      const commentLen = dv.getUint16(off + 32, true);
+      const localOff = dv.getUint32(off + 42, true);
+      const name = dec.decode(u8.subarray(off + 46, off + 46 + nameLen));
+      const lnameLen = dv.getUint16(localOff + 26, true);
+      const lextraLen = dv.getUint16(localOff + 28, true);
+      const dataStart = localOff + 30 + lnameLen + lextraLen;
+      entries.set(name, { method, data: u8.subarray(dataStart, dataStart + compSize) });
+      off += 46 + nameLen + extraLen + commentLen;
+    }
+    return entries;
+  }
+
+  async function inflate(entry) {
+    if (entry.method === 0) return entry.data;
+    if (entry.method !== 8) throw new Error('不支持的 ZIP 压缩方式: ' + entry.method);
+    if (typeof DecompressionStream !== 'function') {
+      throw new Error('当前浏览器不支持解压 xlsx，请改用 Chrome / Edge 103 以上版本，或先把数据另存为 CSV');
+    }
+    const ds = new DecompressionStream('deflate-raw');
+    const stream = new Blob([entry.data]).stream().pipeThrough(ds);
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  const XML_ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+  function decodeEntities(s) {
+    return s.replace(/&(#x?[0-9a-fA-F]+|\w+);/g, (m, g) => {
+      if (g[0] === '#') {
+        const code = g[1] === 'x' || g[1] === 'X'
+          ? parseInt(g.slice(2), 16) : parseInt(g.slice(1), 10);
+        return isFinite(code) ? String.fromCodePoint(code) : m;
+      }
+      return XML_ENT[g] !== undefined ? XML_ENT[g] : m;
+    });
+  }
+
+  // ==================================================================
+  // xlsx 读取
+  // ==================================================================
+  function parseWorkbookSkeleton(files) {
+    const dec = new TextDecoder('utf-8');
+    const wbEntry = files.get('xl/workbook.xml');
+    if (!wbEntry) return null;
+    return wbEntry; // 需要异步解压，交给 openXlsx
+  }
+
+  function attr(tag, name) {
+    const m = tag.match(new RegExp(name.replace(':', '\\:') + '\\s*=\\s*"([^"]*)"'));
+    return m ? decodeEntities(m[1]) : '';
+  }
+
+  function normalizeTarget(t) {
+    t = t.replace(/\\/g, '/');
+    if (t.startsWith('/')) return t.slice(1);
+    if (t.startsWith('xl/')) return t;
+    return 'xl/' + t;
+  }
+
+  function parseSharedStrings(xml) {
+    const out = [];
+    const re = /<si\b[^>]*>([\s\S]*?)<\/si>/g;
+    let m;
+    while ((m = re.exec(xml))) {
+      const ts = m[1].match(/<t\b[^>]*>([\s\S]*?)<\/t>/g) || [];
+      out.push(ts.map((t) => decodeEntities(t.replace(/<[^>]+>/g, ''))).join(''));
+    }
+    return out;
+  }
+
+  function colIndex(ref) {
+    let n = 0;
+    for (let i = 0; i < ref.length; i++) {
+      const c = ref.charCodeAt(i);
+      if (c < 65 || c > 90) break;
+      n = n * 26 + (c - 64);
+    }
+    return n - 1;
+  }
+
+  function parseSheetXml(xml, shared) {
+    const rows = [];
+    const rowRe = /<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g;
+    let rm;
+    let autoRow = 0;
+    while ((rm = rowRe.exec(xml))) {
+      const rowAttrs = rm[1] || '';
+      const rnum = parseInt(attr(rowAttrs, 'r'), 10);
+      const rowIdx = isFinite(rnum) && rnum > 0 ? rnum - 1 : autoRow++;
+      const body = rm[2] || '';
+      const cells = [];
+      const cellRe = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+      let cm;
+      while ((cm = cellRe.exec(body))) {
+        const cAttrs = cm[1] || '';
+        const inner = cm[2] || '';
+        const ref = attr(cAttrs, 'r');
+        const ci = ref ? colIndex(ref) : cells.length;
+        const t = attr(cAttrs, 't');
+        let val = null;
+        if (t === 'inlineStr') {
+          const ts = inner.match(/<t\b[^>]*>([\s\S]*?)<\/t>/g) || [];
+          val = ts.map((x) => decodeEntities(x.replace(/<[^>]+>/g, ''))).join('');
+        } else {
+          const vm = inner.match(/<v\b[^>]*>([\s\S]*?)<\/v>/);
+          if (vm) {
+            const raw = decodeEntities(vm[1]);
+            if (t === 's') val = shared[parseInt(raw, 10)] ?? '';
+            else if (t === 'str') val = raw;
+            else if (t === 'b') val = raw === '1';
+            else {
+              const n = Number(raw);
+              val = isFinite(n) ? n : raw;
+            }
+          } else {
+            const ts = inner.match(/<t\b[^>]*>([\s\S]*?)<\/t>/g);
+            if (ts) val = ts.map((x) => decodeEntities(x.replace(/<[^>]+>/g, ''))).join('');
+          }
+        }
+        if (val !== null && val !== '') cells[ci] = val;
+      }
+      // 补齐空洞
+      for (let i = 0; i < cells.length; i++) if (cells[i] === undefined) cells[i] = '';
+      if (cells.length) rows[rowIdx] = cells;
+    }
+    // 展开表头区的合并单元格（如 “Ages (Ma)” 跨 8 列），否则组标题只会落在首列
+    const mergeRe = /<mergeCell\b[^>]*ref="([^"]+)"/g;
+    let mm;
+    while ((mm = mergeRe.exec(xml))) {
+      const range = mm[1].split(':');
+      if (range.length !== 2) continue;
+      const c1 = colIndex(range[0]), r1 = rowOfRef(range[0]) - 1;
+      const c2 = colIndex(range[1]), r2 = rowOfRef(range[1]) - 1;
+      if (!(r1 >= 0 && r1 < 6 && r2 >= r1 && c2 >= c1)) continue;
+      const val0 = (rows[r1] || [])[c1];
+      if (val0 === undefined || val0 === '') continue;
+      for (let r = r1; r <= r2; r++) {
+        if (!rows[r]) rows[r] = [];
+        for (let c = c1; c <= c2; c++) {
+          if (rows[r][c] === undefined || rows[r][c] === '') rows[r][c] = val0;
+        }
+      }
+    }
+    for (let i = 0; i < rows.length; i++) if (!rows[i]) rows[i] = [];
+    return rows;
+  }
+
+  function rowOfRef(ref) {
+    const m = String(ref).match(/(\d+)$/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+
+  async function openXlsx(buffer) {
+    const files = await unzip(buffer);
+    const dec = new TextDecoder('utf-8');
+
+    const wbEntry = files.get('xl/workbook.xml');
+    if (!wbEntry) throw new Error('缺少 xl/workbook.xml，可能不是 Excel 文件');
+    const wbXml = dec.decode(await inflate(wbEntry));
+
+    let shared = [];
+    if (files.get('xl/sharedStrings.xml')) {
+      shared = parseSharedStrings(dec.decode(await inflate(files.get('xl/sharedStrings.xml'))));
+    }
+
+    const relsXml = files.get('xl/_rels/workbook.xml.rels')
+      ? dec.decode(await inflate(files.get('xl/_rels/workbook.xml.rels'))) : '';
+    const relMap = new Map();
+    const relRe = /<Relationship\b[^>]*?\/?>/g;
+    let rm;
+    while ((rm = relRe.exec(relsXml))) {
+      relMap.set(attr(rm[0], 'Id'), normalizeTarget(attr(rm[0], 'Target')));
+    }
+
+    const sheets = [];
+    const shRe = /<sheet\b[^>]*?\/?>/g;
+    while ((rm = shRe.exec(wbXml))) {
+      const tag = rm[0];
+      sheets.push({
+        name: attr(tag, 'name'),
+        rid: attr(tag, 'r:id') || attr(tag, 'id'),
+        state: attr(tag, 'state'),
+      });
+    }
+
+    const cache = new Map();
+    async function rows(name) {
+      if (cache.has(name)) return cache.get(name);
+      const sh = sheets.find((s) => s.name === name);
+      if (!sh) throw new Error('工作表不存在：' + name);
+      const target = relMap.get(sh.rid);
+      const entry = files.get(target);
+      if (!entry) throw new Error('找不到工作表数据：' + target);
+      const xml = dec.decode(await inflate(entry));
+      const out = parseSheetXml(xml, shared);
+      cache.set(name, out);
+      return out;
+    }
+
+    return {
+      names: sheets.filter((s) => s.state !== 'hidden').map((s) => s.name),
+      rows,
+    };
+  }
+
+  // ==================================================================
+  // CSV
+  // ==================================================================
+  function parseDelimited(text, delim) {
+    const rows = [];
+    let row = [], field = '', inQ = false;
+    text = text.replace(/^\uFEFF/, '');
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQ) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; }
+          else inQ = false;
+        } else field += c;
+      } else if (c === '"') {
+        inQ = true;
+      } else if (c === delim) {
+        row.push(toNum(field)); field = '';
+      } else if (c === '\n') {
+        row.push(toNum(field)); field = '';
+        rows.push(row); row = [];
+      } else if (c === '\r') {
+        // skip
+      } else {
+        field += c;
+      }
+    }
+    if (field !== '' || row.length) { row.push(toNum(field)); rows.push(row); }
+    return rows;
+  }
+
+  function toNum(s) {
+    const t = String(s).trim();
+    if (t === '') return '';
+    const n = Number(t);
+    return isFinite(n) ? n : t;
+  }
+
+  function parseCsv(text) {
+    const head = text.split(/\r?\n/).slice(0, 5).join('\n');
+    const cand = [['\t', (head.match(/\t/g) || []).length],
+      [';', (head.match(/;/g) || []).length],
+      [',', (head.match(/,/g) || []).length]];
+    cand.sort((a, b) => b[1] - a[1]);
+    const delim = cand[0][1] > 0 ? cand[0][0] : ',';
+    return parseDelimited(text, delim);
+  }
+
+  // ==================================================================
+  // 表头识别（与 Python io_excel 对应）
+  // ==================================================================
+  const RATIO_PATTERNS = [
+    ['r68', /(206\s*pb\s*\/\s*238\s*u)|(206\/238)|(238\s*u\s*\/\s*206\s*pb)|(238\/206)/],
+    ['r75', /(207\s*pb\s*\/\s*235\s*u)|(207\/235)|(235\s*u\s*\/\s*207\s*pb)|(235\/207)/],
+    ['r76', /(207\s*pb\s*\/\s*206\s*pb)|(207\/206)|(206\s*pb\s*\/\s*207\s*pb)|(206\/207)/],
+    ['r208', /(208\s*pb\s*\/\s*232\s*th)|(208\/232)|(232\s*th\s*\/\s*208\s*pb)|(232\/208)/],
+  ];
+  const META_PATTERNS = [
+    ['sample', /^(sample|样品|样品号|sample name|specimen)$/],
+    ['grain', /^(grain no|grain|颗粒|颗粒号|grains?)$/],
+    ['spot', /^(spot|点号|analysis|analysis_#|测点|编号)$/],
+    ['comment', /^(comment|备注|说明|位置|location)$/],
+    ['u', /^(u|u ppm|u\(ppm\)|238u ppm|铀)$/],
+    ['th', /^(th|th ppm|th\(ppm\)|232th ppm|钍)$/],
+    ['pb', /^(pb|pb ppm|pb\(ppm\)|铅)$/],
+  ];
+
+  function norm(s) {
+    if (s === null || s === undefined) return '';
+    let t = String(s).trim().toLowerCase();
+    t = t.replace(/²³⁸/g, '238').replace(/²³⁵/g, '235').replace(/²³²/g, '232')
+      .replace(/²⁰⁶/g, '206').replace(/²⁰⁷/g, '207').replace(/²⁰⁸/g, '208');
+    const sup = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9' };
+    t = t.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, (c) => sup[c] || '');
+    t = t.replace(/μ|µ/g, 'u');
+    return t.replace(/\s+/g, ' ').trim();
+  }
+
+  function classify(parts) {
+    if (!Array.isArray(parts)) parts = [parts];
+    const low = parts.map(norm).filter((s) => s);
+    if (!low.length) return [null, null];
+    if (low.some((p) => p.includes('age') || p.includes('年龄'))) return ['age', null];
+    for (let i = low.length - 1; i >= 0; i--) {
+      const p = low[i];
+      if (!p || p === 'ratio' || p === '比值' || p === '1σ' || p === '2σ' || p === '-') continue;
+      if (p.includes('rho') || p.includes('ρ') || p.includes('相关')) return ['rho', null];
+      if (/(2s|1s|2σ|1σ|sigma|err|error|误差)/.test(p)) {
+        return ['error', { two: /2s|2σ/.test(p), percent: p.includes('%') || p.includes('％') }];
+      }
+      const compact = p.replace(/ /g, '');
+      for (const [key, re] of RATIO_PATTERNS) if (re.test(compact)) return ['ratio', key];
+      for (const [key, re] of META_PATTERNS) if (re.test(p)) return ['meta', key];
+    }
+    return [null, null];
+  }
+
+  function findHeader(rows) {
+    let best = -1, bestScore = 0;
+    for (let i = 0; i < Math.min(12, rows.length); i++) {
+      let score = 0;
+      for (const v of rows[i] || []) {
+        const [kind] = classify(v);
+        if (kind === 'ratio') score++;
+      }
+      if (score > bestScore) { best = i; bestScore = score; }
+    }
+    return bestScore >= 2 ? best : -1;
+  }
+
+  function buildMap(rows, hrow) {
+    let ncol = 0;
+    for (let r = hrow; r <= Math.min(hrow + 2, rows.length - 1); r++) {
+      ncol = Math.max(ncol, (rows[r] || []).length);
+    }
+    const headParts = [], heads = [];
+    for (let c = 0; c < ncol; c++) {
+      const parts = [];
+      for (const r of [hrow - 1, hrow, hrow + 1]) {
+        const row = rows[r];
+        if (!row || row[c] === undefined) continue;
+        const v = row[c];
+        if (typeof v === 'string' && v.trim()) parts.push(v.trim());
+      }
+      headParts.push(parts);
+      heads.push(parts.join(' '));
+    }
+
+    const roles = {}, ratios = {}, errs = {};
+    let current = null, currentCol = -10;
+    for (let c = 0; c < ncol; c++) {
+      const [kind, ident] = classify(headParts[c]);
+      if (kind === 'ratio') {
+        if (ratios[ident] !== undefined) {
+          if (c === currentCol + 1) errs[ident] = [c, heads[c]];
+        } else {
+          ratios[ident] = c;
+          current = ident;
+          currentCol = c;
+        }
+      } else if (kind === 'error') {
+        let target = current;
+        const compact = heads[c].replace(/ /g, '');
+        for (const [key, re] of RATIO_PATTERNS) if (re.test(compact)) target = key;
+        if (target && c === currentCol + 1) errs[target] = [c, heads[c]];
+      } else if (kind === 'meta') {
+        roles[ident] = c;
+      } else if (kind === 'rho') {
+        roles.rho = c;
+      }
+    }
+    return { roles, ratios, errs, heads };
+  }
+
+  function inverted(kind, header) {
+    const h = String(header || '').replace(/ /g, '').toLowerCase();
+    if (kind === 'r68') return /238u\/206pb|238\/206/.test(h);
+    if (kind === 'r75') return /235u\/207pb|235\/207/.test(h);
+    if (kind === 'r76') return /206pb\/207pb|206\/207/.test(h);
+    if (kind === 'r208') return /232th\/208pb|232\/208/.test(h);
+    return false;
+  }
+
+  function cellText(row, c) {
+    if (c === undefined || c === null || !row || c >= row.length) return '';
+    const v = row[c];
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'number' && Number.isInteger(v)) return String(v);
+    return String(v).trim();
+  }
+
+  function cellNum(row, c) {
+    if (c === undefined || c === null || !row || c >= row.length) return NaN;
+    const v = row[c];
+    if (typeof v === 'number') return isFinite(v) ? v : NaN;
+    if (typeof v === 'string' && v.trim() !== '') {
+      const n = Number(v.trim());
+      return isFinite(n) ? n : NaN;
+    }
+    return NaN;
+  }
+
+  function find208Age(rows, hrow, ri, heads) {
+    for (let c = 0; c < heads.length; c++) {
+      const h = (heads[c] || '').replace(/ /g, '').toLowerCase();
+      if (((h.includes('208') && h.includes('232') && h.includes('age')) ||
+        (h.includes('208') && h.includes('年龄'))) && rows[ri] && c < rows[ri].length) {
+        const v = cellNum(rows[ri], c);
+        if (isFinite(v) && v > 0) {
+          let s = 0;
+          const hn = norm(heads[c + 1] || '');
+          if (/(2s|1s|2σ|1σ|sigma|abs|误差)/.test(hn)) {
+            const ev = cellNum(rows[ri], c + 1);
+            if (isFinite(ev)) s = (ev / v) / (/2s|2σ/.test(hn) ? 2 : 1);
+          }
+          return { r: PBC.ratio232(v), s };
+        }
+      }
+    }
+    return null;
+  }
+
+  function readTable(rows, meta) {
+    rows = rows || [];
+    const hrow = findHeader(rows);
+    if (hrow < 0) {
+      throw new Error('在前 12 行中找不到可识别的表头（需含 206Pb/238U、207Pb/235U 等比值名）');
+    }
+    const map = buildMap(rows, hrow);
+    const { roles, ratios, errs, heads } = map;
+    if (ratios.r68 === undefined) throw new Error('缺少 206Pb/238U（或 238U/206Pb）列');
+    if (ratios.r75 === undefined && ratios.r76 === undefined) {
+      throw new Error('缺少 207Pb/235U 与 207Pb/206Pb，无法做普通 Pb 校正');
+    }
+
+    const analyses = [];
+    for (let ri = hrow + 1; ri < rows.length; ri++) {
+      const row = rows[ri] || [];
+      if (!row.some((v) => typeof v === 'number' && isFinite(v))) continue;
+
+      const val = (key) => (ratios[key] === undefined ? NaN : cellNum(row, ratios[key]));
+      const err = (key, ratioVal) => {
+        const item = errs[key];
+        if (!item) return 0;
+        const c = item[0], h = norm(item[1]);
+        const v = cellNum(row, c);
+        if (!isFinite(v)) return 0;
+        const pct = h.includes('%') || h.includes('％');
+        const two = /2s|2σ/.test(h);
+        let frac = pct ? v / 100 : (ratioVal ? v / Math.abs(ratioVal) : NaN);
+        if (two) frac /= 2;
+        return isFinite(frac) ? frac : 0;
+      };
+
+      let r68 = val('r68');
+      if (ratios.r68 !== undefined && inverted('r68', heads[ratios.r68]) && r68) r68 = 1 / r68;
+      let r75 = val('r75');
+      if (ratios.r75 !== undefined && inverted('r75', heads[ratios.r75]) && r75) r75 = 1 / r75;
+      let r76 = val('r76');
+      if (ratios.r76 !== undefined && inverted('r76', heads[ratios.r76]) && r76) r76 = 1 / r76;
+      let r208 = val('r208');
+      if (ratios.r208 !== undefined && inverted('r208', heads[ratios.r208]) && r208) r208 = 1 / r208;
+      // 208/232 列若 >1，实际是年龄(Ma)——分组标题 “Ages (Ma)” 可能被合并单元格挡住
+      const r208IsAge = isFinite(r208) && r208 > 1;
+      let s208FromAge = NaN;
+      if (!isFinite(r208)) {
+        const got = find208Age(rows, hrow, ri, heads);
+        if (got) { r208 = got.r; s208FromAge = got.s; }
+      }
+
+      let s68 = err('r68', r68);
+      let s75 = ratios.r75 !== undefined ? err('r75', r75) : NaN;
+      let s76 = ratios.r76 !== undefined ? err('r76', r76) : NaN;
+      let s208 = ratios.r208 !== undefined ? err('r208', r208) : NaN;
+      if (r208IsAge) {
+        // 先按年龄的相对误差算好 s208，再把年龄换成比值
+        r208 = PBC.ratio232(r208);
+      } else if (isFinite(s208FromAge)) {
+        s208 = s208FromAge;
+      }
+
+      let rho = 0;
+      if (roles.rho !== undefined) {
+        const v = cellNum(row, roles.rho);
+        if (isFinite(v)) rho = Math.max(-1, Math.min(1, v));
+      }
+
+      if (!isFinite(r68) || r68 <= 0) continue;
+      if (!isFinite(r75) && isFinite(r76)) {
+        r75 = r68 * r76 * R18;
+        if (isFinite(s76) && s76 > 0) {
+          const conv = PBC.twToWetherill(s68, s76, rho);
+          s75 = conv.s75; rho = conv.rho;
+        }
+      }
+      if (!isFinite(r75) || r75 <= 0) continue;
+
+      analyses.push(PBC.prepare({
+        sample: cellText(row, roles.sample),
+        grain: cellText(row, roles.grain),
+        spot: cellText(row, roles.spot),
+        comment: cellText(row, roles.comment),
+        u: cellNum(row, roles.u),
+        th: cellNum(row, roles.th),
+        pb: cellNum(row, roles.pb),
+        r68, s68: isFinite(s68) ? s68 : 0,
+        r75, s75: isFinite(s75) ? s75 : 0,
+        rho,
+        r208, s208: isFinite(s208) ? s208 : 0,
+        row: ri + 1,
+      }));
+    }
+
+    return {
+      analyses,
+      meta: Object.assign({
+        headerRow: hrow + 1,
+        nTotal: rows.length,
+        nUsed: analyses.length,
+        columns: Object.keys(ratios).map((k) => k + ':' + heads[ratios[k]]).join(', '),
+        headers: heads,
+      }, meta || {}),
+    };
+  }
+
+  function pickSheet(names) {
+    const keys = ['all-data', 'alldata', 'geochron data', 'data', 'sheet1', '校正', '数据'];
+    for (const kw of keys) {
+      for (const n of names) if (n.toLowerCase().includes(kw)) return n;
+    }
+    return names[0];
+  }
+
+  // ==================================================================
+  // xlsx 写出（ZIP store，无压缩）
+  // ==================================================================
+  let CRC_TABLE = null;
+  function crcTable() {
+    if (CRC_TABLE) return CRC_TABLE;
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    CRC_TABLE = t;
+    return t;
+  }
+  function crc32(u8) {
+    const t = crcTable();
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < u8.length; i++) c = t[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function zipStore(files) {
+    const enc = new TextEncoder();
+    const chunks = [];
+    const central = [];
+    let offset = 0;
+    const dosTime = 0, dosDate = 0x21; // 1980-01-01
+    for (const f of files) {
+      const name = enc.encode(f.name);
+      const data = f.data;
+      const crc = crc32(data);
+      const local = new Uint8Array(30 + name.length);
+      const dv = new DataView(local.buffer);
+      dv.setUint32(0, 0x04034b50, true);
+      dv.setUint16(4, 20, true);
+      dv.setUint16(6, 0x0800, true);       // UTF-8
+      dv.setUint16(8, 0, true);            // store
+      dv.setUint16(10, dosTime, true);
+      dv.setUint16(12, dosDate, true);
+      dv.setUint32(14, crc, true);
+      dv.setUint32(18, data.length, true);
+      dv.setUint32(22, data.length, true);
+      dv.setUint16(26, name.length, true);
+      dv.setUint16(28, 0, true);
+      local.set(name, 30);
+      chunks.push(local, data);
+
+      const cen = new Uint8Array(46 + name.length);
+      const cv = new DataView(cen.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, dosTime, true);
+      cv.setUint16(14, dosDate, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, data.length, true);
+      cv.setUint32(24, data.length, true);
+      cv.setUint16(28, name.length, true);
+      cv.setUint16(30, 0, true);
+      cv.setUint16(32, 0, true);
+      cv.setUint16(34, 0, true);
+      cv.setUint16(36, 0, true);
+      cv.setUint32(38, 0, true);
+      cv.setUint32(42, offset, true);
+      cen.set(name, 46);
+      central.push(cen);
+
+      offset += local.length + data.length;
+    }
+    const cenSize = central.reduce((p, c) => p + c.length, 0);
+    const eocd = new Uint8Array(22);
+    const ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, files.length, true);
+    ev.setUint16(10, files.length, true);
+    ev.setUint32(12, cenSize, true);
+    ev.setUint32(16, offset, true);
+
+    const total = offset + cenSize + 22;
+    const out = new Uint8Array(total);
+    let p = 0;
+    for (const c of chunks) { out.set(c, p); p += c.length; }
+    for (const c of central) { out.set(c, p); p += c.length; }
+    out.set(eocd, p);
+    return out;
+  }
+
+  function xmlEsc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+  }
+
+  function colName(i) {
+    let s = '';
+    i += 1;
+    while (i > 0) {
+      const r = (i - 1) % 26;
+      s = String.fromCharCode(65 + r) + s;
+      i = Math.floor((i - 1) / 26);
+    }
+    return s;
+  }
+
+  function sheetXml(rows, colStyles) {
+    const parts = [];
+    parts.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>');
+    parts.push('<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">');
+    parts.push('<sheetData>');
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows[r] || [];
+      const cells = [];
+      for (let c = 0; c < row.length; c++) {
+        let v = row[c];
+        if (v === null || v === undefined) continue;
+        if (typeof v === 'number' && !isFinite(v)) continue;
+        if (typeof v === 'string' && v === '') continue;
+        const ref = colName(c) + (r + 1);
+        const style = (r === 0) ? 1 : (colStyles && colStyles[c] !== undefined ? colStyles[c] : 0);
+        const sAttr = style ? ' s="' + style + '"' : '';
+        if (typeof v === 'number') {
+          cells.push('<c r="' + ref + '"' + sAttr + '><v>' + v + '</v></c>');
+        } else {
+          cells.push('<c r="' + ref + '"' + sAttr + ' t="inlineStr"><is><t xml:space="preserve">' +
+            xmlEsc(v) + '</t></is></c>');
+        }
+      }
+      parts.push('<row r="' + (r + 1) + '">' + cells.join('') + '</row>');
+    }
+    parts.push('</sheetData></worksheet>');
+    return parts.join('');
+  }
+
+  const STYLES_XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<numFmts count="2"><numFmt numFmtId="164" formatCode="0.000000"/>' +
+    '<numFmt numFmtId="165" formatCode="0.0000"/></numFmts>' +
+    '<fonts count="2">' +
+    '<font><sz val="10"/><name val="Calibri"/></font>' +
+    '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>' +
+    '</fonts>' +
+    '<fills count="3"><fill><patternFill patternType="none"/></fill>' +
+    '<fill><patternFill patternType="gray125"/></fill>' +
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF1F4E79"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>' +
+    '<border><left style="thin"><color rgb="FFD9D9D9"/></left><right style="thin"><color rgb="FFD9D9D9"/></right>' +
+    '<top style="thin"><color rgb="FFD9D9D9"/></top><bottom style="thin"><color rgb="FFD9D9D9"/></bottom><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="5">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>' +
+    '<xf numFmtId="2" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>' +
+    '<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"/>' +
+    '</cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+    '</styleSheet>';
+
+  function buildXlsx(sheets) {
+    const enc = new TextEncoder();
+    const safeNames = sheets.map((s, i) => {
+      let n = String(s.name || ('Sheet' + (i + 1))).replace(/[\[\]:*?\/\\]/g, '_').slice(0, 31);
+      return n || ('Sheet' + (i + 1));
+    });
+    const files = [];
+    let ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+    sheets.forEach((s, i) => {
+      ct += '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+    });
+    ct += '</Types>';
+    files.push({ name: '[Content_Types].xml', data: enc.encode(ct) });
+    files.push({
+      name: '_rels/.rels', data: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+        '</Relationships>'),
+    });
+
+    let wb = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>';
+    safeNames.forEach((n, i) => {
+      wb += '<sheet name="' + xmlEsc(n) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>';
+    });
+    wb += '</sheets></workbook>';
+    files.push({ name: 'xl/workbook.xml', data: enc.encode(wb) });
+
+    let rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+    sheets.forEach((s, i) => {
+      rels += '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>';
+    });
+    rels += '<Relationship Id="rId' + (sheets.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>';
+    rels += '</Relationships>';
+    files.push({ name: 'xl/_rels/workbook.xml.rels', data: enc.encode(rels) });
+    files.push({ name: 'xl/styles.xml', data: enc.encode(STYLES_XML) });
+
+    sheets.forEach((s, i) => {
+      files.push({
+        name: 'xl/worksheets/sheet' + (i + 1) + '.xml',
+        data: enc.encode(sheetXml(s.rows || [], s.colStyles)),
+      });
+    });
+    return zipStore(files);
+  }
+
+  function sheetToCsv(rows) {
+    const esc = (v) => {
+      if (v === null || v === undefined) return '';
+      if (typeof v === 'number') return isFinite(v) ? String(v) : '';
+      const s = String(v);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    return rows.map((r) => (r || []).map(esc).join(',')).join('\r\n');
+  }
+
+  // ==================================================================
+  // 模板
+  // ==================================================================
+  const TEMPLATE_HEADERS = ['样品 Sample', '颗粒 Grain', '点号 Spot', '备注 Comment',
+    'U ppm', 'Th ppm', 'Pb ppm', '206Pb/238U', '2s%p', '207Pb/235U', '2s%p', 'Rho',
+    '208Pb/232Th', '2s%p', '208Pb/232Th Age (Ma)'];
+  const TEMPLATE_EXAMPLE = ['11CJ02-01', 1, 1, '示例行，可删', 100, 50, 1, 0.02487, 3.14,
+    0.169, 4.38, 0.45, 0.008119, 4.07, ''];
+
+  function templateXlsx() {
+    const rows = [TEMPLATE_HEADERS.slice(), TEMPLATE_EXAMPLE.slice()];
+    const notes = [
+      ['列名', '含义', '说明'],
+      ['样品 Sample', '样品号', '必填；用于分组汇总'],
+      ['颗粒 / 点号', '颗粒号、分析点号', '选填'],
+      ['U / Th / Pb (ppm)', '元素含量', '总Pb迭代法需要 Th、U'],
+      ['206Pb/238U', '比值', '必填；也可以是 238U/206Pb（自动取倒数）'],
+      ['2s%p', '该比值的 2σ 相对误差（%）', '如 3.14 表示 ±3.14% (2σ)'],
+      ['207Pb/235U', '比值', '与 206Pb/238U 二选一必填'],
+      ['Rho', '206/238 与 207/235 误差相关系数', 'Isoplot 的 Rho，可填 0'],
+      ['208Pb/232Th', '比值', '总Pb迭代法需要'],
+      ['208Pb/232Th Age (Ma)', '若没有比值可填年龄', '程序自动反算比值'],
+      ['提示', '支持 .xlsx / .csv', '表头需出现在前 12 行内'],
+    ];
+    return buildXlsx([
+      { name: '输入数据', rows, colStyles: [0, 0, 0, 0, 3, 3, 3, 2, 3, 2, 3, 4, 2, 3, 3] },
+      { name: '填写说明', rows: notes },
+    ]);
+  }
+
+  root.PBCORR_XLSX = {
+    unzip, openXlsx, parseSheetXml, parseSharedStrings,
+    parseCsv, parseDelimited, readTable, findHeader, buildMap, classify,
+    pickSheet, buildXlsx, sheetToCsv, templateXlsx,
+    TEMPLATE_HEADERS, TEMPLATE_EXAMPLE,
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>/*!
+ * 普通 Pb 校正 —— 网页界面逻辑
+ */
+(function () {
+  'use strict';
+
+  const PBC = window.PBCORR;
+  const X = window.PBCORR_XLSX;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // 任何脚本错误都直接显示在“识别结果”处，避免界面静默失败
+  window.addEventListener('error', (e) => {
+    const el = document.getElementById('fileInfo');
+    if (el) {
+      el.textContent = '脚本错误：' + (e.message || e.type);
+      el.className = 'status err';
+    }
+  });
+
+  const state = {
+    workbook: null, names: [], sheet: '', rows: null,
+    analyses: [], meta: null, results: [], fits: [], summary: [],
+    fileName: '', page: 0, pageSize: 100, running: false, elapsed: 0,
+  };
+
+  const DEMO_CSV = [
+    '样品,颗粒,点号,备注,U ppm,Th ppm,Pb ppm,206Pb/238U,2s%p,207Pb/235U,2s%p,Rho,208Pb/232Th,2s%p',
+    'T16-44-3,1,25,rim,7521.24,55746.4,,0.0029859,8.311,0.0273863,27.376,0.6397,0.000870179,5.315',
+    'T16-44-3,1,11,rim,9317.83,63340.2,,0.00297947,7.292,0.0266722,20.644,0.8277,0.000912926,6.035',
+    'T16-44-3,1,01,rim,8711.59,55870.0,,0.00317617,7.083,0.0199056,26.494,0.7100,0.000924244,5.029',
+    'T16-44-3,1,16,rim,7575.21,58387.1,,0.00261796,7.964,0.0253967,23.884,0.6728,0.000924455,5.358',
+    'T16-44-3,1,22,rim,5533.30,57380.1,,0.00304074,7.982,0.0313457,25.827,0.6137,0.000924805,4.898',
+    'T16-44-3,1,04,rim,5788.75,66904.1,,0.00304337,7.602,0.0393317,34.990,0.6442,0.000937248,4.897',
+    'T16-44-3,1,24,rim,9225.39,55144.9,,0.00279579,6.623,0.0243960,19.184,0.6659,0.000939246,4.410',
+    'T16-44-3,1,20,rim,11175.3,57242.2,,0.00305931,5.941,0.0196957,20.930,0.8881,0.000951475,5.276',
+    'T16-44-3,1,12,rim,11050.5,57981.2,,0.00291632,6.496,0.0322370,19.166,0.7569,0.000960959,4.917',
+    'T16-44-3,1,03,rim,4752.84,57195.5,,0.00337506,7.797,0.0349128,27.186,0.7487,0.000978110,5.838',
+  ].join('\n');
+
+  // ------------------------------------------------------------------
+  // 通用
+  // ------------------------------------------------------------------
+  function log(msg, cls) {
+    const box = $('log');
+    const t = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    const line = document.createElement('div');
+    if (cls) line.className = cls;
+    line.textContent = '[' + t + '] ' + msg;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function setStatus(text, cls) {
+    const el = $('runStatus');
+    el.textContent = text;
+    el.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  function busy(on) {
+    state.running = on;
+    $('btnRun').disabled = on || !state.analyses.length;
+    $('progress').classList.toggle('on', on);
+    if (!on) $('progress').firstElementChild.style.width = '100%';
+  }
+
+  const fmt = (v, d) => (v === null || v === undefined || !isFinite(v)) ? '—' : Number(v).toFixed(d === undefined ? 2 : d);
+  const fmtPct = (v) => isFinite(v) ? (v * 100).toFixed(2) : '—';
+  const fmtG = (v) => {
+    if (v === null || v === undefined || !isFinite(v)) return '—';
+    const a = Math.abs(v);
+    if (a === 0) return '0';
+    if (a >= 100) return v.toFixed(2);
+    if (a >= 1) return v.toFixed(4);
+    if (a >= 0.001) return v.toFixed(6);
+    return v.toExponential(3);
+  };
+
+  function tick() { return new Promise((r) => setTimeout(r, 0)); }
+
+  // ------------------------------------------------------------------
+  // 标签页
+  // ------------------------------------------------------------------
+  document.querySelectorAll('.tab').forEach((btn) => {
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+  });
+
+  function activateTab(name) {
+    document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.panel').forEach((p) => {
+      p.classList.toggle('active', p.id === 'panel-' + name);
+    });
+    if (name === 'batch') requestAnimationFrame(redraw);
+    if (name === 'single' && state.singleResult) {
+      requestAnimationFrame(() => drawTW($('singleCanvas'), [state.singleResult], model(), mode(), [], true));
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // 模型 / 方法
+  // ------------------------------------------------------------------
+  function model() {
+    if ($('modelSelect').value === 'fixed') {
+      return PBC.buildModel('fixed', {
+        r06: Number($('r06').value) || 18.7,
+        r07: Number($('r07').value) || 15.628,
+        r08: Number($('r08').value) || 38.63,
+      });
+    }
+    return PBC.buildModel('sk');
+  }
+  const mode = () => $('modeSelect').value;
+  const method = () => {
+    const el = document.querySelector('input[name="method"]:checked');
+    return el ? el.value : '207';
+  };
+
+  $('modelSelect').addEventListener('change', () => {
+    $('customRow').style.display = $('modelSelect').value === 'fixed' ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.method').forEach((el) => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.method').forEach((m) => m.classList.remove('on'));
+      el.classList.add('on');
+    });
+  });
+
+  // ------------------------------------------------------------------
+  // 文件读取
+  // ------------------------------------------------------------------
+  const drop = $('drop');
+  const fileInput = $('fileInput');
+  drop.addEventListener('click', () => fileInput.click());
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('hover'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('hover'));
+  drop.addEventListener('drop', (e) => {
+    e.preventDefault(); drop.classList.remove('hover');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) openFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) openFile(fileInput.files[0]);
+  });
+
+  function decodeText(buf) {
+    let text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
+    if (text.includes('\uFFFD')) {
+      try { text = new TextDecoder('gbk').decode(buf); } catch (e) { /* ignore */ }
+    }
+    return text;
+  }
+
+  async function openFile(file) {
+    clearResults();
+    state.fileName = file.name;
+    $('fileName').textContent = file.name + '  (' + (file.size / 1024).toFixed(1) + ' KB)';
+    $('fileInfo').textContent = '读取中…';
+    $('btnRun').disabled = true;
+    try {
+      const buf = await file.arrayBuffer();
+      if (/\.csv$|\.txt$/i.test(file.name)) {
+        state.workbook = null;
+        state.names = ['CSV'];
+        state.rows = X.parseCsv(decodeText(buf));
+        const sel = $('sheetSelect');
+        sel.innerHTML = '<option>CSV</option>';
+        sel.disabled = true;
+        useRows(state.rows, 'CSV');
+      } else {
+        const wb = await X.openXlsx(buf);
+        state.workbook = wb;
+        state.names = wb.names.slice();
+        const sel = $('sheetSelect');
+        sel.innerHTML = wb.names.map((n) => '<option>' + esc(n) + '</option>').join('');
+        sel.disabled = false;
+        const pick = X.pickSheet(wb.names);
+        sel.value = pick;
+        await loadSheet(pick);
+      }
+    } catch (err) {
+      console.error(err);
+      $('fileInfo').textContent = '读取失败：' + err.message;
+      $('fileInfo').className = 'status err';
+      log('读取失败：' + err.message, 'er');
+      if (/xls$/i.test(file.name)) {
+        log('旧版 .xls 为二进制格式，请在 Excel 中“另存为 .xlsx”或导出 CSV 后再试。', 'er');
+      }
+    }
+  }
+
+  $('sheetSelect').addEventListener('change', async () => {
+    if (!state.workbook) return;
+    await loadSheet($('sheetSelect').value);
+    clearResults();
+  });
+
+  async function loadSheet(name) {
+    state.sheet = name;
+    $('fileInfo').className = 'status';
+    $('fileInfo').textContent = '解析中…';
+    const rows = await state.workbook.rows(name);
+    state.rows = rows;
+    useRows(rows, name);
+  }
+
+  function useRows(rows, name) {
+    try {
+      const out = X.readTable(rows, { sheet: name });
+      state.analyses = out.analyses;
+      state.meta = out.meta;
+      const info = '识别到 ' + out.analyses.length + ' 行；表头第 ' + out.meta.headerRow +
+        ' 行；列：' + out.meta.columns;
+      $('fileInfo').textContent = info;
+      $('fileInfo').className = 'status ok';
+      log(info, 'ok');
+      $('btnRun').disabled = !out.analyses.length;
+      setStatus('已就绪，可开始校正');
+      clearResults();
+    } catch (err) {
+      state.analyses = [];
+      $('fileInfo').textContent = '未能识别：' + err.message;
+      $('fileInfo').className = 'status err';
+      log('未能识别：' + err.message, 'er');
+      $('btnRun').disabled = true;
+      setStatus('数据无法识别');
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // 运行
+  // ------------------------------------------------------------------
+  $('btnRun').addEventListener('click', run);
+
+  function loadDemo() {
+    clearResults();
+    state.fileName = '示例数据_T16独居石.csv';
+    $('fileName').textContent = '示例数据（T16 独居石，10 个点）';
+    state.rows = X.parseCsv(DEMO_CSV);
+    const sel = $('sheetSelect');
+    sel.innerHTML = '<option>示例数据</option>';
+    sel.disabled = true;
+    useRows(state.rows, '示例数据');
+    document.querySelector('input[name="method"][value="total"]').click();
+    $('modelSelect').value = 'sk';
+    runSync();
+  }
+
+  $('btnDemo').addEventListener('click', loadDemo);
+
+  function readParams() {
+    let nmc = parseInt($('mcCount').value, 10);
+    if (!isFinite(nmc) || nmc < 0) nmc = 200;
+    return { meth: method(), mdl: model(), md: mode(), nmc: Math.min(nmc, 5000) };
+  }
+
+  function computeAll(p) {
+    if (p.meth === 'tw') {
+      const out = PBC.correctTw(state.analyses, p.mdl, p.md, p.nmc, 20240101);
+      return { results: out.results, fits: out.fits };
+    }
+    const results = [];
+    for (let i = 0; i < state.analyses.length; i++) {
+      results.push(PBC.correctAnalysis(state.analyses[i], p.meth, p.mdl, p.md, p.nmc, 20240101 + i));
+    }
+    return { results, fits: [] };
+  }
+
+  function finish(p, out, t0) {
+    state.results = out.results;
+    state.fits = out.fits;
+    state.summary = PBC.summarize(out.results, p.meth);
+    state.page = 0;
+    state.elapsed = (performance.now() - t0) / 1000;
+    const okN = out.results.filter((r) => r.ok).length;
+    setStatus('完成：有效 ' + okN + ' / ' + out.results.length + ' 行，用时 ' + state.elapsed.toFixed(1) + ' s', 'ok');
+    log('完成：有效 ' + okN + ' / ' + out.results.length + ' 行，用时 ' + state.elapsed.toFixed(1) + ' s', 'ok');
+    renderKpis();
+    renderSummary();
+    renderTable();
+    $('resultArea').classList.remove('hidden');
+    requestAnimationFrame(redraw);
+    $('btnXlsx').disabled = false;
+    $('btnCsv').disabled = false;
+  }
+
+  function runSync() {
+    if (!state.analyses.length) return;
+    const t0 = performance.now();
+    const p = readParams();
+    log('开始：' + state.analyses.length + ' 行；方法=' + p.meth + '；模型=' + p.mdl.name + '；取值=' + p.md + '；MC=' + p.nmc);
+    try {
+      finish(p, computeAll(p), t0);
+    } catch (err) {
+      console.error(err);
+      setStatus('运行失败：' + err.message, 'err');
+      log('运行失败：' + err.message, 'er');
+    }
+  }
+
+  async function run() {
+    if (state.running || !state.analyses.length) return;
+    clearResults();
+    busy(true);
+    $('log').innerHTML = '';
+    setStatus('正在校正…');
+    const t0 = performance.now();
+    const p = readParams();
+    log('开始：' + state.analyses.length + ' 行；方法=' + p.meth + '；模型=' + p.mdl.name + '；取值=' + p.md + '；MC=' + p.nmc);
+    try {
+      let out;
+      if (p.meth === 'tw') {
+        out = computeAll(p);
+        $('progress').firstElementChild.style.width = '100%';
+        await tick();
+      } else {
+        const results = [];
+        const N = state.analyses.length;
+        const step = Math.max(1, Math.round(N / 60));
+        for (let i = 0; i < N; i++) {
+          results.push(PBC.correctAnalysis(state.analyses[i], p.meth, p.mdl, p.md, p.nmc, 20240101 + i));
+          if (i % step === 0 || i === N - 1) {
+            $('progress').firstElementChild.style.width = ((i + 1) / N * 100).toFixed(1) + '%';
+            await tick();
+          }
+        }
+        out = { results, fits: [] };
+      }
+      finish(p, out, t0);
+    } catch (err) {
+      console.error(err);
+      setStatus('运行失败：' + err.message, 'err');
+      log('运行失败：' + err.message, 'er');
+    } finally {
+      busy(false);
+    }
+  }
+
+  function clearResults() {
+    state.results = []; state.fits = []; state.summary = []; state.page = 0;
+    $('resultArea').classList.add('hidden');
+    $('btnXlsx').disabled = true;
+    $('btnCsv').disabled = true;
+    $('progress').firstElementChild.style.width = '0';
+    $('summaryTable').innerHTML = '';
+    $('resultTable').innerHTML = '';
+    $('kpis').innerHTML = '';
+  }
+
+  // ------------------------------------------------------------------
+  // 汇总 / 明细
+  // ------------------------------------------------------------------
+  function renderKpis() {
+    const rs = state.results;
+    const ok = rs.filter((r) => r.ok);
+    const f = ok.map((r) => r.f206).filter((v) => isFinite(v)).sort((a, b) => a - b);
+    const med = f.length ? f[Math.floor(f.length / 2)] : NaN;
+    const ages = state.summary.map((s) => s.age).filter(isFinite);
+    const lo = ages.length ? Math.min(...ages) : NaN;
+    const hi = ages.length ? Math.max(...ages) : NaN;
+    const items = [
+      ['数据点', rs.length, '识别到的分析点'],
+      ['有效', ok.length + ' / ' + rs.length, '通过判据的点'],
+      ['中位 f206', fmtPct(med) + '%', '普通 Pb 占比'],
+      ['年龄范围', isFinite(lo) ? (Math.abs(hi - lo) < 0.05 ? lo.toFixed(1) : lo.toFixed(1) + '–' + hi.toFixed(1)) : '—', '按样品汇总 (Ma)'],
+    ];
+    $('kpis').innerHTML = items.map(([l, v, s]) =>
+      '<div class="kpi"><div class="v">' + esc(v) + '</div><div class="l">' + l + ' · ' + s + '</div></div>').join('');
+  }
+
+  function renderSummary() {
+    const rows = state.summary;
+    $('summaryHint').textContent = state.fits.length
+      ? 'T-W 法：每个样品一组回归' : '按样品加权平均，MSWD>1 时误差按 √MSWD 放大';
+    let html = '<thead><tr><th>样品</th><th>n</th><th>年龄 (Ma)</th><th>2σ</th><th>MSWD</th><th>拟合概率</th><th>2σ (未放大)</th><th>方法</th></tr></thead><tbody>';
+    const list = state.fits.length
+      ? state.fits.map((f) => [f.sample, f.n, f.age, f.age_2s, f.mswd, f.prob, '', 'T-W'])
+      : rows.map((s) => [s.sample, s.n, s.age, s.age_2s, s.mswd, s.prob, s.age_2s_uncorrected, s.method]);
+    for (const r of list) {
+      const bad = !isFinite(r[2]);
+      html += '<tr class="' + (bad ? 'bad' : '') + '">' +
+        '<td class="left">' + esc(r[0]) + '</td><td>' + r[1] + '</td>' +
+        '<td><b>' + fmt(r[2], 2) + '</b></td><td>' + fmt(r[3], 2) + '</td>' +
+        '<td>' + fmt(r[4], 2) + '</td><td>' + fmt(r[5], 3) + '</td>' +
+        '<td>' + fmt(r[6], 2) + '</td><td>' + esc(r[7]) + '</td></tr>';
+    }
+    html += '</tbody>';
+    $('summaryTable').innerHTML = html;
+  }
+
+  const RESULT_COLS = [
+    ['#', (r, i) => i + 1],
+    ['样品', (r) => esc(r.analysis.sample)],
+    ['颗粒', (r) => esc(r.analysis.grain)],
+    ['点号', (r) => esc(r.analysis.spot)],
+    ['U', (r) => fmt(r.analysis.u, 1)],
+    ['Th', (r) => fmt(r.analysis.th, 1)],
+    ['Th/U', (r) => fmt(r.analysis.thu_weight, 2)],
+    ['206/238', (r) => fmtG(r.analysis.r68)],
+    ['2σ%', (r) => fmt(r.analysis.s68 * 200, 2)],
+    ['207/235', (r) => fmtG(r.analysis.r75)],
+    ['2σ%', (r) => fmt(r.analysis.s75 * 200, 2)],
+    ['207/206', (r) => fmt(r.analysis.r76, 5)],
+    ['Rho', (r) => fmt(r.analysis.rho, 3)],
+    ['208/232', (r) => fmtG(r.analysis.r208)],
+    ['f206%', (r) => fmtPct(r.f206)],
+    ['f208%', (r) => fmtPct(r.f208)],
+    ['206/238*', (r) => fmtG(r.r68c)],
+    ['207/235*', (r) => fmtG(r.r75c)],
+    ['207/206*', (r) => fmt(r.r76c, 5)],
+    ['208/232*', (r) => fmtG(r.r208c)],
+    ['206/238 年龄', (r) => fmt(r.t68, 1)],
+    ['2σ', (r) => fmt(r.t68_2s, 1)],
+    ['207/235 年龄', (r) => fmt(r.t75, 1)],
+    ['2σ', (r) => fmt(r.t75_2s, 1)],
+    ['207/206 年龄', (r) => fmt(r.t76, 1)],
+    ['2σ', (r) => fmt(r.t76_2s, 1)],
+    ['208/232 年龄', (r) => fmt(r.t208, 1)],
+    ['2σ', (r) => fmt(r.t208_2s, 1)],
+    ['推荐年龄', (r) => '<b>' + fmt(r.t_best, 1) + '</b>'],
+    ['2σ', (r) => fmt(r.t_best_2s, 1)],
+    ['状态', (r) => r.ok ? 'OK' : '剔除'],
+    ['说明', (r) => esc(r.flags)],
+  ];
+
+  function renderTable() {
+    const rs = state.results;
+    const total = Math.max(1, Math.ceil(rs.length / state.pageSize));
+    state.page = Math.max(0, Math.min(state.page, total - 1));
+    const start = state.page * state.pageSize;
+    const slice = rs.slice(start, start + state.pageSize);
+    let html = '<thead><tr>' + RESULT_COLS.map((c) => '<th>' + c[0] + '</th>').join('') + '</tr></thead><tbody>';
+    for (let i = 0; i < slice.length; i++) {
+      const r = slice[i];
+      const cls = !r.ok ? 'bad' : (/较高|极高/.test(r.flags) ? 'warn' : '');
+      html += '<tr class="' + cls + '">' + RESULT_COLS.map((c) =>
+        '<td' + (c[0] === '说明' || c[0] === '样品' ? ' class="left"' : '') + '>' +
+        c[1](r, start + i) + '</td>').join('') + '</tr>';
+    }
+    html += '</tbody>';
+    $('resultTable').innerHTML = html;
+    $('pageInfo').textContent = (state.page + 1) + ' / ' + total + '（共 ' + rs.length + ' 行）';
+    $('tableHint').textContent = '红色=剔除，黄色=普通 Pb 较高';
+  }
+
+  $('prevPage').addEventListener('click', () => { state.page--; renderTable(); });
+  $('nextPage').addEventListener('click', () => { state.page++; renderTable(); });
+
+  // ------------------------------------------------------------------
+  // 绘图
+  // ------------------------------------------------------------------
+  function setup(canvas, ratio) {
+    const W = Math.max(320, canvas.clientWidth || canvas.parentElement.clientWidth || 600);
+    const H = Math.max(260, Math.round(W * (ratio || 0.62)));
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, W, H };
+  }
+
+  function drawTW(canvas, results, mdl, md, fits, single) {
+    const { ctx, W, H } = setup(canvas, 0.6);
+    ctx.clearRect(0, 0, W, H);
+    const ml = 62, mr = 16, mt = 26, mb = 46;
+    const x0 = ml, y0 = mt, x1 = W - mr, y1 = H - mb;
+
+    const pts = [];
+    for (const r of results) {
+      const a = r.analysis;
+      if (!a.has207) continue;
+      const xm = 1 / a.r68, ym = a.r76;
+      let xc = NaN, yc = NaN;
+      if (isFinite(r.r68c) && r.r68c > 0 && isFinite(r.r75c)) {
+        xc = 1 / r.r68c; yc = r.r75c / r.r68c / 137.818;
+      }
+      pts.push({ xm, ym, ex: a.s68 * xm, ey: a.s76 * ym, xc, yc });
+    }
+    if (!pts.length) {
+      ctx.fillStyle = '#94a3b8'; ctx.font = '13px "Segoe UI",sans-serif';
+      ctx.fillText('暂无可绘制的数据', x0 + 20, y0 + 40);
+      return;
+    }
+    const xs = pts.map((p) => p.xm).sort((a, b) => a - b);
+    const p95 = xs[Math.floor(xs.length * 0.95)] || 40;
+    const useLog = p95 > 80;
+    const xmin = useLog ? 1 : 0;
+    const xmax = useLog ? Math.max(500, p95 * 1.4) : Math.min(Math.max(p95 * 1.12, 12), 400);
+    const y0v = (fits && fits.length === 1 && isFinite(fits[0].y0))
+      ? fits[0].y0
+      : (mdl ? mdl.r76(0) : 0.8356);
+    const ymax = Math.max(0.92, Math.max(...pts.map((p) => p.ym)) * 1.08, y0v * 1.03);
+
+    const X = (x) => {
+      if (useLog) {
+        const lx = Math.log10(Math.max(x, xmin));
+        return x0 + (lx - Math.log10(xmin)) / (Math.log10(xmax) - Math.log10(xmin)) * (x1 - x0);
+      }
+      return x0 + (x - xmin) / (xmax - xmin) * (x1 - x0);
+    };
+    const Y = (y) => y1 - (y / ymax) * (y1 - y0);
+
+    // 网格与刻度
+    ctx.font = '11px "Segoe UI",Consolas,sans-serif';
+    ctx.strokeStyle = '#eef2f7'; ctx.lineWidth = 1;
+    const xticks = useLog ? [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].filter((v) => v <= xmax) : null;
+    if (useLog) {
+      for (const v of xticks) {
+        ctx.beginPath(); ctx.moveTo(X(v), y0); ctx.lineTo(X(v), y1); ctx.stroke();
+      }
+    } else {
+      for (let i = 0; i <= 6; i++) {
+        const v = xmin + (xmax - xmin) * i / 6;
+        ctx.beginPath(); ctx.moveTo(X(v), y0); ctx.lineTo(X(v), y1); ctx.stroke();
+      }
+    }
+    for (let i = 0; i <= 5; i++) {
+      const v = ymax * i / 5;
+      ctx.beginPath(); ctx.moveTo(x0, Y(v)); ctx.lineTo(x1, Y(v)); ctx.stroke();
+    }
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    if (useLog) {
+      for (const v of xticks) ctx.fillText(String(v), X(v), y1 + 6);
+    } else {
+      for (let i = 0; i <= 6; i++) {
+        const v = xmin + (xmax - xmin) * i / 6;
+        ctx.fillText(v.toFixed(0), X(v), y1 + 6);
+      }
+    }
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 5; i++) {
+      const v = ymax * i / 5;
+      ctx.fillText(v.toFixed(2), x0 - 7, Y(v));
+    }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#334155'; ctx.font = '12px "Segoe UI",sans-serif';
+    ctx.fillText('238U/206Pb' + (useLog ? '（对数）' : ''), x0, H - 12);
+    ctx.save();
+    ctx.translate(15, y0 + 120);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('207Pb/206Pb', 0, 0);
+    ctx.restore();
+
+    // 谐和线
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2; ctx.beginPath();
+    let started = false;
+    for (let i = 0; i <= 700; i++) {
+      const t = Math.exp(Math.log(0.05) + (Math.log(4600) - Math.log(0.05)) * i / 700);
+      const cx = 1 / PBC.ratio206(t), cy = PBC.ratio76(t);
+      if (!isFinite(cx) || !isFinite(cy) || cy > ymax) { started = false; continue; }
+      if (cx < xmin) { started = false; continue; }
+      const px = X(cx), py = Y(cy);
+      if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // 年龄刻度
+    ctx.fillStyle = '#94a3b8'; ctx.font = '10px "Segoe UI",sans-serif';
+    let lastPx = -1e9;
+    for (const ta of [1, 100, 200, 300, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500]) {
+      const cx = 1 / PBC.ratio206(ta), cy = PBC.ratio76(ta);
+      if (!isFinite(cx) || cx < xmin || cx > xmax || cy > ymax) continue;
+      const px = X(cx), py = Y(cy);
+      if (px - lastPx < 42) continue;
+      lastPx = px;
+      ctx.beginPath(); ctx.arc(px, py, 2, 0, 7); ctx.fill();
+      ctx.fillText(String(ta), px + 5, py + 3);
+    }
+
+    // 普通 Pb 锚点与回归线
+    if (y0v <= ymax) {
+      ctx.fillStyle = '#d68910';
+      ctx.fillRect(X(0) - 4, Y(y0v) - 4, 8, 8);
+      ctx.font = '11px "Segoe UI",sans-serif';
+      ctx.fillText('普通Pb ' + y0v.toFixed(4), X(0) + 8, Y(y0v) - 7);
+    }
+    if (fits && fits.length) {
+      ctx.strokeStyle = 'rgba(214,137,16,.45)'; ctx.lineWidth = 1;
+      for (const f of fits) {
+        if (!isFinite(f.slope) || !isFinite(f.y0)) continue;
+        const yEnd = f.y0 + f.slope * xmax;
+        if (yEnd < 0 || yEnd > ymax) continue;
+        ctx.beginPath(); ctx.moveTo(X(0), Y(f.y0)); ctx.lineTo(X(xmax), Y(yEnd)); ctx.stroke();
+      }
+      ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
+      for (const f of fits) {
+        if (!isFinite(f.age) || f.age <= 0) continue;
+        const cx = 1 / PBC.ratio206(f.age), cy = PBC.ratio76(f.age);
+        if (cx < xmin || cx > xmax || cy > ymax) continue;
+        ctx.beginPath(); ctx.arc(X(cx), Y(cy), 4, 0, 7); ctx.stroke();
+      }
+    }
+
+    // 点
+    for (const p of pts) {
+      if (isFinite(p.xc) && isFinite(p.yc) && pts.length <= 150) {
+        ctx.strokeStyle = '#e6ebf2'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(X(p.xm), Y(p.ym)); ctx.lineTo(X(p.xc), Y(p.yc)); ctx.stroke();
+      }
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1;
+      if (p.ex > 0) {
+        ctx.beginPath(); ctx.moveTo(X(p.xm - p.ex), Y(p.ym)); ctx.lineTo(X(p.xm + p.ex), Y(p.ym)); ctx.stroke();
+      }
+      if (p.ey > 0) {
+        ctx.beginPath(); ctx.moveTo(X(p.xm), Y(p.ym - p.ey)); ctx.lineTo(X(p.xm), Y(p.ym + p.ey)); ctx.stroke();
+      }
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath(); ctx.arc(X(p.xm), Y(p.ym), 2.4, 0, 7); ctx.fill();
+      if (isFinite(p.xc) && isFinite(p.yc) && p.xc >= xmin && p.xc <= xmax && p.yc <= ymax) {
+        ctx.fillStyle = '#2563eb';
+        ctx.beginPath(); ctx.arc(X(p.xc), Y(p.yc), 3, 0, 7); ctx.fill();
+      }
+    }
+
+    // 单点：标注年龄
+    if (single && pts.length === 1 && (!fits || !fits.length)) {
+      const r = results[0];
+      if (isFinite(r.t_best)) {
+        const cx = 1 / PBC.ratio206(r.t_best), cy = PBC.ratio76(r.t_best);
+        if (cx <= xmax && cy <= ymax) {
+          ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(X(cx), Y(cy), 6, 0, 7); ctx.stroke();
+          ctx.fillStyle = '#dc2626'; ctx.font = '11px "Segoe UI",sans-serif';
+          const lx = Math.min(X(cx) + 9, x1 - 62);
+          const ly = Math.max(Math.min(Y(cy) + 16, y1 - 4), y0 + 12);
+          ctx.fillText(r.t_best.toFixed(1) + ' Ma', lx, ly);
+        }
+      }
+    }
+  }
+
+  function drawHist(canvas, results) {
+    const { ctx, W, H } = setup(canvas, 0.62);
+    ctx.clearRect(0, 0, W, H);
+    const ml = 50, mr = 16, mt = 22, mb = 44;
+    const x0 = ml, y0 = mt, x1 = W - mr, y1 = H - mb;
+    let ages = results.filter((r) => r.ok && isFinite(r.t_best) && r.t_best > 0 && r.t_best < 4600)
+      .map((r) => r.t_best);
+    if (!ages.length) {
+      ctx.fillStyle = '#94a3b8'; ctx.font = '13px "Segoe UI",sans-serif';
+      ctx.fillText('暂无有效年龄', x0 + 20, y0 + 40);
+      return;
+    }
+    const hi = Math.max(...ages) * 1.08;
+    const nb = Math.max(8, Math.min(40, Math.round(Math.sqrt(ages.length) * 2)));
+    const bw = hi / nb;
+    const bins = new Array(nb).fill(0);
+    for (const a of ages) bins[Math.min(nb - 1, Math.floor(a / bw))]++;
+    const ymax = Math.max(1, Math.max(...bins));
+    const X = (v) => x0 + v / hi * (x1 - x0);
+    const Y = (v) => y1 - v / ymax * (y1 - y0);
+
+    ctx.strokeStyle = '#eef2f7';
+    for (let i = 0; i <= 5; i++) {
+      const v = ymax * i / 5;
+      ctx.beginPath(); ctx.moveTo(x0, Y(v)); ctx.lineTo(x1, Y(v)); ctx.stroke();
+      ctx.fillStyle = '#64748b'; ctx.font = '10px "Segoe UI",sans-serif';
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(Math.round(v), x0 - 6, Y(v));
+    }
+    for (let i = 0; i < nb; i++) {
+      if (!bins[i]) continue;
+      ctx.fillStyle = 'rgba(147,197,253,.75)';
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 1;
+      const bx = X(i * bw), bwPx = Math.max(1, X(bw) - X(0) - 1);
+      ctx.fillRect(bx, Y(bins[i]), bwPx, y1 - Y(bins[i]));
+      ctx.strokeRect(bx + 0.5, Y(bins[i]) + 0.5, bwPx - 1, y1 - Y(bins[i]) - 1);
+    }
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+    ctx.fillStyle = '#64748b'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let i = 0; i <= 5; i++) ctx.fillText((hi * i / 5).toFixed(0), X(hi * i / 5), y1 + 6);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#334155';
+    ctx.fillText('年龄 (Ma)', x0, H - 12);
+    ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'right';
+    ctx.fillText('n = ' + ages.length, x1, 14);
+  }
+
+  function redraw() {
+    if (!state.results.length) return;
+    drawTW($('twCanvas'), state.results, model(), mode(), state.fits);
+    drawHist($('histCanvas'), state.results);
+  }
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if ($('panel-batch').classList.contains('active')) redraw();
+    }, 150);
+  });
+
+  // ------------------------------------------------------------------
+  // 下载
+  // ------------------------------------------------------------------
+  function saveBlob(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 3000);
+  }
+
+  const baseName = () => (state.fileName || '普通Pb校正').replace(/\.[^.]+$/, '');
+
+  $('btnTemplate').addEventListener('click', () => {
+    const u8 = X.templateXlsx();
+    saveBlob(new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      '普通Pb校正_输入模板.xlsx');
+    log('已生成输入模板', 'ok');
+  });
+
+  function resultRows() {
+    const head = ['序号', '样品', '颗粒', '点号', '备注', 'U (ppm)', 'Th (ppm)', 'Pb (ppm)', 'Th/U',
+      '206Pb/238U', '2σ%', '207Pb/235U', '2σ%', '207Pb/206Pb', '2σ%', 'Rho',
+      '208Pb/232Th', '2σ%', 'f206 (%)', 'f206 2σ (%)', 'f208 (%)',
+      '206Pb/238U*', '207Pb/235U*', '207Pb/206Pb*', '208Pb/232Th*',
+      '206/238 年龄', '2σ', '207/235 年龄', '2σ', '207/206 年龄', '2σ',
+      '208/232 年龄', '2σ', '推荐年龄 (Ma)', '2σ', '状态', '说明'];
+    const rows = [head];
+    state.results.forEach((r, i) => {
+      const a = r.analysis;
+      rows.push([
+        i + 1, a.sample, a.grain, a.spot, a.comment,
+        numOr(a.u), numOr(a.th), numOr(a.pb), numOr(a.thu_weight),
+        a.r68, numOr(a.s68 * 200), a.r75, numOr(a.s75 * 200), a.r76, numOr(a.s76 * 200), a.rho,
+        numOr(a.r208), numOr(a.s208 * 200),
+        numOr(r.f206 * 100), numOr(r.f206_2s * 100), numOr(r.f208 * 100),
+        numOr(r.r68c), numOr(r.r75c), numOr(r.r76c), numOr(r.r208c),
+        numOr(r.t68), numOr(r.t68_2s), numOr(r.t75), numOr(r.t75_2s),
+        numOr(r.t76), numOr(r.t76_2s), numOr(r.t208), numOr(r.t208_2s),
+        numOr(r.t_best), numOr(r.t_best_2s),
+        r.ok ? 'OK' : '剔除', r.flags,
+      ]);
+    });
+    return rows;
+  }
+
+  function numOr(v) { return (v === null || v === undefined || !isFinite(v)) ? '' : v; }
+
+  $('btnXlsx').addEventListener('click', () => {
+    if (!state.results.length) return;
+    const sheets = [{ name: '校正结果', rows: resultRows(), colStyles: resultColStyles() }];
+    if (state.fits.length) {
+      const srows = [['样品', '点数', 'T-W截距年龄 (Ma)', '2σ', '斜率', '斜率 1σ', '普通Pb 207/206', 'MSWD', '拟合概率', '说明']];
+      state.fits.forEach((f) => srows.push([f.sample, f.n, numOr(f.age), numOr(f.age_2s),
+        numOr(f.slope), numOr(f.slope_2s), numOr(f.y0), numOr(f.mswd), numOr(f.prob), f.flags]));
+      sheets.push({ name: '样品汇总', rows: srows, colStyles: [0, 0, 3, 3, 2, 2, 4, 3, 4, 0] });
+      const tw = [['样品', '颗粒', '点号', '238U/206Pb', '2σ%', '207Pb/206Pb', '2σ%', 'Rho(68,76)']];
+      state.results.forEach((r) => {
+        const a = r.analysis;
+        tw.push([a.sample, a.grain, a.spot, 1 / a.r68, a.s68 * (1 / a.r68) * 200,
+          a.r76, a.s76 * a.r76 * 200, a.rho76]);
+      });
+      sheets.push({ name: 'T-W 坐标', rows: tw, colStyles: [0, 0, 0, 2, 3, 2, 3, 4] });
+    } else {
+      const srows = [['样品', '有效点数', '加权平均年龄 (Ma)', '2σ', 'MSWD', '拟合概率', '2σ(未放大)', '方法']];
+      state.summary.forEach((s) => srows.push([s.sample, s.n, numOr(s.age), numOr(s.age_2s),
+        numOr(s.mswd), numOr(s.prob), numOr(s.age_2s_uncorrected), s.method]));
+      sheets.push({ name: '样品汇总', rows: srows, colStyles: [0, 0, 3, 3, 3, 4, 3, 0] });
+    }
+    const params = [
+      ['程序', 'pbcorr web v' + PBC.VERSION],
+      ['运行时间', new Date().toLocaleString('zh-CN')],
+      ['输入文件', state.fileName],
+      ['工作表', state.sheet],
+      ['识别行数', state.analyses.length],
+      ['有效行数', state.results.filter((r) => r.ok).length],
+      ['方法', method()],
+      ['普通Pb模型', model().describe()],
+      ['取值方式', mode() === 'present' ? '现今组成' : '样品年龄时组成'],
+      ['Monte-Carlo 次数', Number($('mcCount').value) || 0],
+      ['耗时 (s)', state.elapsed.toFixed(1)],
+      ['判据', 'f206 = 普通206Pb / 总206Pb；>20% 提示 207 法不可靠，>50% 建议改用总Pb法或T-W法'],
+    ];
+    sheets.push({ name: '计算参数', rows: params });
+    const u8 = X.buildXlsx(sheets);
+    saveBlob(new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      baseName() + '_普通Pb校正_' + method() + '.xlsx');
+    log('已下载结果 xlsx', 'ok');
+  });
+
+  function resultColStyles() {
+    // 与 resultRows 的 37 列一一对应：0=默认 2=6位小数 3=两位小数 4=四位小数
+    return [0, 0, 0, 0, 0, 3, 3, 3, 3,
+      2, 3, 2, 3, 4, 3, 4, 2, 3,
+      3, 3, 3, 2, 2, 4, 2,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0];
+  }
+
+  $('btnCsv').addEventListener('click', () => {
+    if (!state.results.length) return;
+    const rows = resultRows();
+    const csv = X.sheetToCsv(rows);
+    saveBlob(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }),
+      baseName() + '_普通Pb校正_' + method() + '.csv');
+    log('已下载 CSV', 'ok');
+  });
+
+  // ------------------------------------------------------------------
+  // 单点
+  // ------------------------------------------------------------------
+  state.singleResult = null;
+  $('btnCalc').addEventListener('click', () => {
+    const g = (id) => {
+      const v = $(id).value.trim();
+      return v === '' ? NaN : Number(v);
+    };
+    const a = PBC.prepare({
+      sample: '单点', u: g('s_u'), th: g('s_th'),
+      r68: g('s_r68'), s68: g('s_e68') / 100 / 2,
+      r75: g('s_r75'), s75: g('s_e75') / 100 / 2,
+      rho: g('s_rho'), r208: g('s_r208'), s208: g('s_e208') / 100 / 2,
+    });
+    const meth = $('s_method').value;
+    if (!a.has207) { alert('请先填写有效的 206Pb/238U 与 207Pb/235U'); return; }
+    if (meth === 'total' && !a.has208) { alert('总 Pb 迭代法需要 208Pb/232Th 与 Th、U 含量'); return; }
+    const r = PBC.correctAnalysis(a, meth, model(), mode(), 800);
+    state.singleResult = r;
+
+    $('singleAge').innerHTML = (isFinite(r.t_best) ? r.t_best.toFixed(2) : '—') +
+      ' <small>Ma &nbsp;± ' + (isFinite(r.t_best_2s) ? r.t_best_2s.toFixed(2) : '—') + ' (2σ)</small>';
+    $('singleFlags').textContent = (r.ok ? 'OK' : '剔除') + (r.flags ? ' · ' + r.flags : '');
+    $('singleFlags').style.color = r.ok ? '#15803d' : '#b91c1c';
+
+    const kv = [
+      ['普通 Pb 比例 f206', isFinite(r.f206) ? (r.f206 * 100).toFixed(2) + ' %' : '—'],
+      ['f206 2σ', isFinite(r.f206_2s) ? (r.f206_2s * 100).toFixed(2) + ' %' : '—'],
+      ['f208', isFinite(r.f208) ? (r.f208 * 100).toFixed(2) + ' %' : '—'],
+      ['普通 206Pb/238U', isFinite(r.com68) ? r.com68.toExponential(3) : '—'],
+      ['校正 206Pb/238U', fmtG(r.r68c) + ' → ' + fmt(r.t68, 2) + ' Ma'],
+      ['校正 207Pb/235U', fmtG(r.r75c) + ' → ' + fmt(r.t75, 2) + ' Ma'],
+      ['校正 207Pb/206Pb', fmt(r.r76c, 5) + ' → ' + fmt(r.t76, 1) + ' Ma'],
+      ['校正 208Pb/232Th', fmtG(r.r208c) + ' → ' + fmt(r.t208, 2) + ' Ma'],
+      ['普通Pb 207/206 (模型)', fmt(r.r76c_model, 5)],
+    ];
+    $('singleKv').innerHTML = kv.map(([k, v]) =>
+      '<tr><td>' + k + '</td><td>' + esc(v) + '</td></tr>').join('');
+    requestAnimationFrame(() => drawTW($('singleCanvas'), [r], model(), mode(), [], true));
+  });
+
+  // 初始
+  document.querySelector('input[name="method"][value="207"]').click();
+  activateTab('batch');
+
+  // 深链接：#batch / #single / #help 直接切到对应页；#demo 自动载入示例并运行
+  // （file:// 下 query 可能被浏览器丢弃，所以用 hash）
+  const hash = (location.hash || '').replace(/^#/, '');
+  if (hash === 'single' || hash === 'help' || hash === 'batch') {
+    activateTab(hash);
+    if (hash === 'single') {
+      setTimeout(() => $('btnCalc').click(), 60);
+    }
+  } else if (hash === 'demo') {
+    window.addEventListener('load', loadDemo);
+  }
+})();
+</script>
+</body>
+</html>
