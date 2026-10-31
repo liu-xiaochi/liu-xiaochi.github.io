@@ -632,6 +632,108 @@ table.batch td.formula-cell {
   font-size: 0.84rem;
 }
 
+/* ---------- Plot ---------- */
+.plot-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.field-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.field-inline select {
+  font: inherit;
+  font-size: 0.84rem;
+  color: var(--ink);
+  background: #fbfdfc;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 6px 9px;
+  outline: none;
+}
+.field-inline select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.10); }
+.plot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(460px, 660px));
+  justify-content: center;
+  gap: 18px;
+  margin-top: 18px;
+}
+.plot-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.plot-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.plot-head h3 { margin: 0; font-size: 0.98rem; }
+.plot-head p { margin: 3px 0 0; font-size: 0.74rem; color: var(--muted); }
+.plot-tools { display: flex; gap: 5px; flex-shrink: 0; }
+.plot-body { padding: 4px 8px 0; }
+.plot-body svg { width: 100%; max-width: 620px; height: auto; display: block; margin: 0 auto; }
+.plot-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  padding: 6px 16px 10px;
+  font-size: 0.73rem;
+  color: var(--muted);
+}
+.plot-legend .item { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.plot-legend .sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+.plot-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 0 16px 8px;
+  font-size: 0.72rem;
+  color: #3c4d47;
+}
+.plot-points .item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.plot-points .dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.12); }
+.plot-note {
+  padding: 0 16px 10px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.plot-table { padding: 0 16px 14px; }
+.plot-table summary { cursor: pointer; font-size: 0.76rem; color: var(--teal-dark); }
+.plot-table table { width: 100%; border-collapse: collapse; font-size: 0.74rem; margin-top: 6px; }
+.plot-table th, .plot-table td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.plot-empty {
+  grid-column: 1 / -1;
+  background: var(--card);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  padding: 44px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+@media (max-width: 720px) {
+  .plot-grid { grid-template-columns: 1fr; }
+}
+
 /* ---------- Modal ---------- */
 .modal-back {
   position: fixed;
@@ -741,7 +843,7 @@ footer {
 <header class="topbar">
   <div class="brandline">
     <div class="brand"><span class="mark">◈</span>矿物电子探针计算器</div>
-    <span class="version">v1.0</span>
+    <span class="version">v1.3</span>
   </div>
   <div class="subtitle">18 种矿物 · 国际通用结构式算法 · 单样品与批量计算 · 离线可用</div>
   <div class="top-actions">
@@ -754,6 +856,7 @@ footer {
   <div class="tabbar" role="tablist">
     <button id="tabSingle" class="active" type="button" role="tab" aria-selected="true">单样品计算</button>
     <button id="tabBatch" type="button" role="tab" aria-selected="false">批量计算</button>
+    <button id="tabPlot" type="button" role="tab" aria-selected="false">投图分类</button>
   </div>
 
   <!-- ================= 单样品 ================= -->
@@ -863,6 +966,28 @@ footer {
       </div>
     </div>
   </section>
+
+  <!-- ================= 投图分类 ================= -->
+  <section id="panePlot" class="tabpane">
+    <div class="card">
+      <div class="card-head">
+        <h2>投图分类</h2>
+        <span class="hint">三元分类图 · 单样品 / 批量叠加</span>
+      </div>
+      <div class="card-body plot-controls">
+        <label class="field-inline">
+          <span>数据来源</span>
+          <select id="plotSource">
+            <option value="single">当前单样品</option>
+            <option value="batch">批量结果</option>
+          </select>
+        </label>
+        <label class="switch"><input id="plotLabels" type="checkbox" checked> 显示样品名</label>
+        <span id="plotSummary" class="hint"></span>
+      </div>
+    </div>
+    <div id="plotGrid" class="plot-grid"></div>
+  </section>
 </div>
 
 <footer>
@@ -882,12 +1007,12 @@ footer {
       <p>把氧化物 wt% 换算为摩尔数，再按各矿物的氧基准归一化。对具有固定阳离子数的矿物（云母、绿泥石、电气石、磷灰石、长石、橄榄石、锆石等），程序先按理想阳离子数归一化，再给出对应的 O 数；结构 OH 已计入氧基准。</p>
       <h3>2. 氧基准</h3>
       <ul>
-        <li>橄榄石 4 O；辉石 6 O；角闪石 23 O；黑云母/白云母 24 O（含 OH）；绿泥石 28 O；石榴石 12 O；长石 8 O；尖晶石/磁铁矿 32 O；钛铁矿 6 O；榍石 5 O；绿帘石 13 O（含 OH）；电气石 31 O；磷灰石 26 O；锆石 4 O。</li>
+        <li>橄榄石 4 O；辉石 6 O；角闪石 23 O；黑云母/白云母 24 O（含 OH）；绿泥石 28 O；石榴子石 12 O；长石 8 O；尖晶石/磁铁矿 32 O；钛铁矿 6 O；榍石 5 O；绿帘石 13 O（含 OH）；电气石 31 O；磷灰石 26 O；锆石 4 O。</li>
       </ul>
       <h3>3. Fe³⁺ 的处理</h3>
       <ul>
         <li><b>自动（推荐）</b>：若输入了 Fe₂O₃，按 Fe₂O₃/FeO 分配；否则按矿物的标准化学计量估算。</li>
-        <li><b>辉石、石榴石、尖晶石、磁铁矿、钛铁矿</b>：由阳离子数与理想化学计量的偏差估算 Fe³⁺（与常用 EMP 表格一致）。</li>
+        <li><b>辉石、石榴子石、尖晶石、磁铁矿、钛铁矿</b>：由阳离子数与理想化学计量的偏差估算 Fe³⁺（与常用 EMP 表格一致）。</li>
         <li><b>绿帘石</b>：由八面体 Al 的不足估算 Fe³⁺（Ps 分子）。</li>
         <li><b>角闪石、云母、绿泥石、电气石</b>：默认全铁按 Fe²⁺；如测了 Fe₂O₃，请选择“按输入 Fe₂O₃/FeO”。</li>
         <li><b>橄榄石、长石、磷灰石、锆石</b>：默认全铁为 Fe²⁺。</li>
@@ -909,7 +1034,7 @@ footer {
  *
  * 计算约定：
  *  橄榄石 4 O；辉石 6 O；角闪石 23 O；云母 24 O（含 OH）；
- *  绿泥石 28 O；石榴石 12 O；长石 8 O；尖晶石/磁铁矿 32 O；
+ *  绿泥石 28 O；石榴子石 12 O；长石 8 O；尖晶石/磁铁矿 32 O；
  *  钛铁矿 6 O；榍石 5 O；绿帘石 13 O；电气石 31 O；磷灰石 26 O；锆石 4 O。
  *  Fe3+ 默认按电荷平衡估算，也可选择全部按 Fe2+ 或按输入 Fe2O3/FeO。
  */
@@ -1637,7 +1762,7 @@ footer {
     });
   }
 
-  /* ---------------- 石榴石 ---------------- */
+  /* ---------------- 石榴子石 ---------------- */
 
   function calcGarnet(ctx) {
     var r = remFrom(ctx.cats);
@@ -1690,7 +1815,7 @@ footer {
 
     return finish(ctx, {
       name: name,
-      subtitle: '石榴石',
+      subtitle: '石榴子石',
       sites: sites,
       params: [
         P('镁铝榴石 Prp', prp, 2, '%'),
@@ -1702,7 +1827,7 @@ footer {
         P('Mg#', mgNo, 3)
       ],
       notes: [
-        '石榴石按 12 个氧 / 8 个阳离子归一化；T=3、Y=2、X=3。',
+        '石榴子石按 12 个氧 / 8 个阳离子归一化；T=3、Y=2、X=3。',
         '端元：Prp=Mg/ΣX，Alm=Fe2+/ΣX，Sps=Mn/ΣX，Adr=Fe3+/2，Uvr=Cr/2，Grs 由差值得到。',
         'ΣX = Mg+Fe2+Mn+Ca。'
       ]
@@ -2207,7 +2332,7 @@ footer {
     biotite:  { id: 'biotite',  label: '黑云母', en: 'Biotite', group: '层状硅酸盐', oxygen: 24, ohMax: 4, cationTarget: 16, forceFe2: true, calc: function (c) { return calcMica(c, 'biotite'); }, hint: 'K(Mg,Fe)3AlSi3O10(OH)2 · 24 O' },
     muscovite:{ id: 'muscovite',label: '白云母', en: 'Muscovite', group: '层状硅酸盐', oxygen: 24, ohMax: 4, cationTarget: 14, forceFe2: true, calc: function (c) { return calcMica(c, 'muscovite'); }, hint: 'KAl2(AlSi3O10)(OH)2 · 24 O' },
     chlorite: { id: 'chlorite', label: '绿泥石', en: 'Chlorite', group: '层状硅酸盐', oxygen: 28, ohMax: 12.4444444444, cationTarget: 20, forceFe2: true, calc: calcChlorite, hint: '(Mg,Fe)5Al(Si3Al)O10(OH)8 · 28 O' },
-    garnet:   { id: 'garnet',   label: '石榴石', en: 'Garnet', group: '岛状硅酸盐', oxygen: 12, fe3Method: 'garnet', cationTargetAfter: 8, calc: calcGarnet, hint: 'X3Y2Si3O12 · 12 O' },
+    garnet:   { id: 'garnet',   label: '石榴子石', en: 'Garnet', group: '岛状硅酸盐', oxygen: 12, fe3Method: 'garnet', cationTargetAfter: 8, calc: calcGarnet, hint: 'X3Y2Si3O12 · 12 O' },
     plagioclase:{ id: 'plagioclase', label: '斜长石', en: 'Plagioclase', group: '架状硅酸盐', oxygen: 8, forceFe2: true, cationTarget: 5, calc: function (c) { return calcFeldspar(c, 'plagioclase'); }, hint: '(Na,Ca)Al(Al,Si)3O8 · 8 O' },
     alkali_feldspar:{ id: 'alkali_feldspar', label: '碱性长石', en: 'Alkali feldspar', group: '架状硅酸盐', oxygen: 8, forceFe2: true, cationTarget: 5, calc: function (c) { return calcFeldspar(c, 'alkali'); }, hint: '(K,Na)AlSi3O8 · 8 O' },
     spinel:   { id: 'spinel',   label: '尖晶石', en: 'Spinel', group: '氧化物', oxygen: 32, fe3Method: 'spinel', cationTargetAfter: 24, calc: function (c) { return calcSpinel(c, false); }, hint: 'AB2O4 · 32 O' },
@@ -2265,7 +2390,7 @@ footer {
     biotite: { name: 'ZK203-3-1.1 黑云母', data: { SiO2: 37.953, TiO2: 3.65, Al2O3: 12.721, Cr2O3: 0.048, FeO: 15.075, MnO: 0.123, MgO: 15.853, CaO: 0, Na2O: 0.161, K2O: 9.822, NiO: 0.086, Cl: 0 } },
     muscovite: { name: '白云母示例', data: { SiO2: 46.20, TiO2: 0.35, Al2O3: 35.10, Cr2O3: 0.02, FeO: 1.80, MnO: 0.05, MgO: 0.90, CaO: 0.10, Na2O: 0.55, K2O: 10.20, F: 0.10 } },
     chlorite: { name: '绿泥石示例', data: { SiO2: 28.10, TiO2: 0.10, Al2O3: 19.80, Cr2O3: 0.02, FeO: 20.20, MnO: 0.25, MgO: 25.10, CaO: 0.10, Na2O: 0.05, K2O: 0.03 } },
-    garnet: { name: '07HT76-4-1 石榴石', data: { SiO2: 39.818, TiO2: 0, Al2O3: 18.546, Cr2O3: 0, FeO: 5.061, MnO: 0.648, MgO: 0.001, CaO: 36.887, Na2O: 0, K2O: 0.035, NiO: 0.033 } },
+    garnet: { name: '07HT76-4-1 石榴子石', data: { SiO2: 39.818, TiO2: 0, Al2O3: 18.546, Cr2O3: 0, FeO: 5.061, MnO: 0.648, MgO: 0.001, CaO: 36.887, Na2O: 0, K2O: 0.035, NiO: 0.033 } },
     plagioclase: { name: 'PL52F-1 斜长石', data: { SiO2: 50.3879, TiO2: 0.02782, Al2O3: 30.968, FeO: 0.641908, MgO: 0.039238, MnO: 0, CaO: 13.193, Na2O: 3.86193, K2O: 0.10943, BaO: 0, SrO: 0, P2O5: 0.025718, Cr2O3: 0, Cl: 0, F: 0 } },
     alkali_feldspar: { name: '碱性长石示例', data: { SiO2: 64.80, Al2O3: 18.40, FeO: 0.15, CaO: 0.20, Na2O: 2.10, K2O: 14.10, BaO: 0.35, TiO2: 0.02, MnO: 0.01 } },
     spinel: { name: 'PL54C A5 尖晶石', data: { TiO2: 0.386907, SiO2: 0.105478, Al2O3: 63.8171, Cr2O3: 0.091939, V2O3: 0.074791, FeO: 18.0735, MnO: 0.093632, MgO: 16.7608, ZnO: 1.78673, CaO: 0, NiO: 0 } },
@@ -2387,7 +2512,7 @@ footer {
       ['biotite', ['黑云母', 'biotite', 'bt']],
       ['muscovite', ['白云母', 'muscovite', 'ms']],
       ['chlorite', ['绿泥石', 'chlorite', 'chl']],
-      ['garnet', ['石榴石', 'garnet', 'grt']],
+      ['garnet', ['石榴子石', 'garnet', 'grt']],
       ['plagioclase', ['斜长石', 'plagioclase', 'pl']],
       ['alkali_feldspar', ['碱性长石', '钾长石', 'alkali feldspar', 'kfs']],
       ['spinel', ['尖晶石', 'spinel', 'spl']],
@@ -2426,6 +2551,706 @@ footer {
     templateCSV: templateCSV,
     toNumber: toNumber,
     CHARGE: CHARGE
+  };
+});
+
+</script>
+<script>
+/*
+ * 三元分类图模块
+ * 纯 SVG 绘制，无外部依赖。供 ui.js 调用。
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.MineralPlots = factory();
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  var PALETTE = [
+    '#0f766e', '#b45309', '#1d4ed8', '#be185d', '#4d7c0f', '#7c3aed',
+    '#c2410c', '#0369a1', '#a16207', '#155e75', '#9d174d', '#3f6212'
+  ];
+
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function num(v) {
+    var n = Number(v);
+    return isFinite(n) ? n : 0;
+  }
+
+  function param(r, prefix) {
+    if (!r || !r.params) return 0;
+    for (var i = 0; i < r.params.length; i++) {
+      if (String(r.params[i].label).indexOf(prefix) === 0) return num(r.params[i].value);
+    }
+    return 0;
+  }
+
+  function siteIon(r, siteKey, ion) {
+    if (!r || !r.sites) return 0;
+    for (var i = 0; i < r.sites.length; i++) {
+      if (r.sites[i].key === siteKey) return num((r.sites[i].ions || {})[ion]);
+    }
+    return 0;
+  }
+
+  /* ---------------- 图件定义 ---------------- */
+
+  var DIAGRAMS = [
+    {
+      id: 'feldspar',
+      title: '长石 An–Ab–Or 分类图',
+      subtitle: 'Feldspar ternary · 网格 20% · 简化成分分类',
+      minerals: ['plagioclase', 'alkali_feldspar'],
+      corners: [
+        { key: 'An', label: 'An', name: '钙长石', color: '#b45309' },
+        { key: 'Ab', label: 'Ab', name: '钠长石', color: '#0f766e' },
+        { key: 'Or', label: 'Or', name: '正长石', color: '#1d4ed8' }
+      ],
+      point: function (r) {
+        return { a: param(r, 'An'), b: param(r, 'Ab'), c: param(r, 'Or') };
+      },
+      fields: [
+        { label: '未分类/混合', color: '#f3f4f6', vertices: [[10, 80, 10], [90, 0, 10], [10, 0, 90]] },
+        { label: '钠长石', color: '#fef3c7', vertices: [[0, 100, 0], [10, 90, 0], [10, 80, 10], [0, 90, 10]] },
+        { label: '奥长石', color: '#fde68a', vertices: [[10, 90, 0], [30, 70, 0], [30, 60, 10], [10, 80, 10]] },
+        { label: '中长石', color: '#fcd34d', vertices: [[30, 70, 0], [50, 50, 0], [50, 40, 10], [30, 60, 10]] },
+        { label: '拉长石', color: '#fbbf24', vertices: [[50, 50, 0], [70, 30, 0], [70, 20, 10], [50, 40, 10]] },
+        { label: '培长石', color: '#f59e0b', vertices: [[70, 30, 0], [90, 10, 0], [90, 0, 10], [70, 20, 10]] },
+        { label: '钙长石', color: '#d97706', vertices: [[90, 10, 0], [100, 0, 0], [90, 0, 10]] },
+        { label: '歪长石', color: '#a7f3d0', vertices: [[0, 90, 10], [10, 80, 10], [10, 55, 35], [0, 65, 35]] },
+        { label: '透长石', color: '#dbeafe', vertices: [[0, 65, 35], [10, 55, 35], [10, 25, 65], [0, 35, 65]] },
+        { label: '正长石', color: '#bfdbfe', vertices: [[0, 35, 65], [10, 25, 65], [10, 0, 90], [0, 10, 90]] },
+        { label: '微斜长石', color: '#93c5fd', vertices: [[0, 10, 90], [10, 0, 90], [0, 0, 100]] }
+      ],
+      note: '边界按 An=10/30/50/70/90 与 Or=10/35/65/90 简化；碱性长石种属还取决于结构态，本图仅按成分近似。'
+    },
+    {
+      id: 'pyroxene',
+      title: '辉石 Wo–En–Fs 分类图',
+      subtitle: 'Pyroxene ternary · 网格 20% · 简化四边形分类',
+      minerals: ['opx', 'cpx'],
+      corners: [
+        { key: 'Wo', label: 'Wo', name: '硅灰石', color: '#b45309' },
+        { key: 'En', label: 'En', name: '顽火辉石', color: '#0f766e' },
+        { key: 'Fs', label: 'Fs', name: '铁辉石', color: '#1d4ed8' }
+      ],
+      point: function (r) {
+        return { a: param(r, 'Wo'), b: param(r, 'En'), c: param(r, 'Fs') };
+      },
+      fields: [
+        { label: '顽火辉石', color: '#dcfce7', vertices: [[0, 100, 0], [5, 95, 0], [5, 90, 5], [0, 90, 10]] },
+        { label: '古铜辉石', color: '#d1fae5', vertices: [[0, 90, 10], [5, 90, 5], [5, 50, 45], [0, 50, 50]] },
+        { label: '紫苏辉石', color: '#bbf7d0', vertices: [[0, 50, 50], [5, 50, 45], [5, 10, 85], [0, 10, 90]] },
+        { label: '铁辉石', color: '#86efac', vertices: [[0, 10, 90], [5, 10, 85], [5, 0, 95], [0, 0, 100]] },
+        { label: '易变辉石', color: '#fef3c7', vertices: [[5, 95, 0], [20, 80, 0], [20, 0, 80], [5, 0, 95]] },
+        { label: '普通辉石', color: '#fdba74', vertices: [[20, 80, 0], [45, 55, 0], [45, 0, 55], [20, 0, 80]] },
+        { label: '透辉石', color: '#bfdbfe', vertices: [[45, 55, 0], [100, 0, 0], [45, 27.5, 27.5]] },
+        { label: '钙铁辉石', color: '#fecaca', vertices: [[45, 27.5, 27.5], [100, 0, 0], [45, 0, 55]] }
+      ],
+      note: '投点按 Wo+En+Fs 归一化到 100；简化 Morimoto (1988) 四边形分类。绿辉石/硬玉需 Na–Al 判别，Ac 组分未显示。'
+    },
+    {
+      id: 'olivine',
+      title: '橄榄石 Fo–Fa–Tp 分类图',
+      subtitle: 'Olivine ternary · 网格 20% · 按 Fo 分级',
+      minerals: ['olivine'],
+      corners: [
+        { key: 'Fo', label: 'Fo', name: '镁橄榄石', color: '#0f766e' },
+        { key: 'Fa', label: 'Fa', name: '铁橄榄石', color: '#b45309' },
+        { key: 'Tp', label: 'Tp', name: '锰橄榄石', color: '#7c3aed' }
+      ],
+      point: function (r) {
+        return { a: param(r, 'Fo'), b: param(r, 'Fa'), c: param(r, 'Tp') };
+      },
+      fields: [
+        { label: '镁橄榄石', color: '#d1fae5', vertices: [[100, 0, 0], [90, 10, 0], [90, 0, 10]] },
+        { label: '贵橄榄石', color: '#a7f3d0', vertices: [[90, 10, 0], [70, 30, 0], [70, 0, 30], [90, 0, 10]] },
+        { label: '橄榄石', color: '#6ee7b7', vertices: [[70, 30, 0], [50, 50, 0], [50, 0, 50], [70, 0, 30]] },
+        { label: '铁橄榄石', color: '#fecaca', vertices: [[50, 50, 0], [0, 100, 0], [0, 0, 100], [50, 0, 50]] }
+      ],
+      note: 'Fo 分级参考常用方案；Tp>50% 为锰橄榄石。'
+    },
+    {
+      id: 'garnet-pyralspite',
+      title: '石榴子石 Prp–Alm–Sps 图',
+      subtitle: 'Pyralspite · 按最大端元命名',
+      minerals: ['garnet'],
+      corners: [
+        { key: 'Prp', label: 'Prp', name: '镁铝榴石', color: '#0f766e' },
+        { key: 'Alm', label: 'Alm', name: '铁铝榴石', color: '#b45309' },
+        { key: 'Sps', label: 'Sps', name: '锰铝榴石', color: '#7c3aed' }
+      ],
+      point: function (r) {
+        return { a: param(r, '镁铝榴石'), b: param(r, '铁铝榴石'), c: param(r, '锰铝榴石') };
+      },
+      minSum: 20,
+      emptyText: 'Pyralspite 三端元合计 <20%，未投点（以钙铝/钙铁榴石为主）',
+      fields: [],
+      note: '该图不画边界，按三个端元的相对比例投点；三端元合计 <20% 时不投点，避免把富钙榴石误画到某个角落。'
+    },
+    {
+      id: 'garnet-ugrandite',
+      title: '石榴子石 Grs–Adr–Uvr 图',
+      subtitle: 'Ugrandite · 按最大端元命名',
+      minerals: ['garnet'],
+      corners: [
+        { key: 'Grs', label: 'Grs', name: '钙铝榴石', color: '#0f766e' },
+        { key: 'Adr', label: 'Adr', name: '钙铁榴石', color: '#b45309' },
+        { key: 'Uvr', label: 'Uvr', name: '钙铬榴石', color: '#7c3aed' }
+      ],
+      point: function (r) {
+        return { a: param(r, '钙铝榴石'), b: param(r, '钙铁榴石'), c: param(r, '钙铬榴石') };
+      },
+      minSum: 20,
+      emptyText: 'Ugrandite 三端元合计 <20%，未投点（以镁铝/铁铝/锰铝榴石为主）',
+      fields: [],
+      note: '该图不画边界；与左图配合判断石榴子石主端元。三端元合计 <20% 时不投点。'
+    },
+    {
+      id: 'spinel',
+      title: '尖晶石 Cr–Al–Fe³⁺ 图',
+      subtitle: 'Spinel ternary · 简化三端元分类',
+      minerals: ['spinel', 'magnetite'],
+      corners: [
+        { key: 'Cr', label: 'Cr', name: '铬', color: '#0f766e' },
+        { key: 'Al', label: 'Al', name: '铝', color: '#b45309' },
+        { key: 'Fe3', label: 'Fe³⁺', name: '三价铁', color: '#1d4ed8' }
+      ],
+      point: function (r) {
+        return { a: num((r.cats || {}).Cr), b: num((r.cats || {}).Al), c: num((r.cats || {}).Fe3) };
+      },
+      fields: [
+        { label: '铬铁矿', color: '#ede9fe', vertices: [[100, 0, 0], [50, 50, 0], [50, 0, 50]] },
+        { label: '尖晶石（Al 端元）', color: '#c7d2fe', vertices: [[0, 100, 0], [50, 50, 0], [0, 50, 50]] },
+        { label: '磁铁矿', color: '#fecaca', vertices: [[0, 0, 100], [50, 50, 0], [0, 50, 50]] },
+        { label: '其他/中间', color: '#e5e7eb', vertices: [[50, 50, 0], [0, 50, 50], [50, 0, 50]] }
+      ],
+      note: '简化 Cr–Al–Fe³⁺ 三角图；Ti、Fe²⁺、Mg 未显示，磁铁矿与尖晶石端元仅作参考。'
+    },
+    {
+      id: 'apatite',
+      title: '磷灰石 F–Cl–OH 图',
+      subtitle: 'Apatite ternary · 卤素/羟基端元',
+      minerals: ['apatite'],
+      corners: [
+        { key: 'F', label: 'F', name: '氟', color: '#0f766e' },
+        { key: 'Cl', label: 'Cl', name: '氯', color: '#b45309' },
+        { key: 'OH', label: 'OH', name: '羟基', color: '#1d4ed8' }
+      ],
+      point: function (r) {
+        return { a: num(r.F), b: num(r.Cl), c: num(r.OH) };
+      },
+      fields: [
+        { label: '氟磷灰石', color: '#ccfbf1', vertices: [[100, 0, 0], [50, 50, 0], [50, 0, 50]] },
+        { label: '氯磷灰石', color: '#dbeafe', vertices: [[0, 100, 0], [50, 50, 0], [0, 50, 50]] },
+        { label: '羟磷灰石', color: '#fce7f3', vertices: [[0, 0, 100], [50, 50, 0], [0, 50, 50]] },
+        { label: '其他/中间', color: '#e5e7eb', vertices: [[50, 50, 0], [0, 50, 50], [50, 0, 50]] }
+      ],
+      note: 'OH 由 2−F−Cl 计算；F+Cl>2 时 OH=0。'
+    },
+    {
+      id: 'amphibole-si-nka',
+      title: '角闪石 Si–(Na+K)A 分类图',
+      subtitle: 'Calcic amphibole · Leake (1997) 简化',
+      minerals: ['amphibole'],
+      kind: 'xy',
+      x: { label: 'Si (apfu)', min: 5.5, max: 8.0, ticks: [5.5, 6.0, 6.5, 7.0, 7.5, 8.0] },
+      y: { label: '(Na+K)A (apfu)', min: 0, max: 1.0, ticks: [0, 0.2, 0.4, 0.6, 0.8, 1.0] },
+      point: function (r) {
+        return { x: param(r, 'Si(T)'), y: param(r, '(Na+K)A') };
+      },
+      fields: [
+        { label: '透闪石–阳起石', color: '#d1fae5', polygon: [[7.5, 0], [8.0, 0], [8.0, 0.5], [7.5, 0.5]] },
+        { label: '角闪石', color: '#fef3c7', polygon: [[6.5, 0], [7.5, 0], [7.5, 0.5], [6.5, 0.5]] },
+        { label: '钙镁闪石', color: '#fdba74', polygon: [[6.0, 0], [6.5, 0], [6.5, 0.5], [6.0, 0.5]] },
+        { label: '浅闪石', color: '#bfdbfe', polygon: [[6.5, 0.5], [7.5, 0.5], [7.5, 1.0], [6.5, 1.0]] },
+        { label: '韭闪石', color: '#fecaca', polygon: [[6.0, 0.5], [6.5, 0.5], [6.5, 1.0], [6.0, 1.0]] },
+        { label: '其他/高Ti', color: '#e5e7eb', polygon: [[5.5, 0], [6.0, 0], [6.0, 1.0], [5.5, 1.0]] },
+        { label: '其他/高Si', color: '#e5e7eb', polygon: [[7.5, 0.5], [8.0, 0.5], [8.0, 1.0], [7.5, 1.0]] }
+      ],
+      note: '仅适用于钙质角闪石（(Ca+Na)B≥0.5、NaB<0.5）；Fe–Mg–Mn 与钠质角闪石请用相应图。边界按 Leake (1997) 简化。'
+    },
+    {
+      id: 'biotite-fe-alvi',
+      title: '黑云母 Fe/(Fe+Mg)–Al(VI) 分类图',
+      subtitle: 'Biotite · Foster (1960) 简化四边形',
+      minerals: ['biotite'],
+      kind: 'xy',
+      x: { label: 'Fe/(Fe+Mg)', min: 0, max: 1, ticks: [0, 0.2, 0.4, 0.6, 0.8, 1.0] },
+      y: { label: 'Al(VI) (12 O)', min: 0, max: 1.0, ticks: [0, 0.25, 0.5, 0.75, 1.0] },
+      point: function (r) {
+        return { x: param(r, 'Fe/(Fe+Mg)'), y: param(r, 'Al(VI)') / 2 };
+      },
+      fields: [
+        { label: '金云母', color: '#d1fae5', polygon: [[0, 0], [0.5, 0], [0.5, 0.5], [0, 0.5]] },
+        { label: '黑云母', color: '#fef3c7', polygon: [[0.5, 0], [1, 0], [1, 0.5], [0.5, 0.5]] },
+        { label: '东云母', color: '#bfdbfe', polygon: [[0, 0.5], [0.5, 0.5], [0.5, 1], [0, 1]] },
+        { label: '铁叶云母', color: '#fecaca', polygon: [[0.5, 0.5], [1, 0.5], [1, 1], [0.5, 1]] }
+      ],
+      note: 'Foster (1960) 简化四边形；Al(VI) 为八面体 Al，按 12 O 换算。Fe/(Fe+Mg) 使用 Fe²⁺；若输入 Fe₂O₃，程序按所选 Fe³⁺ 方案分配。'
+    },
+    {
+      id: 'muscovite-si-alvi',
+      title: '白云母 Si–Al(VI) 分类图',
+      subtitle: 'White mica · 白云母–多硅白云母–绿鳞石–珍珠云母',
+      minerals: ['muscovite'],
+      kind: 'xy',
+      x: { label: 'Si (12 O)', min: 2.0, max: 4.0, ticks: [2.0, 2.5, 3.0, 3.5, 4.0] },
+      y: { label: 'Al(VI) (12 O)', min: 0.5, max: 2.5, ticks: [0.5, 1.0, 1.5, 2.0, 2.5] },
+      point: function (r) {
+        return { x: param(r, 'Si(T)') / 2, y: param(r, 'Al(VI)') / 2 };
+      },
+      fields: [
+        { label: '其他/过渡', color: '#f3f4f6', polygon: [[2.0, 0.5], [4.0, 0.5], [4.0, 2.5], [2.0, 2.5]] },
+        { label: '珍珠云母', color: '#fecaca', polygon: [[2.0, 2.0], [2.8, 2.0], [2.8, 2.5], [2.0, 2.5]] },
+        { label: '白云母', color: '#d1fae5', polygon: [[2.8, 1.8], [3.2, 1.8], [3.2, 2.2], [2.8, 2.2]] },
+        { label: '多硅白云母', color: '#fef3c7', polygon: [[3.2, 1.2], [3.7, 1.2], [3.7, 2.0], [3.2, 2.0]] },
+        { label: '绿鳞石', color: '#bfdbfe', polygon: [[3.7, 0.8], [4.0, 0.8], [4.0, 1.5], [3.7, 1.5]] }
+      ],
+      note: '均按 12 O 换算（程序 24 O 值除以 2）。Na/(Na+K)>0.5 的钠云母在同一位置，需结合右图区分。'
+    },
+    {
+      id: 'muscovite-na-si',
+      title: '白云母 Na/(Na+K)–Si 分类图',
+      subtitle: 'White mica · 白云母–钠云母–多硅白云母',
+      minerals: ['muscovite'],
+      kind: 'xy',
+      x: { label: 'Si (12 O)', min: 2.0, max: 4.0, ticks: [2.0, 2.5, 3.0, 3.5, 4.0] },
+      y: { label: 'Na/(Na+K)', min: 0, max: 1, ticks: [0, 0.2, 0.4, 0.6, 0.8, 1.0] },
+      point: function (r) {
+        var na = siteIon(r, 'I', 'Na'), k = siteIon(r, 'I', 'K');
+        return { x: param(r, 'Si(T)') / 2, y: (na + k) > 0 ? na / (na + k) : 0 };
+      },
+      fields: [
+        { label: '白云母', color: '#d1fae5', polygon: [[2.8, 0], [3.3, 0], [3.3, 0.5], [2.8, 0.5]] },
+        { label: '多硅白云母', color: '#fef3c7', polygon: [[3.3, 0], [4.0, 0], [4.0, 0.5], [3.3, 0.5]] },
+        { label: '钠云母', color: '#bfdbfe', polygon: [[2.8, 0.5], [3.3, 0.5], [3.3, 1.0], [2.8, 1.0]] },
+        { label: '多硅钠云母', color: '#fecaca', polygon: [[3.3, 0.5], [4.0, 0.5], [4.0, 1.0], [3.3, 1.0]] },
+        { label: '其他/低Si', color: '#f3f4f6', polygon: [[2.0, 0], [2.8, 0], [2.8, 1.0], [2.0, 1.0]] }
+      ],
+      note: 'Na/(Na+K) 由 A 位 Na、K 计算；Ca 高（>0.5）时考虑珍珠云母。'
+    },
+    {
+      id: 'chlorite-si-fe',
+      title: '绿泥石 Si–Fe/(Fe+Mg) 分类图',
+      subtitle: 'Chlorite · Hey (1954) 简化',
+      minerals: ['chlorite'],
+      kind: 'xy',
+      x: { label: 'Si (14 O)', min: 2.0, max: 4.0, ticks: [2.0, 2.5, 3.0, 3.5, 4.0] },
+      y: { label: 'Fe/(Fe+Mg)', min: 0, max: 1, ticks: [0, 0.2, 0.4, 0.6, 0.8, 1.0] },
+      point: function (r) {
+        return { x: param(r, 'Si(T)') / 2, y: param(r, 'Fe/(Fe+Mg)') };
+      },
+      fields: [
+        { label: '斜绿泥石', color: '#d1fae5', polygon: [[2, 0], [4, 0], [4, 0.5], [2, 0.5]] },
+        { label: '鲕绿泥石', color: '#fecaca', polygon: [[2, 0.5], [4, 0.5], [4, 1], [2, 1]] }
+      ],
+      note: '按 Fe/(Fe+Mg)=0.5 简化划分；程序 Si(T) 为 28 O 基准，图中已除以 2 换算为 14 O。Mn 高时另见锰绿泥石。'
+    },
+    {
+      id: 'tourmaline-ca-li',
+      title: '电气石 X(Ca)–Y(Li) 分类图',
+      subtitle: 'Tourmaline · 简化种属划分',
+      minerals: ['tourmaline'],
+      kind: 'xy',
+      x: { label: 'X(Ca) (apfu)', min: 0, max: 1, ticks: [0, 0.2, 0.4, 0.6, 0.8, 1.0] },
+      y: { label: 'Y(Li) (apfu)', min: 0, max: 1, ticks: [0, 0.2, 0.4, 0.6, 0.8, 1.0] },
+      point: function (r) {
+        return { x: param(r, 'X(Ca)'), y: param(r, 'Y(Li)') };
+      },
+      fields: [
+        { label: '黑电气石–镁电气石', color: '#d1fae5', polygon: [[0, 0], [0.5, 0], [0.5, 0.3], [0, 0.3]] },
+        { label: '锂电气石', color: '#bfdbfe', polygon: [[0, 0.3], [0.5, 0.3], [0.5, 1], [0, 1]] },
+        { label: '钙质电气石', color: '#fef3c7', polygon: [[0.5, 0], [1, 0], [1, 0.3], [0.5, 0.3]] },
+        { label: '含锂钙电气石', color: '#fecaca', polygon: [[0.5, 0.3], [1, 0.3], [1, 1], [0.5, 1]] }
+      ],
+      note: '按 X(Ca) 与 Y(Li) 简化；黑电气石与镁电气石需再用 Fe/(Fe+Mg) 区分。Li 未测时按 0 处理。'
+    },
+    {
+      id: 'epidote-ps',
+      title: '绿帘石 Ps–Fe³⁺ 分类图',
+      subtitle: 'Epidote · Ps = Fe³⁺/(Fe³⁺+Al(VI))',
+      minerals: ['epidote'],
+      kind: 'xy',
+      x: { label: 'Ps (%)', min: 0, max: 100, ticks: [0, 20, 40, 60, 80, 100] },
+      y: { label: 'Fe³⁺ (apfu)', min: 0, max: 1.5, ticks: [0, 0.5, 1.0, 1.5] },
+      point: function (r) {
+        return { x: param(r, 'Ps'), y: param(r, 'Fe3+') };
+      },
+      fields: [
+        { label: '斜黝帘石', color: '#d1fae5', polygon: [[0, 0], [5, 0], [5, 1.5], [0, 1.5]] },
+        { label: '绿帘石', color: '#fef3c7', polygon: [[5, 0], [15, 0], [15, 1.5], [5, 1.5]] },
+        { label: '富铁绿帘石', color: '#fdba74', polygon: [[15, 0], [30, 0], [30, 1.5], [15, 1.5]] },
+        { label: '铁绿帘石', color: '#fecaca', polygon: [[30, 0], [100, 0], [100, 1.5], [30, 1.5]] }
+      ],
+      note: 'Ps = Fe³⁺/(Fe³⁺+Al(VI))×100；边界按 Ps=5/15/30 简化。'
+    },
+    {
+      id: 'ilmenite-ilm-hem',
+      title: '钛铁矿 Ilm–Hem 分类图',
+      subtitle: 'Ilmenite–hematite · 固溶体',
+      minerals: ['ilmenite'],
+      kind: 'xy',
+      x: { label: 'Ilm (%)', min: 0, max: 100, ticks: [0, 20, 40, 60, 80, 100] },
+      y: { label: 'Hem (%)', min: 0, max: 100, ticks: [0, 20, 40, 60, 80, 100] },
+      point: function (r) {
+        return { x: param(r, '钛铁矿 Ilm'), y: param(r, '赤铁矿 Hem') };
+      },
+      fields: [
+        { label: '钛铁矿', color: '#d1fae5', polygon: [[50, 0], [100, 0], [100, 50], [50, 50]] },
+        { label: '赤铁矿', color: '#fecaca', polygon: [[0, 50], [50, 50], [50, 100], [0, 100]] },
+        { label: '固溶体/中间', color: '#f3f4f6', polygon: [[0, 0], [50, 0], [50, 50], [0, 50]] },
+        { label: '富钛赤铁矿', color: '#e5e7eb', polygon: [[50, 50], [100, 50], [100, 100], [50, 100]] }
+      ],
+      note: 'Ilm=Ti/2×100，Hem=Fe³⁺/4×100；镁钛矿/锰钛矿需 Mg/Mn>50% 时另行命名。'
+    }
+  ];
+
+  function diagramsFor(mineralId) {
+    return DIAGRAMS.filter(function (d) { return d.minerals.indexOf(mineralId) !== -1; });
+  }
+
+  function hasPoints(diagram, results) {
+    for (var i = 0; i < (results || []).length; i++) {
+      if (getPoint(diagram, results[i], i)) return true;
+    }
+    return false;
+  }
+
+  function getPoint(diagram, result, index) {
+    var p = diagram.point(result);
+    if (!p) return null;
+    var label = result.sample || ('样品 ' + (index + 1));
+    var name = result.name || '';
+    var color = PALETTE[index % PALETTE.length];
+
+    if (diagram.kind === 'xy') {
+      var x = num(p.x), y = num(p.y);
+      if (!isFinite(x) || !isFinite(y)) return null;
+      if (x < diagram.x.min - 1e-9 || x > diagram.x.max + 1e-9) return null;
+      if (y < diagram.y.min - 1e-9 || y > diagram.y.max + 1e-9) return null;
+      return {
+        kind: 'xy', x: x, y: y,
+        label: label, mineral: result.mineralLabel || '', name: name, color: color
+      };
+    }
+
+    var a = num(p.a), b = num(p.b), c = num(p.c);
+    var sum = a + b + c;
+    if (!(sum > 0)) return null;
+    if (diagram.minSum && sum < diagram.minSum) return null;
+    return {
+      kind: 'ternary',
+      a: a / sum * 100,
+      b: b / sum * 100,
+      c: c / sum * 100,
+      raw: [a, b, c],
+      label: label,
+      mineral: result.mineralLabel || '',
+      name: name,
+      color: color
+    };
+  }
+
+  /* ---------------- SVG ---------------- */
+
+  function ternarySVG(diagram, points, opts) {
+    opts = opts || {};
+    var W = 620, H = 540;
+    var pad = { t: 76, b: 58, l: 88, r: 88 };
+    var H3 = Math.sqrt(3) / 2;
+    var S = Math.min(W - pad.l - pad.r, (H - pad.t - pad.b) / H3);
+    var ox = (W - S) / 2;
+    var baseY = H - pad.b;
+    var topY = baseY - H3 * S;
+
+    function xy(a, b, c) {
+      return [ox + S * (c + a / 2) / 100, baseY - H3 * S * (a / 100)];
+    }
+    function poly(vertices) {
+      return vertices.map(function (v) {
+        var p = xy(v[0], v[1], v[2]);
+        return p[0].toFixed(2) + ',' + p[1].toFixed(2);
+      }).join(' ');
+    }
+
+    var svg = [];
+    svg.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + esc(diagram.title) + '">');
+    svg.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#ffffff"/>');
+    svg.push('<text x="' + (W / 2) + '" y="24" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="16" font-weight="700" fill="#0b3b36">' + esc(diagram.title) + '</text>');
+    svg.push('<text x="' + (W / 2) + '" y="43" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="10.5" fill="#62736d">' + esc(diagram.subtitle) + '</text>');
+
+    // 三角形背景
+    var A = xy(100, 0, 0), B = xy(0, 100, 0), C = xy(0, 0, 100);
+    svg.push('<polygon points="' + [A, B, C].map(function (p) { return p[0].toFixed(2) + ',' + p[1].toFixed(2); }).join(' ') + '" fill="#fbfdfc" stroke="#9db3aa" stroke-width="1.5"/>');
+
+    // 分类色块
+    (diagram.fields || []).forEach(function (f) {
+      svg.push('<polygon points="' + poly(f.vertices) + '" fill="' + f.color + '" fill-opacity="0.72" stroke="none"/>');
+    });
+
+    // 20% 网格
+    [20, 40, 60, 80].forEach(function (t) {
+      var segs = [
+        [[t, 100 - t, 0], [t, 0, 100 - t]],
+        [[0, t, 100 - t], [100 - t, t, 0]],
+        [[0, 100 - t, t], [100 - t, 0, t]]
+      ];
+      segs.forEach(function (seg) {
+        var p1 = xy(seg[0][0], seg[0][1], seg[0][2]);
+        var p2 = xy(seg[1][0], seg[1][1], seg[1][2]);
+        svg.push('<line x1="' + p1[0].toFixed(2) + '" y1="' + p1[1].toFixed(2) + '" x2="' + p2[0].toFixed(2) + '" y2="' + p2[1].toFixed(2) + '" stroke="#e2ece8" stroke-width="1"/>');
+      });
+    });
+
+    // 三角形边
+    svg.push('<polygon points="' + [A, B, C].map(function (p) { return p[0].toFixed(2) + ',' + p[1].toFixed(2); }).join(' ') + '" fill="none" stroke="#9db3aa" stroke-width="1.5"/>');
+
+    // 角标
+    var corners = diagram.corners;
+    svg.push('<text x="' + A[0].toFixed(2) + '" y="' + (A[1] - 14).toFixed(2) + '" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12" font-weight="700" fill="' + corners[0].color + '">' + esc(corners[0].label + ' ' + corners[0].name) + '</text>');
+    svg.push('<text x="' + (B[0] - 8).toFixed(2) + '" y="' + (B[1] + 20).toFixed(2) + '" text-anchor="end" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12" font-weight="700" fill="' + corners[1].color + '">' + esc(corners[1].label + ' ' + corners[1].name) + '</text>');
+    svg.push('<text x="' + (C[0] + 8).toFixed(2) + '" y="' + (C[1] + 20).toFixed(2) + '" text-anchor="start" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12" font-weight="700" fill="' + corners[2].color + '">' + esc(corners[2].label + ' ' + corners[2].name) + '</text>');
+
+    // 投点
+    if (!points.length) {
+      svg.push('<text x="' + (W / 2) + '" y="' + (baseY - 80) + '" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12.5" fill="#9aa8a2">' + esc(diagram.emptyText || '暂无该矿物数据') + '</text>');
+    } else {
+      points.forEach(function (p) {
+        var q = xy(p.a, p.b, p.c);
+        var title = p.label + ' · ' + p.name + ' · ' + diagram.corners[0].key + ' ' + p.a.toFixed(1) + ' / ' + diagram.corners[1].key + ' ' + p.b.toFixed(1) + ' / ' + diagram.corners[2].key + ' ' + p.c.toFixed(1);
+        svg.push('<circle cx="' + q[0].toFixed(2) + '" cy="' + q[1].toFixed(2) + '" r="5.5" fill="' + p.color + '" stroke="#ffffff" stroke-width="1.6"><title>' + esc(title) + '</title></circle>');
+        if (opts.labels !== false && points.length <= 40) {
+          var lx = q[0] + 8, ly = q[1] - 7, anchor = 'start';
+          if (lx > W - 96) { lx = q[0] - 8; anchor = 'end'; }
+          if (ly < 70) ly = q[1] + 15;
+          if (q[1] > baseY - 18) ly = q[1] - 14;
+          svg.push('<text x="' + lx.toFixed(2) + '" y="' + ly.toFixed(2) + '" text-anchor="' + anchor + '" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="10" fill="#21332d" paint-order="stroke" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round">' + esc(p.label) + '</text>');
+        }
+      });
+    }
+
+    svg.push('</svg>');
+    return svg.join('');
+  }
+
+  function autoTicks(min, max, count) {
+    var span = max - min;
+    if (!(span > 0)) return [min];
+    var raw = span / count;
+    var pow = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var norm = raw / pow;
+    var step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+    step *= pow;
+    var start = Math.ceil(min / step) * step;
+    var out = [];
+    for (var v = start; v <= max + step * 1e-9; v += step) out.push(Math.round(v / step) * step);
+    return out;
+  }
+
+  function cartesianSVG(diagram, points, opts) {
+    opts = opts || {};
+    var W = 620, H = 540;
+    var pad = { t: 62, b: 62, l: 78, r: 56 };
+    var xmin = diagram.x.min, xmax = diagram.x.max;
+    var ymin = diagram.y.min, ymax = diagram.y.max;
+    var plotW = W - pad.l - pad.r;
+    var plotH = H - pad.t - pad.b;
+
+    function sx(x) { return pad.l + (x - xmin) / (xmax - xmin) * plotW; }
+    function sy(y) { return pad.t + (ymax - y) / (ymax - ymin) * plotH; }
+    function fmt(v) {
+      var a = Math.abs(v);
+      if (a >= 10) return String(Math.round(v * 10) / 10);
+      if (a >= 1) return v.toFixed(1);
+      return v.toFixed(2);
+    }
+
+    var xTicks = diagram.x.ticks || autoTicks(xmin, xmax, 5);
+    var yTicks = diagram.y.ticks || autoTicks(ymin, ymax, 5);
+    var svg = [];
+    svg.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + esc(diagram.title) + '">');
+    svg.push('<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#ffffff"/>');
+    svg.push('<text x="' + (W / 2) + '" y="24" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="16" font-weight="700" fill="#0b3b36">' + esc(diagram.title) + '</text>');
+    svg.push('<text x="' + (W / 2) + '" y="43" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="10.5" fill="#62736d">' + esc(diagram.subtitle) + '</text>');
+
+    svg.push('<rect x="' + pad.l + '" y="' + pad.t + '" width="' + plotW + '" height="' + plotH + '" fill="#fbfdfc" stroke="#9db3aa" stroke-width="1.2"/>');
+
+    (diagram.fields || []).forEach(function (f) {
+      if (!f.polygon) return;
+      var pts = f.polygon.map(function (v) {
+        return sx(v[0]).toFixed(2) + ',' + sy(v[1]).toFixed(2);
+      }).join(' ');
+      svg.push('<polygon points="' + pts + '" fill="' + f.color + '" fill-opacity="0.72" stroke="none"/>');
+    });
+
+    xTicks.forEach(function (t) {
+      if (t < xmin - 1e-9 || t > xmax + 1e-9) return;
+      var x = sx(t);
+      svg.push('<line x1="' + x.toFixed(2) + '" y1="' + pad.t + '" x2="' + x.toFixed(2) + '" y2="' + (H - pad.b) + '" stroke="#e2ece8" stroke-width="1"/>');
+      svg.push('<text x="' + x.toFixed(2) + '" y="' + (H - pad.b + 15) + '" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="9.5" fill="#62736d">' + fmt(t) + '</text>');
+    });
+    yTicks.forEach(function (t) {
+      if (t < ymin - 1e-9 || t > ymax + 1e-9) return;
+      var y = sy(t);
+      svg.push('<line x1="' + pad.l + '" y1="' + y.toFixed(2) + '" x2="' + (W - pad.r) + '" y2="' + y.toFixed(2) + '" stroke="#e2ece8" stroke-width="1"/>');
+      svg.push('<text x="' + (pad.l - 8) + '" y="' + (y + 3.5).toFixed(2) + '" text-anchor="end" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="9.5" fill="#62736d">' + fmt(t) + '</text>');
+    });
+
+    svg.push('<rect x="' + pad.l + '" y="' + pad.t + '" width="' + plotW + '" height="' + plotH + '" fill="none" stroke="#9db3aa" stroke-width="1.2"/>');
+    svg.push('<text x="' + (W / 2) + '" y="' + (H - 18) + '" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="11.5" font-weight="600" fill="#3c4d47">' + esc(diagram.x.label) + '</text>');
+    svg.push('<text x="18" y="' + (pad.t + plotH / 2) + '" text-anchor="middle" transform="rotate(-90 18 ' + (pad.t + plotH / 2) + ')" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="11.5" font-weight="600" fill="#3c4d47">' + esc(diagram.y.label) + '</text>');
+
+    if (!points.length) {
+      svg.push('<text x="' + (pad.l + plotW / 2) + '" y="' + (pad.t + plotH / 2) + '" text-anchor="middle" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="12.5" fill="#9aa8a2">' + esc(diagram.emptyText || '暂无该矿物数据') + '</text>');
+    } else {
+      points.forEach(function (p) {
+        var cx = sx(p.x), cy = sy(p.y);
+        var tip = p.label + ' · ' + p.name + ' · ' + diagram.x.label + ' ' + p.x.toFixed(2) + ' / ' + diagram.y.label + ' ' + p.y.toFixed(2);
+        svg.push('<circle cx="' + cx.toFixed(2) + '" cy="' + cy.toFixed(2) + '" r="5.5" fill="' + p.color + '" stroke="#ffffff" stroke-width="1.6"><title>' + esc(tip) + '</title></circle>');
+        if (opts.labels !== false && points.length <= 40) {
+          var lx = cx + 8, ly = cy - 7, anchor = 'start';
+          if (lx > W - 100) { lx = cx - 8; anchor = 'end'; }
+          if (ly < pad.t + 14) ly = cy + 15;
+          if (cy > H - pad.b - 16) ly = cy - 14;
+          svg.push('<text x="' + lx.toFixed(2) + '" y="' + ly.toFixed(2) + '" text-anchor="' + anchor + '" font-family="Segoe UI, Microsoft YaHei, sans-serif" font-size="10" fill="#21332d" paint-order="stroke" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round">' + esc(p.label) + '</text>');
+        }
+      });
+    }
+
+    svg.push('</svg>');
+    return svg.join('');
+  }
+
+  /* ---------------- 卡片 ---------------- */
+
+  function legendHTML(diagram, points) {
+    var html = '<div class="plot-legend">';
+    if (diagram.fields && diagram.fields.length) {
+      diagram.fields.forEach(function (f) {
+        html += '<span class="item"><span class="sw" style="background:' + f.color + '"></span>' + esc(f.label) + '</span>';
+      });
+    } else if (diagram.corners) {
+      html += '<span class="item">按最大端元命名：' + diagram.corners.map(function (c) { return esc(c.name); }).join(' / ') + '</span>';
+    } else {
+      html += '<span class="item">按图中分区与样品点判断</span>';
+    }
+    if (points.length) {
+      html += '<span class="item">投点：<b>' + points.length + '</b> 个</span>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function tableHTML(diagram, points) {
+    if (!points.length) return '';
+    var html = '<details class="plot-table"><summary>查看投图数据表</summary><table><thead><tr>';
+    if (diagram.kind === 'xy') {
+      html += '<th>样品</th><th>' + esc(diagram.x.label) + '</th><th>' + esc(diagram.y.label) + '</th><th>分类</th></tr></thead><tbody>';
+      points.forEach(function (p) {
+        html += '<tr><td>' + esc(p.label) + '</td><td>' + p.x.toFixed(2) + '</td><td>' + p.y.toFixed(2) + '</td><td>' + esc(p.name) + '</td></tr>';
+      });
+    } else {
+      var c = diagram.corners;
+      html += '<th>样品</th><th>' + esc(c[0].key) + '</th><th>' + esc(c[1].key) + '</th><th>' + esc(c[2].key) + '</th><th>分类</th></tr></thead><tbody>';
+      points.forEach(function (p) {
+        html += '<tr><td>' + esc(p.label) + '</td><td>' + p.a.toFixed(2) + '</td><td>' + p.b.toFixed(2) + '</td><td>' + p.c.toFixed(2) + '</td><td>' + esc(p.name) + '</td></tr>';
+      });
+    }
+    html += '</tbody></table></details>';
+    return html;
+  }
+
+  function renderCard(diagram, results, opts) {
+    opts = opts || {};
+    var points = [];
+    (results || []).forEach(function (r, i) {
+      var p = getPoint(diagram, r, i);
+      if (p) points.push(p);
+    });
+    var svg = diagram.kind === 'xy' ? cartesianSVG(diagram, points, opts) : ternarySVG(diagram, points, opts);
+    var html = '<div class="plot-card" data-diagram="' + diagram.id + '">';
+    html += '<div class="plot-head"><div><h3>' + esc(diagram.title) + '</h3><p>' + esc(diagram.subtitle) + '</p></div>';
+    html += '<div class="plot-tools"><button class="btn small" type="button" data-export="svg">SVG</button><button class="btn small" type="button" data-export="png">PNG</button></div></div>';
+    html += '<div class="plot-body">' + svg + '</div>';
+    html += legendHTML(diagram, points);
+    if (points.length > 1) {
+      html += '<div class="plot-points">';
+      points.forEach(function (p) {
+        html += '<span class="item"><span class="dot" style="background:' + p.color + '"></span>' + esc(p.label) + '</span>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="plot-note">' + esc(diagram.note || '') + '</div>';
+    html += tableHTML(diagram, points);
+    html += '</div>';
+    return html;
+  }
+
+  /* ---------------- 导出 ---------------- */
+
+  function download(filename, blob) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+  }
+
+  function exportSVG(card, filename) {
+    var svg = card.querySelector('svg');
+    if (!svg) return;
+    var clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    var text = new XMLSerializer().serializeToString(clone);
+    download(filename || '投图.svg', new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + text], { type: 'image/svg+xml;charset=utf-8' }));
+  }
+
+  function exportPNG(card, filename) {
+    var svg = card.querySelector('svg');
+    if (!svg) return;
+    var clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    var text = new XMLSerializer().serializeToString(clone);
+    var url = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml;charset=utf-8' }));
+    var img = new Image();
+    img.onload = function () {
+      var scale = 2;
+      var canvas = document.createElement('canvas');
+      canvas.width = 620 * scale;
+      canvas.height = 540 * scale;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0, 620, 540);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function (blob) {
+        if (blob) download(filename || '投图.png', blob);
+      }, 'image/png');
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      alert('PNG 导出失败，请改用 SVG 导出。');
+    };
+    img.src = url;
+  }
+
+  return {
+    DIAGRAMS: DIAGRAMS,
+    PALETTE: PALETTE,
+    diagramsFor: diagramsFor,
+    hasPoints: hasPoints,
+    getPoint: getPoint,
+    renderCard: renderCard,
+    exportSVG: exportSVG,
+    exportPNG: exportPNG
   };
 });
 
@@ -2627,9 +3452,11 @@ footer {
     var m = E.MINERALS[state.mineralId];
     try {
       var r = E.calculate(state.mineralId, state.values, { fe3Mode: state.feMode });
+      r.sample = $('#sampleName').value || '未命名';
       state.lastResult = r;
       renderResult(r);
       saveState();
+      if ($('#panePlot') && $('#panePlot').classList.contains('active')) renderPlots();
     } catch (err) {
       renderError(err.message || String(err));
     }
@@ -2730,7 +3557,7 @@ footer {
   }
 
   function feModeLabel(mode) {
-    var map = { auto: '自动', charge: '电荷平衡', allFe2: '全部 Fe²⁺', input: '按输入 Fe₂O₃', pyroxene: '辉石化学计量', garnet: '石榴石化学计量', spinel: '尖晶石化学计量', ilmenite: '钛铁矿化学计量', epidote: '绿帘石 Al 不足' };
+    var map = { auto: '自动', charge: '电荷平衡', allFe2: '全部 Fe²⁺', input: '按输入 Fe₂O₃', pyroxene: '辉石化学计量', garnet: '石榴子石化学计量', spinel: '尖晶石化学计量', ilmenite: '钛铁矿化学计量', epidote: '绿帘石 Al 不足' };
     return map[mode] || mode;
   }
 
@@ -2783,6 +3610,7 @@ footer {
       var item = { sample: row.sample, mineralId: row.mineralId, data: row.data, result: null, error: null };
       try {
         item.result = E.calculate(row.mineralId, row.data, { fe3Mode: state.feMode });
+        item.result.sample = row.sample;
         state.batchResults.push(item.result);
       } catch (err) {
         item.error = err.message || String(err);
@@ -2790,6 +3618,7 @@ footer {
       state.batchItems.push(item);
     });
     renderBatch();
+    if ($('#panePlot') && $('#panePlot').classList.contains('active')) renderPlots();
   }
 
   function renderBatch() {
@@ -2888,7 +3717,7 @@ footer {
       'PL52F-1,橄榄石,37.8353,0,0,0,24.4077,0,0.438392,37.1075,0.016889,0,0,0',
       '#4,角闪石,46.405,1.686,7.39,0.045,14.493,0,0.252,13.346,11.077,1.774,0.142,0',
       'PL52F-1,斜长石,50.3879,0.02782,30.968,0,0.641908,0,0,0.039238,13.193,3.86193,0.10943,0.025718',
-      '07HT76-4-1,石榴石,39.818,0,18.546,0,5.061,0,0.648,0.001,36.887,0,0.035,0',
+      '07HT76-4-1,石榴子石,39.818,0,18.546,0,5.061,0,0.648,0.001,36.887,0,0.035,0',
       'PL54C,尖晶石,0.105478,0.386907,63.8171,0.091939,18.0735,0,0.093632,16.7608,0,0,0,0'
     ];
     $('#batchText').value = lines.join('\n');
@@ -2907,14 +3736,96 @@ footer {
 
   /* ---------------- 交互 ---------------- */
 
+  /* ---------------- 投图分类 ---------------- */
+
+  function plotEmpty(msg) {
+    return '<div class="plot-empty">' + esc(msg) + '</div>';
+  }
+
+  function renderPlots() {
+    var grid = $('#plotGrid');
+    if (!grid || !window.MineralPlots) return;
+    var source = $('#plotSource') ? $('#plotSource').value : 'single';
+    var labels = $('#plotLabels') ? $('#plotLabels').checked : true;
+    var summary = $('#plotSummary');
+    var results = source === 'single' ? (state.lastResult ? [state.lastResult] : []) : state.batchResults.slice();
+
+    if (!results.length) {
+      grid.innerHTML = plotEmpty(source === 'single'
+        ? '还没有单样品结果。请先在“单样品计算”里计算一个样品。'
+        : '还没有批量结果。请先在“批量计算”里解析并计算数据。');
+      if (summary) summary.textContent = '';
+      return;
+    }
+
+    var diagrams;
+    if (source === 'single') {
+      diagrams = MineralPlots.diagramsFor(results[0].mineralId);
+      if (!diagrams.length) {
+        grid.innerHTML = plotEmpty('当前矿物（' + results[0].mineralLabel + '）暂未配置分类图。已支持：长石、辉石、橄榄石、石榴子石、尖晶石、磷灰石，以及角闪石、黑云母、白云母、绿泥石、电气石、绿帘石、钛铁矿。');
+        summary.textContent = '当前：' + results[0].mineralLabel + ' · ' + results[0].name;
+        return;
+      }
+      grid.innerHTML = diagrams.map(function (d) {
+        return MineralPlots.renderCard(d, results, { labels: labels });
+      }).join('');
+      summary.textContent = '当前：' + results[0].mineralLabel + ' · ' + results[0].name;
+    } else {
+      diagrams = MineralPlots.DIAGRAMS.filter(function (d) {
+        return results.some(function (r) {
+          return d.minerals.indexOf(r.mineralId) !== -1 && MineralPlots.getPoint(d, r, 0);
+        });
+      });
+      if (!diagrams.length) {
+        grid.innerHTML = plotEmpty('批量结果中的矿物暂未配置分类图。已支持：长石、辉石、橄榄石、石榴子石、尖晶石、磷灰石，以及角闪石、黑云母、白云母、绿泥石、电气石、绿帘石、钛铁矿。');
+        summary.textContent = '批量：' + results.length + ' 个成功样品';
+        return;
+      }
+      grid.innerHTML = diagrams.map(function (d) {
+        var sub = results.filter(function (r) { return d.minerals.indexOf(r.mineralId) !== -1; });
+        return MineralPlots.renderCard(d, sub, { labels: labels });
+      }).join('');
+      var unsupported = results.filter(function (r) {
+        return !MineralPlots.diagramsFor(r.mineralId).length;
+      }).length;
+      summary.textContent = '批量：' + results.length + ' 个成功样品，' + diagrams.length + ' 张图' +
+        (unsupported ? '；' + unsupported + ' 个暂未配置三元图' : '');
+    }
+  }
+
+  function bindPlotEvents() {
+    var grid = $('#plotGrid');
+    if (!grid) return;
+    grid.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('button[data-export]') : null;
+      if (!btn) return;
+      var card = btn.closest('.plot-card');
+      if (!card) return;
+      var id = card.getAttribute('data-diagram');
+      var d = null;
+      for (var i = 0; i < MineralPlots.DIAGRAMS.length; i++) {
+        if (MineralPlots.DIAGRAMS[i].id === id) { d = MineralPlots.DIAGRAMS[i]; break; }
+      }
+      var base = (d ? d.title : '投图').replace(/[\\/:*?"<>|]/g, '_') + '_' + new Date().toISOString().slice(0, 10);
+      if (btn.getAttribute('data-export') === 'svg') MineralPlots.exportSVG(card, base + '.svg');
+      else MineralPlots.exportPNG(card, base + '.png');
+    });
+  }
+
   function switchTab(name) {
     var single = name === 'single';
+    var batch = name === 'batch';
+    var plot = name === 'plot';
     $('#tabSingle').classList.toggle('active', single);
-    $('#tabBatch').classList.toggle('active', !single);
+    $('#tabBatch').classList.toggle('active', batch);
+    $('#tabPlot').classList.toggle('active', plot);
     $('#tabSingle').setAttribute('aria-selected', String(single));
-    $('#tabBatch').setAttribute('aria-selected', String(!single));
+    $('#tabBatch').setAttribute('aria-selected', String(batch));
+    $('#tabPlot').setAttribute('aria-selected', String(plot));
     $('#paneSingle').classList.toggle('active', single);
-    $('#paneBatch').classList.toggle('active', !single);
+    $('#paneBatch').classList.toggle('active', batch);
+    $('#panePlot').classList.toggle('active', plot);
+    if (plot) renderPlots();
   }
 
   function onMineralChange() {
@@ -2996,6 +3907,7 @@ footer {
       state.lastResult = null;
       $('#resultPanel').innerHTML = '<div class="result-empty"><div class="glyph">◈</div><div>已清空。输入氧化物含量后点击“计算结构式”。</div></div>';
       saveState();
+      if ($('#panePlot') && $('#panePlot').classList.contains('active')) renderPlots();
     });
     $('#openMethod').addEventListener('click', function () { $('#methodModal').classList.add('open'); });
     $('#closeMethod').addEventListener('click', function () { $('#methodModal').classList.remove('open'); });
@@ -3004,6 +3916,10 @@ footer {
 
     $('#tabSingle').addEventListener('click', function () { switchTab('single'); });
     $('#tabBatch').addEventListener('click', function () { switchTab('batch'); });
+    $('#tabPlot').addEventListener('click', function () { switchTab('plot'); });
+    $('#plotSource').addEventListener('change', renderPlots);
+    $('#plotLabels').addEventListener('change', renderPlots);
+    bindPlotEvents();
 
     $('#batchCalcBtn').addEventListener('click', batchCalculate);
     $('#batchDemoBtn').addEventListener('click', loadBatchDemo);
@@ -3026,6 +3942,13 @@ footer {
     if (window.location && window.location.hash === '#batch') {
       switchTab('batch');
       loadBatchDemo();
+    } else if (window.location && window.location.hash === '#plot') {
+      switchTab('plot');
+    } else if (window.location && window.location.hash === '#plotbatch') {
+      switchTab('plot');
+      loadBatchDemo();
+      if ($('#plotSource')) $('#plotSource').value = 'batch';
+      renderPlots();
     }
   }
 
