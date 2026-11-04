@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>同位素瑞利分馏模拟器 · Rayleigh Isotope</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --panel:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e3e8f0;
+    --accent:#7c3aed; --accent-soft:#f5f0ff; --danger:#dc2626; --warn:#b45309; --ok:#15803d;
+    --radius:14px; --shadow:0 1px 2px rgba(15,23,42,.05),0 10px 28px rgba(15,23,42,.06);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --logo-a:#7c3aed; --logo-b:#2563eb;
+  }
+  body[data-view="mineral"]{ --accent:#0891b2; --accent-soft:#ecfeff; --logo-a:#0891b2; --logo-b:#0ea5e9; }
+  body[data-view="afc"]{ --accent:#0d9488; --accent-soft:#effcf9; --logo-a:#0d9488; --logo-b:#14b8a6; }
+  body[data-view="docs"]{ --accent:#475569; --accent-soft:#f1f5f9; --logo-a:#475569; --logo-b:#64748b; }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:14px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{margin:0;font-weight:650;letter-spacing:.2px}
+  button,input,select{font:inherit;color:inherit}
+  .hidden{display:none !important}
+
+  .topbar{
+    position:sticky;top:0;z-index:30;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:10px 20px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:11px;margin-right:4px}
+  .logo{
+    width:36px;height:36px;border-radius:10px;flex:none;
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;letter-spacing:.3px;
+    background:linear-gradient(135deg,var(--logo-a),var(--logo-b));
+    box-shadow:0 6px 16px rgba(124,58,237,.22);transition:.2s;
+  }
+  .brand h1{font-size:15px}
+  .sub{margin:0;color:var(--muted);font-size:11.5px}
+
+  .modules{display:flex;gap:3px;background:#eef2f7;padding:3px;border-radius:11px;flex-wrap:wrap}
+  .mod-btn{
+    border:0;background:transparent;padding:6px 12px;border-radius:9px;
+    font-size:12.5px;color:#475569;cursor:pointer;transition:.15s;white-space:nowrap;
+  }
+  .mod-btn:hover{color:#0f172a}
+  .mod-btn.active{background:#fff;color:var(--accent);font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.1)}
+
+  .top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+  .preset{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}
+  .preset select{
+    max-width:270px;padding:6px 10px;border:1px solid var(--line);border-radius:9px;
+    background:#fff;font-size:12.5px;color:var(--ink);
+  }
+  .btn{
+    border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 11px;
+    cursor:pointer;font-size:12.5px;transition:.15s;white-space:nowrap;
+  }
+  .btn:hover{border-color:#c9d4e5;background:#f8fafc}
+  .btn.ghost{color:#334155}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+
+  .layout{
+    display:grid;grid-template-columns:minmax(400px,480px) minmax(0,1fr);
+    gap:18px;padding:18px 22px 34px;max-width:1640px;margin:0 auto;align-items:start;
+  }
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .left{padding:16px 16px 18px;position:sticky;top:72px;max-height:calc(100vh - 92px);overflow:auto}
+  .right{padding:16px 18px 20px;min-width:0}
+
+  .block{padding:12px 0;border-bottom:1px dashed var(--line)}
+  .block:last-child{border-bottom:0;padding-bottom:0}
+  .block:first-child{padding-top:0}
+  .block h2{font-size:13px;color:#334155;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .block h2 .tag{font-size:11px;font-weight:500;color:var(--muted);background:#f1f5f9;border-radius:6px;padding:2px 6px;margin-left:auto}
+
+  .wide-select{
+    width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:#fff;
+    font-size:12.8px;color:var(--ink);
+  }
+  .wide-select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+
+  .params{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:10px}
+  .params.three{grid-template-columns:1fr 1fr 1fr}
+  .field{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted)}
+  .field input,.field select{
+    width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;
+    font-family:var(--mono);font-size:12.5px;color:var(--ink);
+  }
+  .field select{font-family:inherit;font-size:12.5px}
+  .field input:focus,.field select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  .inline-toggle{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#334155;margin-top:8px}
+  .inline-toggle input{accent-color:var(--accent)}
+
+  .tbl-scroll{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:310px}
+  table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+  th,td{padding:0;border-bottom:1px solid #eef2f7;text-align:left;white-space:nowrap}
+  thead th{
+    position:sticky;top:0;z-index:1;background:#f8fafc;color:#475569;font-weight:600;font-size:11px;
+    padding:7px 5px;border-bottom:1px solid var(--line);
+  }
+  tbody td{padding:3px 3px}
+  tbody tr:last-child td{border-bottom:0}
+  td input[type=text],td input[type=number]{
+    width:100%;min-width:46px;border:1px solid transparent;border-radius:6px;background:transparent;
+    padding:5px 4px;font-size:12px;
+  }
+  td input[type=text]:hover,td input[type=number]:hover{background:#f8fafc;border-color:#eef2f7}
+  td input[type=text]:focus,td input[type=number]:focus{background:#fff;border-color:var(--accent);outline:2px solid var(--accent-soft)}
+  td input.num{font-family:var(--mono);text-align:right;min-width:60px;padding:5px 3px}
+  td.name input{min-width:76px;font-weight:500}
+  td.iso input{min-width:64px;text-align:right;font-family:var(--mono);font-size:11.5px}
+  td.narrow input{min-width:38px}
+  th.numcol{text-align:right}
+  .del{
+    border:0;background:transparent;color:#94a3b8;cursor:pointer;font-size:15px;line-height:1;
+    padding:2px 5px;border-radius:6px;
+  }
+  .del:hover{color:var(--danger);background:#fef2f2}
+  .row-add{
+    margin-top:8px;border:1px dashed #cbd5e1;background:#fbfdff;color:#475569;border-radius:9px;
+    padding:6px 10px;width:100%;cursor:pointer;font-size:12.5px;
+  }
+  .row-add:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .note{font-size:11.5px;color:var(--muted);margin:8px 0 0;line-height:1.55}
+  .note b{color:#334155;font-weight:600}
+  .warnline{font-size:11.5px;margin:8px 0 0;line-height:1.55}
+  .warnline.bad{color:var(--warn)}
+  .warnline.ok{color:var(--ok)}
+
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  .stat{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+  .stat b{display:block;font-family:var(--mono);font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stat span{font-size:10.5px;color:var(--muted);letter-spacing:.2px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .chart-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .chart-head h2{font-size:14px;margin-right:auto}
+  .chart-head .tag{font-size:11px;color:var(--muted);background:#f1f5f9;border-radius:6px;padding:2px 7px}
+  .chart-wrap{position:relative;width:100%;height:390px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+  .chart-wrap canvas{display:block;width:100%;height:100%}
+  .chart-wrap.small{height:300px}
+  .tooltip{
+    position:absolute;pointer-events:none;z-index:5;background:rgba(15,23,42,.92);color:#fff;
+    border-radius:9px;padding:8px 10px;font-size:11.5px;line-height:1.5;max-width:270px;
+    box-shadow:0 6px 20px rgba(15,23,42,.25);transform:translate(10px,-50%);
+  }
+  .tooltip b{font-weight:600}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:11.5px;color:#334155}
+  .legend .item{display:flex;align-items:center;gap:6px}
+  .legend svg{overflow:visible}
+
+  .tbl-out{margin-top:14px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  .tbl-out table{font-size:12px}
+  .tbl-out th,.tbl-out td{padding:6px 9px;text-align:right}
+  .tbl-out th:first-child,.tbl-out td:first-child{text-align:left}
+  .tbl-out thead th{background:#f8fafc;border-bottom:1px solid var(--line)}
+  .tbl-out td{font-family:var(--mono);font-size:11.5px}
+  .tbl-out td small{display:block;color:var(--muted);font-family:system-ui,sans-serif;font-size:10px}
+  .empty{padding:28px 12px;text-align:center;color:var(--muted);font-size:12.5px}
+
+  .formula{
+    font-family:var(--mono);font-size:11.8px;line-height:1.75;color:#334155;
+    background:#f8fafc;border:1px solid var(--line);border-radius:9px;padding:9px 11px;white-space:pre-wrap;
+  }
+  .formula b{color:var(--accent);font-weight:600}
+
+  details.help{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:#fbfdff}
+  details.help summary{cursor:pointer;padding:9px 12px;font-size:12.5px;color:#334155;font-weight:600}
+  details.help .body{padding:2px 14px 14px;font-size:12px;color:#475569;line-height:1.65}
+  details.help code{font-family:var(--mono);background:#eef2f7;border-radius:4px;padding:1px 5px;font-size:11.5px}
+  details.help ul{margin:6px 0 0;padding-left:18px}
+  details.help li{margin:4px 0}
+
+  dialog{
+    border:1px solid var(--line);border-radius:16px;padding:0;max-width:720px;width:calc(100% - 40px);
+    box-shadow:0 24px 70px rgba(15,23,42,.3);
+  }
+  dialog::backdrop{background:rgba(15,23,42,.35);backdrop-filter:blur(2px)}
+  .dlg-head{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .dlg-head h3{font-size:14px;margin-right:auto}
+  .dlg-body{padding:14px 18px 18px;font-size:13px;color:#334155;max-height:70vh;overflow:auto}
+  .dlg-body table{width:100%;font-size:12px;margin-top:8px;table-layout:fixed}
+  .dlg-body th,.dlg-body td{padding:6px 6px;border-bottom:1px solid #eef2f7;text-align:right;white-space:normal;vertical-align:top}
+  .dlg-body th:first-child,.dlg-body td:first-child{text-align:left;width:40%}
+  .dlg-body th:last-child,.dlg-body td:last-child{width:7%}
+  .doc table th,.doc table td{white-space:normal}
+  .ok{color:var(--ok);font-weight:600}
+  .bad{color:var(--danger);font-weight:600}
+
+  .docwrap{max-width:1080px;margin:0 auto;padding:18px 22px 40px}
+  .doc{padding:24px 30px 34px;line-height:1.75;color:#1e293b}
+  .doc h1{font-size:20px;margin:0 0 6px}
+  .doc h2{font-size:15px;margin:26px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .doc h3{font-size:13px;margin:16px 0 5px}
+  .doc p{margin:7px 0}
+  .doc ul,.doc ol{margin:6px 0;padding-left:22px}
+  .doc li{margin:4px 0}
+  .doc table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px}
+  .doc th,.doc td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  .doc th{background:#f8fafc;font-weight:600;color:#334155}
+  .doc code{font-family:var(--mono);background:#eef2f7;border-radius:4px;padding:1px 5px;font-size:11.5px}
+  .doc .eq{font-family:var(--mono);background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:8px 11px;margin:8px 0;font-size:12px;white-space:pre-wrap}
+  .doc .kv{color:var(--muted);font-size:11.5px}
+  .doc .callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:9px 12px;border-radius:0 8px 8px 0;margin:10px 0;font-size:12.5px}
+
+  @media (max-width:1080px){
+    .layout{grid-template-columns:1fr}
+    .left{position:static;max-height:none}
+  }
+  @media (max-width:640px){
+    .topbar{padding:10px 12px}
+    .layout{padding:12px}
+    .params,.params.three{grid-template-columns:1fr}
+    .summary{grid-template-columns:1fr 1fr}
+    .chart-wrap{height:320px}
+    .doc{padding:18px 16px 24px}
+  }
+</style>
+</head>
+<body data-view="main">
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">δ</div>
+    <div>
+      <h1>同位素瑞利分馏模拟器</h1>
+      <p class="sub" id="subtitle">Rayleigh 蒸馏 · 结晶 / 去气 / 熔融 / AFC</p>
+    </div>
+  </div>
+  <nav class="modules" id="viewNav">
+    <button class="mod-btn active" data-view="main">瑞利分馏</button>
+    <button class="mod-btn" data-view="mineral">多矿物 / Δ(T) / 变 α</button>
+    <button class="mod-btn" data-view="afc">AFC 同位素</button>
+    <button class="mod-btn" data-view="docs">说明与校验</button>
+  </nav>
+  <div class="top-actions">
+    <label class="preset">预设
+      <select id="preset"></select>
+    </label>
+    <button class="btn ghost" id="btnTest">方程校验</button>
+    <button class="btn ghost" id="btnCSV">导出 CSV</button>
+  </div>
+</header>
+
+<section class="view" id="view-main">
+  <main class="layout">
+    <aside class="panel left" id="left-main"></aside>
+    <section class="panel right" id="right-main"></section>
+  </main>
+</section>
+
+<section class="view hidden" id="view-mineral">
+  <main class="layout">
+    <aside class="panel left" id="left-mineral"></aside>
+    <section class="panel right" id="right-mineral"></section>
+  </main>
+</section>
+
+<section class="view hidden" id="view-afc">
+  <main class="layout">
+    <aside class="panel left" id="left-afc"></aside>
+    <section class="panel right" id="right-afc"></section>
+  </main>
+</section>
+
+<section class="view hidden" id="view-docs">
+  <div class="docwrap">
+    <article class="panel doc" id="docBody"></article>
+  </div>
+</section>
+
+<dialog id="testDialog">
+  <div class="dlg-head"><h3>方程校验</h3><button class="btn ghost" id="dlgClose">关闭</button></div>
+  <div class="dlg-body" id="testBody"></div>
+</dialog>
+
+<script>
+'use strict';
+
+/* ================= common ================= */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (v, d = 3) => {
+  if (v === null || v === undefined || Number.isNaN(v)) return '—';
+  if (!isFinite(v)) return '∞';
+  const a = Math.abs(v);
+  if (a !== 0 && (a < 1e-3 || a >= 1e5)) return v.toExponential(2);
+  return v.toFixed(d).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '') || '0';
+};
+const deepClone = o => JSON.parse(JSON.stringify(o));
+const num = (v, d = 0) => { const x = +v; return Number.isFinite(x) ? x : d; };
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+function niceTicks(min, max, count){
+  const span = max - min;
+  if (span <= 0) return [min];
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  step *= mag;
+  const start = Math.ceil(min / step - 1e-9) * step;
+  const out = [];
+  for (let v = start; v <= max + 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+
+function logTicks(min, max){
+  const out = [];
+  const a = Math.ceil(Math.log10(min) - 1e-9);
+  const b = Math.floor(Math.log10(max) + 1e-9);
+  for (let e = a; e <= b; e++){
+    const v = Math.pow(10, e);
+    out.push(v);
+    if (b - a <= 2) for (let k = 2; k <= 9; k++){
+      const vv = k * v;
+      if (vv <= max) out.push(vv);
+    }
+  }
+  return out.sort((x, y) => x - y);
+}
+
+function tickText(v, span){
+  if (v === 0) return '0';
+  const a = Math.abs(v);
+  if (a >= 1e5 || (a > 0 && a < 1e-4)) return v.toExponential(1);
+  const d = Math.max(0, Math.min(6, Math.ceil(-Math.log10(Math.max(span, 1e-12))) + 1));
+  return v.toFixed(d);
+}
+
+function xTickText(v, xMax){
+  if (Math.abs(v) >= 1000 || (Math.abs(v) > 0 && Math.abs(v) < 0.001)) return v.toExponential(1);
+  if (Math.abs(xMax) > 2) return String(Math.round(v * 1000) / 1000);
+  return v.toFixed(3).replace(/\.?0+$/, '') || '0';
+}
+
+function valueAt(points, x){
+  if (!points || !points.length) return null;
+  let lo = 0, hi = points.length - 1;
+  if (x <= points[0].x) return points[0].y;
+  if (x >= points[hi].x) return points[hi].y;
+  while (hi - lo > 1){
+    const mid = (lo + hi) >> 1;
+    if (points[mid].x <= x) lo = mid; else hi = mid;
+  }
+  const a = points[lo], b = points[hi];
+  const t = (x - a.x) / ((b.x - a.x) || 1);
+  return a.y + (b.y - a.y) * t;
+}
+
+function makeChart(canvasSel, wrapSel, tipSel){
+  const ch = { canvas: $(canvasSel), wrap: $(wrapSel), tip: $(tipSel), cache: null, hover: null };
+  if (!ch.canvas || !ch.wrap) return null;
+  ch.wrap.addEventListener('mousemove', e => {
+    if (!ch.cache) return;
+    const r = ch.wrap.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const c = ch.cache;
+    if (mx < c.x0 || mx > c.x1){ ch.tip.hidden = true; return; }
+    const x = c.xMin + (mx - c.x0) / (c.x1 - c.x0) * (c.xMax - c.xMin);
+    ch.hover = x;
+    drawChart(ch, c.series, c.opt);
+    showTip(ch, e.clientX - r.left, e.clientY - r.top, x);
+  });
+  ch.wrap.addEventListener('mouseleave', () => {
+    ch.hover = null; ch.tip.hidden = true;
+    if (ch.cache) drawChart(ch, ch.cache.series, ch.cache.opt);
+  });
+  return ch;
+}
+
+function drawChart(ch, series, opt){
+  const canvas = ch.canvas, wrap = ch.wrap;
+  const W = Math.max(320, wrap.clientWidth);
+  const H = Math.max(200, wrap.clientHeight);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 68, r: 18, t: 16, b: 46 };
+  const x0 = pad.l, x1 = W - pad.r, y0 = pad.t, y1 = H - pad.b;
+  const plotW = x1 - x0, plotH = y1 - y0;
+  const xMin = opt.xMin, xMax = opt.xMax;
+
+  const ys = [];
+  for (const s of series) for (const p of s.points){
+    if (isFinite(p.y) && (!opt.logY || p.y > 0)) ys.push(p.y);
+  }
+  if (!ys.length){
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '13px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('没有可绘制的数据', W / 2, H / 2);
+    ch.cache = null;
+    return;
+  }
+
+  let vMin = Math.min(...ys), vMax = Math.max(...ys);
+  if (opt.logY){
+    const lo = Math.pow(10, Math.floor(Math.log10(Math.max(vMin, 1e-12))));
+    const hi = Math.pow(10, Math.ceil(Math.log10(Math.max(vMax, lo * 10))));
+    vMin = lo; vMax = hi;
+  } else {
+    const padY = (vMax - vMin) * 0.07 || Math.abs(vMax) * 0.07 || 1;
+    if (opt.zeroLine){
+      vMin = Math.min(vMin, 0); vMax = Math.max(vMax, 0);
+    }
+    vMin = vMin - padY * 0.25;
+    vMax = vMax + padY;
+  }
+
+  const yv = v => {
+    if (opt.logY){
+      const t = (Math.log10(Math.max(v, 1e-12)) - Math.log10(vMin)) / (Math.log10(vMax) - Math.log10(vMin));
+      return y1 - t * plotH;
+    }
+    return y1 - ((v - vMin) / (vMax - vMin || 1)) * plotH;
+  };
+  const xv = x => x0 + ((x - xMin) / (xMax - xMin || 1)) * plotW;
+
+  ctx.lineWidth = 1;
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.fillStyle = '#64748b';
+
+  const xTicks = niceTicks(xMin, xMax, 6);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xTicks){
+    if (t < xMin - 1e-9 || t > xMax + 1e-9) continue;
+    const x = xv(t);
+    ctx.strokeStyle = '#eef2f7';
+    ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke();
+    ctx.fillText(xTickText(t, xMax), x, y1 + 8);
+  }
+
+  const yTicks = opt.logY ? logTicks(vMin, vMax) : niceTicks(vMin, vMax, 6);
+  const ySpan = vMax - vMin;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yTicks){
+    if (t < vMin - 1e-12 || t > vMax + 1e-12) continue;
+    const y = yv(t);
+    if (y < y0 - 1 || y > y1 + 1) continue;
+    ctx.strokeStyle = '#eef2f7';
+    ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+    ctx.fillStyle = '#64748b';
+    ctx.fillText(opt.logY ? (t >= 1 ? String(Math.round(t)) : t.toExponential(0)) : tickText(t, ySpan), x0 - 8, y);
+  }
+
+  if (vMin <= 0 && vMax >= 0){
+    ctx.strokeStyle = '#cbd5e1'; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(x0, yv(0)); ctx.lineTo(x1, yv(0)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0, y1); ctx.lineTo(x1, y1); ctx.stroke();
+
+  for (const s of series){
+    if (!s.points.length) continue;
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = s.width || 2;
+    ctx.setLineDash(s.dash || []);
+    ctx.beginPath();
+    let started = false;
+    for (const p of s.points){
+      if (!isFinite(p.y) || (opt.logY && p.y <= 0)){ started = false; continue; }
+      const X = xv(p.x), Y = yv(p.y);
+      if (!started){ ctx.moveTo(X, Y); started = true; } else ctx.lineTo(X, Y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  if (ch.hover !== null && ch.hover >= xMin && ch.hover <= xMax){
+    const hx = xv(ch.hover);
+    ctx.strokeStyle = '#94a3b8'; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(hx, y0); ctx.lineTo(hx, y1); ctx.stroke();
+    ctx.setLineDash([]);
+    for (const s of series){
+      const y = valueAt(s.points, ch.hover);
+      if (!isFinite(y) || (opt.logY && y <= 0)) continue;
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(hx, yv(y), 3.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+
+  ctx.fillStyle = '#475569';
+  ctx.font = '12px system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText(opt.xLabel, (x0 + x1) / 2, H - 20);
+  ctx.save();
+  ctx.translate(16, (y0 + y1) / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(opt.yLabel, 0, 0);
+  ctx.restore();
+
+  ch.cache = { series, opt, x0, x1, y0, y1, xMin, xMax, vMin, vMax, yv, xv, W, H };
+}
+
+function showTip(ch, xPix, yPix, x){
+  const c = ch.cache;
+  const rows = c.series
+    .map(s => ({ s, y: valueAt(s.points, x) }))
+    .filter(o => isFinite(o.y))
+    .sort((a, b) => b.y - a.y);
+  if (!rows.length){ ch.tip.hidden = true; return; }
+  ch.tip.hidden = false;
+  ch.tip.style.left = Math.max(4, Math.min(xPix, c.W - 290)) + 'px';
+  ch.tip.style.top = Math.max(40, Math.min(yPix, c.H - 30)) + 'px';
+  const xTag = c.opt.xTag || 'x';
+  const dig = c.opt.yDigits || 3;
+  ch.tip.innerHTML = `<div style="color:#cbd5e1;margin-bottom:4px">${esc(xTag)} = <b style="color:#fff">${fmt(x, 4)}</b></div>` +
+    rows.map(o => `<div><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${o.s.color};margin-right:6px"></span>${esc(o.s.label)} <b>${fmt(o.y, dig)}</b></div>`).join('');
+}
+
+function renderLegend(el, series){
+  if (!el) return;
+  if (!series.length){ el.innerHTML = ''; return; }
+  el.innerHTML = series.map(s => `
+    <span class="item">
+      <svg width="22" height="8"><line x1="1" y1="4" x2="21" y2="4" stroke="${s.color}" stroke-width="2" stroke-dasharray="${(s.dash || []).join(',')}"></line></svg>
+      ${esc(s.label)}
+    </span>`).join('');
+}
+
+/* ================= isotope math ================= */
+const PALETTE = ['#7c3aed', '#dc2626', '#0891b2', '#ea580c', '#16a34a', '#db2777', '#2563eb', '#65a30d', '#475569', '#b45309'];
+
+function d2R(d){ return 1 + (+d || 0) / 1000; }
+function R2d(r){ return (r - 1) * 1000; }
+function alphaOf(delta, mode){ return mode === 'exp' ? Math.exp((+delta || 0) / 1000) : 1 + (+delta || 0) / 1000; }
+
+/* Unified point for one process at one F (melt/vapor fraction). */
+function computePoint(proc, sys, F, mode){
+  const a = alphaOf(sys.delta, mode);
+  const R0 = d2R(sys.d0);
+  const D = Math.max(0, num(sys.D, 1));
+
+  if (proc === 'fc'){
+    if (!(F > 0)) return null;
+    const f = Math.pow(F, D);
+    const RL = R0 * Math.pow(f, a - 1);
+    const C = Math.pow(F, D - 1);
+    let dacc = null;
+    const cm = 1 - F * C;                    // crystal-borne element mass (C0 = 1)
+    if (cm > 1e-9) dacc = R2d((R0 - F * C * RL) / cm);
+    return { F, f, dm: R2d(RL), di: R2d(a * RL), dacc, C };
+  }
+
+  if (proc === 'degas'){
+    const Fv = clamp(F, 0, 1 - 1e-9);
+    const f = Math.pow(1 - Fv, D);
+    const RL = R0 * Math.pow(f, a - 1);
+    const C = Math.pow(1 - Fv, D - 1);
+    let dacc = null;
+    if (1 - f > 1e-12) dacc = R2d((R0 - f * RL) / (1 - f));
+    return { F: Fv, f, dm: R2d(RL), di: R2d(a * RL), dacc, C };
+  }
+
+  if (proc === 'eqcryst'){
+    if (!(F > 0)) return null;
+    const C = 1 / (D + F * (1 - D));
+    const RL = R0 * (F + (1 - F) * D) / (F + (1 - F) * D * a);
+    return { F, f: F * C, dm: R2d(RL), di: R2d(a * RL), dacc: null, C };
+  }
+
+  if (proc === 'batchmelt'){
+    if (!(F > 0)) return null;
+    const C = 1 / (D + F * (1 - D));
+    const RL = R0 * (F + (1 - F) * D) / (F + (1 - F) * D / a);
+    return { F, f: F * C, dm: R2d(RL), di: R2d(RL / a), dacc: null, C };
+  }
+
+  if (proc === 'fracmelt'){
+    if (F >= 1 || !(D > 0)) return null;
+    const Cres = Math.pow(1 - F, 1 / D - 1);
+    const C = Cres / D;
+    const fres = Math.pow(1 - F, 1 / D);
+    const Rres = R0 * Math.pow(fres, a - 1);
+    const RL = a * Rres;
+    const elemMelt = 1 - (1 - F) * Cres;
+    let dacc = null;
+    if (elemMelt > 1e-9) dacc = R2d((R0 - (1 - F) * Cres * Rres) / elemMelt);
+    return { F, f: fres, dm: R2d(RL), di: R2d(Rres), dacc, C };
+  }
+  return null;
+}
+
+/* ================= process metadata ================= */
+const PROCESS = {
+  fc: {
+    label: '分离结晶（Rayleigh FC）',
+    dLabel: 'Δ 矿物−熔体 (‰)',
+    dLabelLong: 'Δ = δ矿物 − δ熔体',
+    DLabel: 'D 固/熔',
+    phase: '晶体',
+    hasInst: true, hasAcc: true,
+    note: '熔体不断与晶体分离；f = F^D 为元素在熔体中的剩余分数。D=1 时即经典 δ = (δ₀+1000)·F^(α−1)−1000。',
+    eq: 'α = 1 + Δ/1000\nf = F^D\nδ_熔体 = (δ₀+1000)·f^(α−1) − 1000\nδ_瞬时晶体 = (δ_熔体+1000)·α − 1000\nC_熔体/C₀ = F^(D−1)'
+  },
+  degas: {
+    label: '岩浆去气 / 流体出溶',
+    dLabel: 'Δ 蒸气−熔体 (‰)',
+    dLabelLong: 'Δ = δ蒸气 − δ熔体',
+    DLabel: 'D 气/熔',
+    phase: '蒸气',
+    hasInst: true, hasAcc: true,
+    note: '开放体系：元素以 D_气/熔 进入逃逸的蒸气/流体；f = (1−F_气)^D 为熔体中元素剩余分数。',
+    eq: 'α = 1 + Δ/1000\nf = (1−F_v)^D_v\nδ_熔体 = (δ₀+1000)·f^(α−1) − 1000\nδ_瞬时蒸气 = (δ_熔体+1000)·α − 1000\nC_熔体/C₀ = (1−F_v)^(D_v−1)'
+  },
+  eqcryst: {
+    label: '平衡结晶（晶体不分离）',
+    dLabel: 'Δ 矿物−熔体 (‰)',
+    dLabelLong: 'Δ = δ矿物 − δ熔体',
+    DLabel: 'D 固/熔',
+    phase: '晶体',
+    hasInst: true, hasAcc: false,
+    note: '封闭体系：晶体与熔体始终保持平衡并留在体系内；熔体成分由总体系质量平衡决定。',
+    eq: 'C_熔体/C₀ = 1/[D + F(1−D)]\nR_熔体/R₀ = [F+(1−F)D] / [F+(1−F)D·α]\nδ_晶体 = (δ_熔体+1000)·α − 1000'
+  },
+  batchmelt: {
+    label: '批次熔融（平衡熔融）',
+    dLabel: 'Δ 熔体−残余相 (‰)',
+    dLabelLong: 'Δ = δ熔体 − δ残余固相',
+    DLabel: 'D 残/熔',
+    phase: '残余相',
+    hasInst: true, hasAcc: false,
+    note: '源区与熔体平衡，熔体不抽离；F 为熔融程度，D 为残余固相/熔体分配系数。',
+    eq: 'C_熔体/C₀ = 1/[D + F(1−D)]\nR_熔体/R₀ = [F+(1−F)D] / [F+(1−F)D/α]\nδ_残余相 = (δ_熔体+1000)/α − 1000'
+  },
+  fracmelt: {
+    label: '分离熔融（Rayleigh 熔融）',
+    dLabel: 'Δ 熔体−残余相 (‰)',
+    dLabelLong: 'Δ = δ熔体 − δ残余固相',
+    DLabel: 'D 残/熔',
+    phase: '残余相',
+    hasInst: true, hasAcc: true,
+    note: '熔体形成后即时抽离；残余相按 Rayleigh 蒸馏演化，瞬时熔体与之平衡。',
+    eq: 'C_残余/C₀ = (1−F)^(1/D−1)\nC_熔体 = C_残余/D\nf_残余 = (1−F)^(1/D)\nR_残余/R₀ = f_残余^(α−1)\nR_瞬时熔体 = α·R_残余'
+  }
+};
+
+const SERIES_DEFS = {
+  fc:       [{ key: 'dm', label: '熔体', dash: [] }, { key: 'di', label: '瞬时晶体', dash: [6, 4] }, { key: 'dacc', label: '累积晶体', dash: [2, 3] }],
+  degas:    [{ key: 'dm', label: '熔体', dash: [] }, { key: 'di', label: '瞬时蒸气', dash: [6, 4] }, { key: 'dacc', label: '累积蒸气', dash: [2, 3] }],
+  eqcryst:  [{ key: 'dm', label: '熔体', dash: [] }, { key: 'di', label: '平衡晶体', dash: [6, 4] }],
+  batchmelt:[{ key: 'dm', label: '熔体', dash: [] }, { key: 'di', label: '残余固相', dash: [6, 4] }],
+  fracmelt:[{ key: 'dm', label: '瞬时熔体', dash: [] }, { key: 'di', label: '残余固相', dash: [6, 4] }, { key: 'dacc', label: '累积熔体', dash: [2, 3] }]
+};
+/* ================= state ================= */
+function mkMain(o){
+  return Object.assign({
+    proc: 'fc', alphaMode: 'lin', xAxis: 'F',
+    Fmin: 0.02, Fmax: 1, N: 60,
+    showInst: true, showAcc: true, tableSys: 0,
+    systems: []
+  }, o);
+}
+function mkMineral(o){
+  return Object.assign({
+    mode: 'multi', name: 'Fe', iso: 'δ⁵⁶Fe', d0: 0.076,
+    Fmin: 0.02, Fmax: 1, N: 60,
+    minerals: [],
+    formula: 'zr', Tstart: 900, Tend: 700, SiO2: 70, A: -0.85, B: 0, C: 0,
+    a: 0.999919, b: -0.0003016, fmin: 0.01, fmax: 1, D: 1
+  }, o);
+}
+function mkAfc(o){
+  return Object.assign({
+    mode: 'delta', d0: 6, da: 18, R0: 0.7045, Ra: 0.7200,
+    C0: 1, Ca: 1, D: 0, delta: 0,
+    rList: '0.2, 0.15, 0.1',
+    Fmin: 0.05, Fmax: 1, N: 60, showSimple: true
+  }, o);
+}
+const S = (name, iso, d0, delta, D = 1) => ({ name, iso, d0, delta, D, on: true });
+
+const PRESETS = {
+  main: [
+    {
+      key: 'fe-fc', label: 'Fe–矿物分离结晶（McCoy-West 2018）',
+      state: mkMain({ proc: 'fc', systems: [
+        S('尖晶石', 'δ⁵⁶Fe', 0.076, 0.22),
+        S('橄榄石', 'δ⁵⁶Fe', 0.076, -0.15),
+        S('混合相', 'δ⁵⁶Fe', 0.076, 0.052)
+      ] })
+    },
+    {
+      key: 'si-fc', label: 'Si–矿物分离结晶（Savage 2011）',
+      state: mkMain({ proc: 'fc', systems: [
+        S('橄榄石', 'δ³⁰Si', -0.34, -0.15),
+        S('辉石', 'δ³⁰Si', -0.34, -0.21),
+        S('斜长石', 'δ³⁰Si', -0.34, 0.11)
+      ] })
+    },
+    {
+      key: 'zr-fc', label: 'Zr–锆石分离结晶（Inglis 2019）',
+      state: mkMain({ proc: 'fc', Fmin: 0.01, systems: [
+        S('锆石 700°C', 'δ⁹⁴Zr', 0.0422695, -0.081)
+      ] })
+    },
+    {
+      key: 'o-fc', label: 'O–矿物分离结晶（White 2015）',
+      state: mkMain({ proc: 'fc', systems: [
+        S('矿物 A', 'δ¹⁸O', 6, 0.8),
+        S('矿物 B', 'δ¹⁸O', 6, 0.5),
+        S('矿物 C', 'δ¹⁸O', 6, 0.3)
+      ] })
+    },
+    {
+      key: 'b-fc', label: 'B–电气石分离结晶（Marschall 2009）',
+      state: mkMain({ proc: 'fc', systems: [
+        S('电气石', 'δ¹¹B', -10.5, 10)
+      ] })
+    },
+    {
+      key: 'v-fc', label: 'V–氧化物分离结晶（Prytulak 2016）',
+      state: mkMain({ proc: 'fc', systems: [
+        S('氧化物 1100°C', 'δ⁵¹V', -0.75, -0.4545)
+      ] })
+    },
+    {
+      key: 'fe-degas', label: 'Fe–岩浆去气（Du 2017）',
+      state: mkMain({ proc: 'degas', Fmin: 0, Fmax: 0.5, systems: [
+        S('蒸气 782°C', 'δ⁵⁶Fe', 0.1, -0.1347, 3.83)
+      ] })
+    },
+    {
+      key: 'li-degas', label: 'Li–流体出溶（Teng 2006 / Fan 2020）',
+      state: mkMain({ proc: 'degas', Fmin: 0, Fmax: 0.6, systems: [
+        S('流体 D=1', 'δ⁷Li', 0, -4, 1),
+        S('流体 D=2.5', 'δ⁷Li', 0, -4, 2.5),
+        S('流体 D=4', 'δ⁷Li', 0, -4, 4)
+      ] })
+    },
+    {
+      key: 'o-eq', label: 'O–平衡结晶（White 2015）',
+      state: mkMain({ proc: 'eqcryst', systems: [
+        S('矿物', 'δ¹⁸O', 6, 0.8)
+      ] })
+    },
+    {
+      key: 'si-batch', label: 'Si–批次熔融（示例）',
+      state: mkMain({ proc: 'batchmelt', systems: [
+        S('源区', 'δ³⁰Si', -0.34, 0.15)
+      ] })
+    },
+    {
+      key: 'si-frac', label: 'Si–分离熔融（示例）',
+      state: mkMain({ proc: 'fracmelt', Fmin: 0.02, systems: [
+        S('源区', 'δ³⁰Si', -0.34, 0.15)
+      ] })
+    },
+    {
+      key: 'custom-main', label: '自定义（空白）',
+      state: mkMain({ proc: 'fc', systems: [S('体系 1', 'δ', 0, 0)] })
+    }
+  ],
+
+  mineral: [
+    {
+      key: 'fe-multi', label: 'Fe–多矿物加权（Ol+Opx+Cpx+Sp）',
+      state: mkMineral({ mode: 'multi', name: 'Fe', iso: 'δ⁵⁶Fe', d0: 0.076, minerals: [
+        { name: '橄榄石', X: 0.55, delta: -0.15, D: 1 },
+        { name: '斜方辉石', X: 0.15, delta: -0.10, D: 1 },
+        { name: '单斜辉石', X: 0.20, delta: 0.05, D: 1 },
+        { name: '尖晶石', X: 0.10, delta: 0.22, D: 1 }
+      ] })
+    },
+    {
+      key: 'si-multi', label: 'Si–多矿物加权（Ol+Cpx+Pl）',
+      state: mkMineral({ mode: 'multi', name: 'Si', iso: 'δ³⁰Si', d0: -0.34, minerals: [
+        { name: '橄榄石', X: 0.50, delta: -0.15, D: 1 },
+        { name: '单斜辉石', X: 0.30, delta: -0.21, D: 1 },
+        { name: '斜长石', X: 0.20, delta: 0.11, D: 1 }
+      ] })
+    },
+    {
+      key: 'v-multi', label: 'V–多矿物（D 加权；Prytulak 2016）',
+      state: mkMineral({ mode: 'multi', name: 'V', iso: 'δ⁵¹V', d0: -0.75, minerals: [
+        { name: '斜长石', X: 0.50, delta: 0, D: 0 },
+        { name: '磁铁矿', X: 0.15, delta: -0.4545, D: 32 },
+        { name: '斜方辉石', X: 0.20, delta: -0.4545, D: 1.5 },
+        { name: '单斜辉石', X: 0.15, delta: -0.4545, D: 2.5 }
+      ] })
+    },
+    {
+      key: 'zr-dT', label: 'Zr–锆石 Δ(T)（Inglis 2019）',
+      state: mkMineral({ mode: 'dT', formula: 'zr', name: 'Zr', iso: 'δ⁹⁴Zr', d0: 0.0422695, Tstart: 900, Tend: 700, Fmin: 0.01, D: 1 })
+    },
+    {
+      key: 'ti-dT', label: 'Ti–氧化物 Δ(T)（Johnson 2019）',
+      state: mkMineral({ mode: 'dT', formula: 'ti', name: 'Ti', iso: 'δ⁴⁹Ti', d0: 0, Tstart: 1150, Tend: 950, SiO2: 70, Fmin: 0.01, D: 1 })
+    },
+    {
+      key: 'fe-dT', label: 'Fe–蒸气 Δ(T)（Du 2017）',
+      state: mkMineral({ mode: 'dT', formula: 'fe', name: 'Fe', iso: 'δ⁵⁶Fe', d0: 0.1, Tstart: 900, Tend: 700, Fmin: 0.01, D: 3.83 })
+    },
+    {
+      key: 'zr-alphaF', label: 'Zr–变 α（动力↔平衡，Table 5）',
+      state: mkMineral({ mode: 'alphaF', name: 'Zr', iso: 'δ⁹⁴Zr', d0: 0.0422695, a: 0.999919, b: -0.0003016, fmin: 0.01, fmax: 1, N: 60 })
+    }
+  ],
+
+  afc: [
+    {
+      key: 'o-afc', label: 'O–AFC（White 2015 参数）',
+      state: mkAfc({ mode: 'delta', d0: 6, da: 18, C0: 1, Ca: 1, D: 0, delta: 0, rList: '0.2, 0.15, 0.1' })
+    },
+    {
+      key: 'sr-afc', label: 'Sr–AFC（比值模式，示例）',
+      state: mkAfc({ mode: 'ratio', R0: 0.7045, Ra: 0.7200, C0: 100, Ca: 200, D: 0.5, rList: '0.3' })
+    },
+    {
+      key: 'nd-afc', label: 'Nd–AFC（比值模式，示例）',
+      state: mkAfc({ mode: 'ratio', R0: 0.5130, Ra: 0.5122, C0: 10, Ca: 20, D: 0.1, rList: '0.5, 0.2' })
+    },
+    {
+      key: 'custom-afc', label: '自定义（空白）',
+      state: mkAfc({ mode: 'delta', d0: 0, da: 0, C0: 1, Ca: 1, D: 0, delta: 0, rList: '0.3' })
+    }
+  ]
+};
+
+const state = {
+  view: 'main',
+  presetKey: { main: 'fe-fc', mineral: 'fe-multi', afc: 'o-afc' },
+  main: deepClone(PRESETS.main[0].state),
+  mineral: deepClone(PRESETS.mineral[0].state),
+  afc: deepClone(PRESETS.afc[0].state)
+};
+
+const charts = { main: null, mineral: null, afc: null };
+const SUBTITLES = {
+  main: '瑞利蒸馏 · 结晶 / 去气 / 熔融 / 平衡',
+  mineral: '多矿物 Δ 加权 · Δ(T) · α = a + b·f',
+  afc: '同化–分离结晶的同位素质量平衡',
+  docs: '约定、方程、与工作区表格的对应'
+};
+
+/* ================= main view ================= */
+function renderMain(){
+  const s = state.main;
+  const P = PROCESS[s.proc];
+  const dDefs = SERIES_DEFS[s.proc];
+  const diLabel = (dDefs.find(d => d.key === 'di') || {}).label || '瞬时相';
+  const accLabel = (dDefs.find(d => d.key === 'dacc') || {}).label || '累积相';
+  const left = $('#left-main');
+  const right = $('#right-main');
+
+  left.innerHTML = `
+    <div class="block">
+      <h2>过程 <span class="tag">${esc(P.label)}</span></h2>
+      <select id="proc" class="wide-select">
+        ${Object.entries(PROCESS).map(([k, v]) => `<option value="${k}" ${k === s.proc ? 'selected' : ''}>${esc(v.label)}</option>`).join('')}
+      </select>
+      <p class="note">${esc(P.note)}</p>
+    </div>
+
+    <div class="block">
+      <h2>参数</h2>
+      <div class="params">
+        <label class="field">F 最小<input id="Fmin" type="number" step="0.01" value="${s.Fmin}"></label>
+        <label class="field">F 最大<input id="Fmax" type="number" step="0.01" value="${s.Fmax}"></label>
+        <label class="field">曲线点数<input id="N" type="number" step="10" min="4" max="400" value="${s.N}"></label>
+        <label class="field">α 换算
+          <select id="alphaMode">
+            <option value="lin" ${s.alphaMode === 'lin' ? 'selected' : ''}>α = 1 + Δ/1000</option>
+            <option value="exp" ${s.alphaMode === 'exp' ? 'selected' : ''}>α = exp(Δ/1000)</option>
+          </select>
+        </label>
+      </div>
+      <div class="params">
+        <label class="field">横轴
+          <select id="xAxis">
+            <option value="F" ${s.xAxis === 'F' ? 'selected' : ''}>F（熔体/蒸气分数）</option>
+            <option value="f" ${s.xAxis === 'f' ? 'selected' : ''}>f（元素剩余分数）</option>
+          </select>
+        </label>
+      </div>
+      <label class="inline-toggle"><input type="checkbox" id="showInst" ${s.showInst ? 'checked' : ''}>显示${esc(diLabel)}</label>
+      <label class="inline-toggle"><input type="checkbox" id="showAcc" ${s.showAcc ? 'checked' : ''} ${P.hasAcc ? '' : 'disabled'}>显示${esc(accLabel)}</label>
+    </div>
+
+    <div class="block">
+      <h2>体系 <span class="tag">${s.systems.length} 个</span></h2>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>体系</th><th>同位素</th><th class="numcol">δ₀</th><th class="numcol">${esc(P.dLabel.replace(' (‰)', ''))}</th>
+            <th class="numcol">${esc(P.DLabel)}</th><th>显示</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${s.systems.map((sys, i) => `
+              <tr>
+                <td class="name"><input type="text" data-i="${i}" data-k="name" value="${esc(sys.name)}"></td>
+                <td class="iso"><input type="text" data-i="${i}" data-k="iso" value="${esc(sys.iso)}"></td>
+                <td><input class="num" type="number" step="0.001" data-i="${i}" data-k="d0" value="${sys.d0}"></td>
+                <td><input class="num" type="number" step="0.01" data-i="${i}" data-k="delta" value="${sys.delta}"></td>
+                <td><input class="num" type="number" step="0.1" data-i="${i}" data-k="D" value="${sys.D}"></td>
+                <td><input type="checkbox" data-i="${i}" data-k="on" ${sys.on ? 'checked' : ''}></td>
+                <td><button class="del" data-del="${i}" title="删除">×</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <button class="row-add" id="addSys">＋ 添加体系</button>
+      <p class="note"><b>Δ</b>：${esc(P.dLabelLong)}。正号表示该相富重同位素。α 由 Δ 换算。</p>
+    </div>
+
+    <div class="block">
+      <h2>当前方程</h2>
+      <div class="formula">${esc(P.eq)}</div>
+    </div>`;
+
+  right.innerHTML = `
+    <div class="chart-head">
+      <h2>同位素演化</h2>
+      <span class="tag" id="mainTag"></span>
+    </div>
+    <div class="chart-wrap" id="mainWrap"><canvas id="mainChart"></canvas><div class="tooltip" id="mainTip" hidden></div></div>
+    <div class="legend" id="mainLegend"></div>
+    <div class="summary" id="mainSummary"></div>
+    <div class="tbl-out" id="mainTable"></div>
+    <p class="note" id="mainMsg"></p>`;
+
+  bindMain();
+  charts.main = makeChart('#mainChart', '#mainWrap', '#mainTip');
+  updateMain();
+}
+
+function bindMain(){
+  const s = state.main;
+  const left = $('#left-main');
+  const right = $('#right-main');
+
+  left.oninput = mainEdit;
+  left.onchange = mainEdit;
+  right.oninput = e => {
+    if (e.target.id === 'mainSysSel'){ s.tableSys = +e.target.value; updateMain(); }
+  };
+  right.onchange = right.oninput;
+
+  left.onclick = e => {
+    const del = e.target.closest('[data-del]');
+    if (del){
+      const i = +del.dataset.del;
+      s.systems.splice(i, 1);
+      if (s.tableSys >= s.systems.length) s.tableSys = Math.max(0, s.systems.length - 1);
+      renderMain();
+      return;
+    }
+    if (e.target.closest('#addSys')){
+      s.systems.push({ name: '新体系', iso: 'δ', d0: 0, delta: 0, D: 1, on: true });
+      renderMain();
+    }
+  };
+}
+
+function mainEdit(e){
+  const t = e.target;
+  const s = state.main;
+  if (t.id === 'proc'){ s.proc = t.value; renderMain(); return; }
+  if (t.id === 'alphaMode'){ s.alphaMode = t.value; updateMain(); return; }
+  if (t.id === 'xAxis'){ s.xAxis = t.value; updateMain(); return; }
+  if (t.id === 'Fmin' || t.id === 'Fmax' || t.id === 'N'){ s[t.id] = num(t.value, s[t.id]); updateMain(); return; }
+  if (t.id === 'showInst' || t.id === 'showAcc'){ s[t.id] = t.checked; updateMain(); return; }
+  if (t.dataset && t.dataset.i !== undefined){
+    const i = +t.dataset.i;
+    if (!s.systems[i]) return;
+    const k = t.dataset.k;
+    if (k === 'on') s.systems[i].on = t.checked;
+    else if (k === 'name' || k === 'iso') s.systems[i][k] = t.value;
+    else s.systems[i][k] = num(t.value, 0);
+    updateMain();
+  }
+}
+
+function mainGrid(s){
+  const N = clamp(Math.round(s.N), 4, 400);
+  let Fmin = clamp(s.Fmin, 0, 0.9999);
+  let Fmax = clamp(s.Fmax, 0.0001, 1);
+  if (Fmax <= Fmin) Fmax = Math.min(1, Fmin + 0.01);
+  if (s.proc === 'fc' || s.proc === 'eqcryst') Fmin = Math.max(Fmin, 1e-4);
+  if (s.proc === 'degas') Fmax = Math.min(Fmax, 1 - 1e-9);
+  if (s.proc === 'fracmelt') Fmax = Math.min(Fmax, 0.999);
+  const arr = [];
+  for (let i = 0; i <= N; i++) arr.push(Fmin + (Fmax - Fmin) * i / N);
+  return arr;
+}
+
+function updateMain(){
+  const s = state.main;
+  const P = PROCESS[s.proc];
+  const tag = $('#mainTag');
+  const msg = $('#mainMsg');
+  if (!tag || !msg) return;
+
+  const vis = s.systems.filter(x => x.on);
+  if (!vis.length){
+    if (charts.main) drawChart(charts.main, [], { xMin: 0, xMax: 1, xLabel: 'F', yLabel: 'δ (‰)' });
+    $('#mainLegend').innerHTML = '';
+    $('#mainSummary').innerHTML = '';
+    $('#mainTable').innerHTML = '';
+    msg.className = 'note';
+    msg.textContent = '请在左侧勾选至少一个体系。';
+    return;
+  }
+
+  const Fs = mainGrid(s);
+  const bySys = [];
+  for (const sys of vis){
+    const pts = [];
+    for (const F of Fs){
+      const p = computePoint(s.proc, sys, F, s.alphaMode);
+      if (!p) continue;
+      p.ax = s.xAxis === 'f' ? p.f : p.F;
+      pts.push(p);
+    }
+    pts.sort((a, b) => a.ax - b.ax);
+    bySys.push({ sys, pts });
+  }
+
+  const defs = SERIES_DEFS[s.proc];
+  const series = [];
+  bySys.forEach(({ sys, pts }, si) => {
+    const color = PALETTE[si % PALETTE.length];
+    for (const def of defs){
+      if (def.key === 'di' && (!P.hasInst || !s.showInst)) continue;
+      if (def.key === 'dacc' && (!P.hasAcc || !s.showAcc)) continue;
+      const points = pts.map(p => ({ x: p.ax, y: p[def.key] })).filter(o => Number.isFinite(o.y));
+      if (!points.length) continue;
+      series.push({ points, color, dash: def.dash, label: `${sys.name} ${def.label}` });
+    }
+  });
+
+  const xs = series.flatMap(x => x.points.map(p => p.x));
+  let xMin = xs.length ? Math.min(...xs) : 0;
+  let xMax = xs.length ? Math.max(...xs) : 1;
+  if (!(xMax > xMin)){ xMin -= 0.01; xMax += 0.01; }
+
+  const fIsResidue = s.proc === 'fracmelt';
+  const xLabel = s.xAxis === 'f'
+    ? (fIsResidue ? 'f（残余相元素分数）' : 'f（熔体元素分数）')
+    : (s.proc === 'degas' ? 'F_v（蒸气分数）' : 'F（熔体分数）');
+
+  const opt = { xMin, xMax, xLabel, yLabel: 'δ (‰)', xTag: s.xAxis === 'f' ? 'f' : 'F', yDigits: 3 };
+  if (charts.main) drawChart(charts.main, series, opt);
+  renderLegend($('#mainLegend'), series);
+
+  const first = bySys[0];
+  const best = first.pts.reduce((a, b) => Math.abs(b.dm - first.sys.d0) > Math.abs(a.dm - first.sys.d0) ? b : a, first.pts[0]);
+  $('#mainSummary').innerHTML = `
+    <div class="stat"><b>${fmt(best.dm, 3)}</b><span>${esc(first.sys.iso)} 熔体（${s.xAxis === 'f' ? 'f' : 'F'}=${fmt(best.ax, 3)}）</span></div>
+    <div class="stat"><b>${fmt(best.dm - first.sys.d0, 3)}</b><span>相对 δ₀ 的变化 (‰)</span></div>
+    <div class="stat"><b>${fmt(best.f, 4)}</b><span>${fIsResidue ? 'f 残余相元素分数' : 'f 熔体元素分数'}</span></div>
+    <div class="stat"><b>${fmt(best.C, 3)}</b><span>C/C₀</span></div>`;
+
+  tag.textContent = `${P.label} · ${vis.length} 个体系`;
+
+  // table for one system
+  const idx = clamp(Math.round(s.tableSys), 0, s.systems.length - 1);
+  s.tableSys = idx;
+  const tSys = s.systems[idx];
+  const tBy = bySys.find(b => b.sys === tSys) || first;
+  const diLabel = (defs.find(d => d.key === 'di') || {}).label || '瞬时相';
+  const daccLabel = (defs.find(d => d.key === 'dacc') || {}).label || '累积相';
+  const tPts = [...tBy.pts].sort((a, b) => a.F - b.F);
+  const rows = [];
+  const n = tPts.length;
+  const sample = [];
+  for (let k = 0; k < 9; k++) sample.push(Math.round(k * (n - 1) / 8));
+  for (const i of sample){
+    const p = tPts[i];
+    if (!p) continue;
+    rows.push(`<tr>
+      <td>${fmt(p.F, 4)}</td>
+      <td>${fmt(p.f, 4)}</td>
+      <td>${fmt(p.dm, 3)}</td>
+      <td>${fmt(p.di, 3)}</td>
+      ${P.hasAcc ? `<td>${fmt(p.dacc, 3)}</td>` : ''}
+      <td>${fmt(p.C, 3)}</td>
+    </tr>`);
+  }
+  $('#mainTable').innerHTML = `
+    <div style="padding:10px 10px 0"><label class="field" style="max-width:260px">数值表体系
+      <select id="mainSysSel">${s.systems.map((x, i) => `<option value="${i}" ${i === idx ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
+    </label></div>
+    <table>
+      <thead><tr><th>F</th><th>f</th><th>δ 熔体</th><th>δ ${esc(diLabel)}</th>${P.hasAcc ? `<th>δ ${esc(daccLabel)}</th>` : ''}<th>C/C₀</th></tr></thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>`;
+
+  const warns = [];
+  if (s.proc === 'fracmelt' && vis.some(x => num(x.D, 1) <= 0)) warns.push('分离熔融需要 D > 0。');
+  if (s.proc === 'fc' && vis.some(x => num(x.D, 1) === 0)) warns.push('D = 0 时元素不进入晶体，熔体成分不变。');
+  const styleNote = defs.map(d => `${d.dash.length ? (d.dash[0] === 2 ? '点线' : '虚线') : '实线'} = ${d.label}`).join('；');
+  msg.className = warns.length ? 'warnline bad' : 'note';
+  msg.textContent = warns.length ? warns.join(' ') : `${styleNote}。悬停查看同一 ${s.xAxis === 'f' ? 'f' : 'F'} 下各曲线数值。`;
+}
+
+/* ================= mineral / Δ(T) / α(f) view ================= */
+function renderMineral(){
+  const m = state.mineral;
+  const left = $('#left-mineral');
+  const right = $('#right-mineral');
+
+  const modeIntro = m.mode === 'multi'
+    ? '把各矿物的 Δ 按「元素质量分数 X·D」加权成整体 Δ，再按瑞利分离结晶计算。'
+    : m.mode === 'dT'
+      ? 'Δ 随温度变化，温度沿 F 线性下降；模型用数值积分 d lnR = D(α−1) d lnF。'
+      : '分馏因子随元素剩余分数 f 线性变化：α(f) = a + b·f；b = α_动力 − α_平衡。';
+
+  left.innerHTML = `
+    <div class="block">
+      <h2>模式 <span class="tag">${m.mode === 'multi' ? '多矿物' : m.mode === 'dT' ? 'Δ(T)' : '变 α'}</span></h2>
+      <select id="mmode" class="wide-select">
+        <option value="multi" ${m.mode === 'multi' ? 'selected' : ''}>多矿物加权（常数 Δ）</option>
+        <option value="dT" ${m.mode === 'dT' ? 'selected' : ''}>单一矿物 Δ(T) 演化</option>
+        <option value="alphaF" ${m.mode === 'alphaF' ? 'selected' : ''}>变 α：α = a + b·f</option>
+      </select>
+      <p class="note">${esc(modeIntro)}</p>
+    </div>
+    ${m.mode === 'multi' ? mineralMultiLeft(m) : m.mode === 'dT' ? mineralDTLeft(m) : mineralAlphaLeft(m)}
+    <div class="block">
+      <h2>说明</h2>
+      <div class="formula">${esc(m.mode === 'multi'
+        ? 'D_bulk = Σ XᵢDᵢ\nΔ_bulk = Σ XᵢDᵢΔᵢ / Σ XᵢDᵢ\nδ_熔体 = (δ₀+1000)·F^(D_bulk(α_bulk−1)) − 1000'
+        : m.mode === 'dT'
+          ? 'd lnR = D·(α(T)−1)·d lnF\nδ = (R−1)·1000\nα(T) = 1 + Δ(T)/1000'
+          : 'α(f) = a + b·f\nδ = (δ₀+1000)·exp[(a−1)ln f + b(f−1)] − 1000\nδ_瞬时 = (δ₀+1000)·(a+bf)·exp[…] − 1000')}</div>
+    </div>`;
+
+  right.innerHTML = `
+    <div class="chart-head"><h2>同位素演化</h2><span class="tag" id="mineralTag"></span></div>
+    <div class="chart-wrap" id="mineralWrap"><canvas id="mineralChart"></canvas><div class="tooltip" id="mineralTip" hidden></div></div>
+    <div class="legend" id="mineralLegend"></div>
+    <div class="summary" id="mineralSummary"></div>
+    <div class="tbl-out" id="mineralTable"></div>
+    <p class="note" id="mineralMsg"></p>`;
+
+  bindMineral();
+  charts.mineral = makeChart('#mineralChart', '#mineralWrap', '#mineralTip');
+  updateMineral();
+}
+
+function mineralMultiLeft(m){
+  return `
+    <div class="block">
+      <h2>体系与参数</h2>
+      <div class="params three">
+        <label class="field">名称<input id="mname" type="text" value="${esc(m.name)}"></label>
+        <label class="field">同位素<input id="miso" type="text" value="${esc(m.iso)}"></label>
+        <label class="field">δ₀ (‰)<input id="md0" type="number" step="0.001" value="${m.d0}"></label>
+      </div>
+      <div class="params three">
+        <label class="field">F 最小<input id="mFmin" type="number" step="0.01" value="${m.Fmin}"></label>
+        <label class="field">F 最大<input id="mFmax" type="number" step="0.01" value="${m.Fmax}"></label>
+        <label class="field">点数<input id="mN" type="number" step="10" min="4" max="400" value="${m.N}"></label>
+      </div>
+    </div>
+    <div class="block">
+      <h2>矿物 <span class="tag">X 自动归一化</span></h2>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>矿物</th><th class="numcol">Xᵢ</th><th class="numcol">Δᵢ</th><th class="numcol">Dᵢ</th><th></th></tr></thead>
+          <tbody>
+            ${m.minerals.map((mi, i) => `
+              <tr>
+                <td class="name"><input type="text" data-mi="${i}" data-mk="name" value="${esc(mi.name)}"></td>
+                <td><input class="num" type="number" step="0.05" data-mi="${i}" data-mk="X" value="${mi.X}"></td>
+                <td><input class="num" type="number" step="0.01" data-mi="${i}" data-mk="delta" value="${mi.delta}"></td>
+                <td><input class="num" type="number" step="0.1" data-mi="${i}" data-mk="D" value="${mi.D}"></td>
+                <td><button class="del" data-mdel="${i}" title="删除">×</button></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <button class="row-add" id="addMin">＋ 添加矿物</button>
+      <p class="note">Δᵢ 为矿物−熔体；整体 Δ 用 <b>ΣXᵢDᵢΔᵢ/ΣXᵢDᵢ</b> 加权，而不是简单按模态加权。</p>
+    </div>`;
+}
+
+function mineralDTLeft(m){
+  const isTi = m.formula === 'ti';
+  const isCustom = m.formula === 'custom';
+  return `
+    <div class="block">
+      <h2>体系与参数</h2>
+      <div class="params three">
+        <label class="field">名称<input id="mname" type="text" value="${esc(m.name)}"></label>
+        <label class="field">同位素<input id="miso" type="text" value="${esc(m.iso)}"></label>
+        <label class="field">δ₀ (‰)<input id="md0" type="number" step="0.001" value="${m.d0}"></label>
+      </div>
+      <label class="field" style="margin-top:8px">Δ(T) 公式
+        <select id="mformula">
+          <option value="zr" ${m.formula === 'zr' ? 'selected' : ''}>Zr 锆石–熔体（Inglis 2019）</option>
+          <option value="ti" ${m.formula === 'ti' ? 'selected' : ''}>Ti 氧化物–熔体（Johnson 2019）</option>
+          <option value="fe" ${m.formula === 'fe' ? 'selected' : ''}>Fe 蒸气–熔体（Du 2017）</option>
+          <option value="v" ${m.formula === 'v' ? 'selected' : ''}>V 矿物–熔体（Prytulak 2016）</option>
+          <option value="custom" ${m.formula === 'custom' ? 'selected' : ''}>自定义 A/T² + B/T⁴ + C/T⁶</option>
+        </select>
+      </label>
+      <div class="params three">
+        <label class="field">T 起始 °C（F=1）<input id="mTstart" type="number" step="10" value="${m.Tstart}"></label>
+        <label class="field">T 终止 °C（F 最小）<input id="mTend" type="number" step="10" value="${m.Tend}"></label>
+        <label class="field">D（固/熔 或 气/熔）<input id="mD" type="number" step="0.1" value="${m.D}"></label>
+      </div>
+      ${isTi ? `<div class="params three"><label class="field">熔体 SiO₂ (wt%)<input id="mSiO2" type="number" step="1" value="${m.SiO2}"></label></div>` : ''}
+      ${isCustom ? `<div class="params three">
+        <label class="field">A (‰·K²)<input id="mA" type="number" step="1000" value="${m.A}"></label>
+        <label class="field">B (‰·K⁴)<input id="mB" type="number" step="1000" value="${m.B}"></label>
+        <label class="field">C (‰·K⁶)<input id="mC" type="number" step="1000" value="${m.C}"></label>
+      </div>` : ''}
+      <div class="params three">
+        <label class="field">F 最小<input id="mFmin" type="number" step="0.01" value="${m.Fmin}"></label>
+        <label class="field">F 最大<input id="mFmax" type="number" step="0.01" value="${m.Fmax}"></label>
+        <label class="field">点数<input id="mN" type="number" step="10" min="4" max="400" value="${m.N}"></label>
+      </div>
+      <p class="note">温度沿 F 线性变化：F=1 时 T=T_start，F=F_min 时 T=T_end。若要恒温，把两者设为相同值。</p>
+    </div>`;
+}
+
+function mineralAlphaLeft(m){
+  return `
+    <div class="block">
+      <h2>体系与参数</h2>
+      <div class="params three">
+        <label class="field">名称<input id="mname" type="text" value="${esc(m.name)}"></label>
+        <label class="field">同位素<input id="miso" type="text" value="${esc(m.iso)}"></label>
+        <label class="field">δ₀ (‰)<input id="md0" type="number" step="0.001" value="${m.d0}"></label>
+      </div>
+      <div class="params">
+        <label class="field">a（f→0 的 α）<input id="ma" type="number" step="0.00001" value="${m.a}"></label>
+        <label class="field">b（α 随 f 的斜率）<input id="mb" type="number" step="0.00001" value="${m.b}"></label>
+      </div>
+      <div class="params three">
+        <label class="field">f 最小<input id="mfmin" type="number" step="0.01" value="${m.fmin}"></label>
+        <label class="field">f 最大<input id="mfmax" type="number" step="0.01" value="${m.fmax}"></label>
+        <label class="field">点数<input id="mN" type="number" step="10" min="4" max="400" value="${m.N}"></label>
+      </div>
+      <p class="note">对应工作区 Zr 表格 Table 5 的“动力→平衡线性过渡”模型：a = α_equilibrium，b = α_kinetic − α_equilibrium。</p>
+    </div>`;
+}
+
+function bindMineral(){
+  const m = state.mineral;
+  const left = $('#left-mineral');
+  left.oninput = mineralEdit;
+  left.onchange = mineralEdit;
+  left.onclick = e => {
+    const del = e.target.closest('[data-mdel]');
+    if (del){
+      m.minerals.splice(+del.dataset.mdel, 1);
+      renderMineral();
+      return;
+    }
+    if (e.target.closest('#addMin')){
+      m.minerals.push({ name: '新矿物', X: 0, delta: 0, D: 1 });
+      renderMineral();
+    }
+  };
+}
+
+function mineralEdit(e){
+  const t = e.target;
+  const m = state.mineral;
+  if (t.id === 'mmode'){ m.mode = t.value; renderMineral(); return; }
+  if (t.id === 'mformula'){ m.formula = t.value; renderMineral(); return; }
+  const map = { mname: 'name', miso: 'iso', md0: 'd0', mFmin: 'Fmin', mFmax: 'Fmax', mN: 'N',
+    mTstart: 'Tstart', mTend: 'Tend', mSiO2: 'SiO2', mA: 'A', mB: 'B', mC: 'C',
+    ma: 'a', mb: 'b', mfmin: 'fmin', mfmax: 'fmax', mD: 'D' };
+  if (map[t.id]){
+    const k = map[t.id];
+    if (k === 'name' || k === 'iso') m[k] = t.value;
+    else m[k] = num(t.value, m[k]);
+    updateMineral();
+    return;
+  }
+  if (t.dataset && t.dataset.mi !== undefined){
+    const i = +t.dataset.mi;
+    if (!m.minerals[i]) return;
+    const k = t.dataset.mk;
+    if (k === 'name') m.minerals[i].name = t.value;
+    else m.minerals[i][k] = num(t.value, 0);
+    updateMineral();
+  }
+}
+
+function dTAt(formula, T, m){
+  const K = T + 273.15;
+  const K2 = K * K;
+  if (formula === 'zr') return -7.87e4 / K2 + 1.94e9 / (K2 * K2) - 5.85e13 / (K2 * K2 * K2);
+  if (formula === 'ti') return (-0.5 + 0.017 * num(m.SiO2, 70)) * 1e6 / K2;
+  if (formula === 'fe') return -0.15e6 / K2;
+  if (formula === 'v') return -0.85e6 / K2;
+  return num(m.A, 0) / K2 + num(m.B, 0) / (K2 * K2) + num(m.C, 0) / (K2 * K2 * K2);
+}
+
+function solveDT(m){
+  const Fmin = clamp(m.Fmin, 1e-3, 0.999);
+  const N = clamp(Math.round(num(m.N, 60)), 40, 1000);
+  const R0 = d2R(m.d0);
+  const D = Math.max(0, num(m.D, 1));
+  const Tof = F => m.Tend + (m.Tstart - m.Tend) * (F - Fmin) / (1 - Fmin);
+  const dOf = F => dTAt(m.formula, Tof(F), m);
+
+  let prevF = 1, prevA = alphaOf(dOf(1), 'lin'), lnR = 0;
+  const pts = [{ F: 1, T: Tof(1), dT: dOf(1), melt: m.d0, inst: R2d(prevA * R0), C: 1 }];
+  for (let i = 1; i <= N; i++){
+    const t = i / N;
+    const F = Math.pow(Fmin, t);
+    const T = Tof(F);
+    const dTv = dTAt(m.formula, T, m);
+    const a = alphaOf(dTv, 'lin');
+    lnR += D * ((prevA + a) / 2 - 1) * (Math.log(F) - Math.log(prevF));
+    const R = R0 * Math.exp(lnR);
+    pts.push({ F, T, dT: dTv, melt: R2d(R), inst: R2d(a * R), C: Math.pow(F, D - 1) });
+    prevF = F; prevA = a;
+  }
+  return pts.reverse();
+}
+
+function updateMineral(){
+  const m = state.mineral;
+  const msg = $('#mineralMsg');
+  const tag = $('#mineralTag');
+  if (!msg || !tag) return;
+
+  let series = [], opt = null, stats = [], tableHTML = '';
+
+  if (m.mode === 'multi'){
+    const minerals = m.minerals.map(x => ({ name: x.name, X: Math.max(0, num(x.X, 0)), delta: num(x.delta, 0), D: Math.max(0, num(x.D, 0)) }));
+    let sx = 0, sxd = 0, sxdD = 0;
+    for (const mi of minerals){ sx += mi.X; sxd += mi.X * mi.D; sxdD += mi.X * mi.D * mi.delta; }
+    if (!(sx > 0)){
+      msg.className = 'warnline bad';
+      msg.textContent = '请至少给一个矿物非零的 X。';
+      if (charts.mineral) drawChart(charts.mineral, [], { xMin: 0, xMax: 1, xLabel: 'F', yLabel: 'δ (‰)' });
+      return;
+    }
+    const Db = sxd / sx;
+    const dbulk = sxd > 1e-12 ? sxdD / sxd : minerals.reduce((s, mi) => s + mi.X / sx * mi.delta, 0);
+    const sys = { name: m.name, iso: m.iso, d0: m.d0, delta: dbulk, D: Db };
+
+    const N = clamp(Math.round(m.N), 4, 400);
+    const Fmin = Math.max(1e-4, Math.min(m.Fmin, 0.999));
+    const Fmax = clamp(m.Fmax, Fmin + 1e-4, 1);
+    const pts = [];
+    for (let i = 0; i <= N; i++){
+      const F = Fmin + (Fmax - Fmin) * i / N;
+      const p = computePoint('fc', sys, F, 'lin');
+      if (p) pts.push(p);
+    }
+
+    const defs = SERIES_DEFS.fc;
+    series = defs.map(def => ({
+      points: pts.map(p => ({ x: p.F, y: p[def.key] })).filter(o => Number.isFinite(o.y)),
+      color: def.key === 'dm' ? PALETTE[0] : def.key === 'di' ? PALETTE[1] : PALETTE[2],
+      dash: def.dash, label: def.label
+    })).filter(s => s.points.length);
+
+    opt = { xMin: Fmin, xMax: Fmax, xLabel: 'F（熔体分数）', yLabel: 'δ (‰)', xTag: 'F', yDigits: 3 };
+
+    const end = pts[0];
+    stats = [
+      [fmt(dbulk, 4), 'Δ_bulk (‰)'],
+      [fmt(Db, 3), 'D_bulk'],
+      [fmt(sx, 3), 'ΣX（未归一化）'],
+      [fmt(end ? end.dm : null, 3), `${m.iso} 熔体（F_min）`]
+    ];
+
+    const rows = [];
+    for (let k = 0; k < 9; k++){
+      const p = pts[Math.round(k * (pts.length - 1) / 8)];
+      if (!p) continue;
+      rows.push(`<tr><td>${fmt(p.F, 4)}</td><td>${fmt(p.f, 4)}</td><td>${fmt(p.dm, 3)}</td><td>${fmt(p.di, 3)}</td><td>${fmt(p.dacc, 3)}</td><td>${fmt(p.C, 3)}</td></tr>`);
+    }
+    tableHTML = `<table><thead><tr><th>F</th><th>f</th><th>δ 熔体</th><th>δ 瞬时晶体</th><th>δ 累积晶体</th><th>C/C₀</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+    tag.textContent = `多矿物 · ${minerals.length} 个矿物`;
+    msg.className = 'note';
+    msg.textContent = `Δ_bulk = ${fmt(dbulk, 4)}‰，D_bulk = ${fmt(Db, 3)}。若各矿物 D 相同，Δ_bulk 退化为模态加权 ΣXΔ/ΣX。`;
+  }
+
+  else if (m.mode === 'dT'){
+    const pts = solveDT(m);
+    series = [
+      { points: pts.map(p => ({ x: p.F, y: p.melt })), color: PALETTE[0], dash: [], label: '熔体' },
+      { points: pts.map(p => ({ x: p.F, y: p.inst })), color: PALETTE[1], dash: [6, 4], label: '瞬时晶体' }
+    ];
+    opt = { xMin: Math.min(...pts.map(p => p.F)), xMax: 1, xLabel: 'F（熔体分数）', yLabel: 'δ (‰)', xTag: 'F', yDigits: 3 };
+    const start = pts[pts.length - 1];
+    const end = pts[0];
+    stats = [
+      [fmt(start.dT, 3), 'Δ 起始 (‰)'],
+      [fmt(end.dT, 3), 'Δ 终止 (‰)'],
+      [fmt(end.melt, 3), `${m.iso} 熔体（F_min）`],
+      [fmt(end.T, 0), '终止温度 (°C)']
+    ];
+    const rows = [];
+    for (let k = 0; k < 9; k++){
+      const p = pts[Math.round(k * (pts.length - 1) / 8)];
+      if (!p) continue;
+      rows.push(`<tr><td>${fmt(p.F, 4)}</td><td>${fmt(p.T, 0)}</td><td>${fmt(p.dT, 3)}</td><td>${fmt(p.melt, 3)}</td><td>${fmt(p.inst, 3)}</td><td>${fmt(p.C, 3)}</td></tr>`);
+    }
+    tableHTML = `<table><thead><tr><th>F</th><th>T (°C)</th><th>Δ (‰)</th><th>δ 熔体</th><th>δ 瞬时晶体</th><th>C/C₀</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+    tag.textContent = `Δ(T) · ${m.formula === 'zr' ? 'Zr 锆石' : m.formula === 'ti' ? 'Ti 氧化物' : m.formula === 'fe' ? 'Fe 蒸气' : m.formula === 'v' ? 'V 矿物' : '自定义'}`;
+    msg.className = 'note';
+    msg.textContent = '积分步数随“点数”变化；恒温时与解析解一致（见“方程校验”）。';
+  }
+
+  else {
+    const N = clamp(Math.round(m.N), 4, 400);
+    const fmin = Math.max(1e-4, Math.min(m.fmin, 0.9999));
+    const fmax = clamp(m.fmax, fmin + 1e-4, 1);
+    const a = num(m.a, 1), b = num(m.b, 0), R0 = d2R(m.d0);
+    const pts = [];
+    for (let i = 0; i <= N; i++){
+      const f = fmin + (fmax - fmin) * i / N;
+      const ex = (a - 1) * Math.log(f) + b * (f - 1);
+      pts.push({
+        f,
+        af: a + b * f,
+        melt: R2d(R0 * Math.exp(ex)),
+        inst: R2d(R0 * (a + b * f) * Math.exp(ex)),
+        base: R2d(R0 * Math.pow(f, a - 1))
+      });
+    }
+    series = [
+      { points: pts.map(p => ({ x: p.f, y: p.melt })), color: PALETTE[0], dash: [], label: '变 α 熔体' },
+      { points: pts.map(p => ({ x: p.f, y: p.inst })), color: PALETTE[1], dash: [6, 4], label: '变 α 瞬时晶体' },
+      { points: pts.map(p => ({ x: p.f, y: p.base })), color: '#94a3b8', dash: [2, 3], label: '常数 α = a（平衡端元）' }
+    ];
+    opt = { xMin: fmin, xMax: fmax, xLabel: 'f（元素剩余分数）', yLabel: 'δ (‰)', xTag: 'f', yDigits: 3 };
+    const end = pts[0], start = pts[pts.length - 1];
+    stats = [
+      [fmt(end.af, 6), 'α(f_min)'],
+      [fmt(start.af, 6), 'α(f_max)'],
+      [fmt(end.melt, 3), `${m.iso} 熔体（f_min）`],
+      [fmt(end.melt - end.base, 3), '与常数 α 的差 (‰)']
+    ];
+    const rows = [];
+    for (let k = 0; k < 9; k++){
+      const p = pts[Math.round(k * (pts.length - 1) / 8)];
+      if (!p) continue;
+      rows.push(`<tr><td>${fmt(p.f, 4)}</td><td>${fmt(p.af, 6)}</td><td>${fmt(p.melt, 3)}</td><td>${fmt(p.inst, 3)}</td><td>${fmt(p.base, 3)}</td></tr>`);
+    }
+    tableHTML = `<table><thead><tr><th>f</th><th>α(f)</th><th>δ 变 α 熔体</th><th>δ 瞬时晶体</th><th>δ 常数 α</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+    tag.textContent = `变 α · a=${fmt(a, 6)}, b=${fmt(b, 6)}`;
+    msg.className = 'note';
+    msg.textContent = '灰色点线是同一个 a 作为常数 α 的瑞利曲线，用来显示 α 随 f 变化带来的偏离。';
+  }
+
+  if (charts.mineral) drawChart(charts.mineral, series, opt);
+  renderLegend($('#mineralLegend'), series);
+  $('#mineralSummary').innerHTML = stats.map(([v, k]) => `<div class="stat"><b>${v}</b><span>${esc(k)}</span></div>`).join('');
+  $('#mineralTable').innerHTML = tableHTML;
+}
+
+/* ================= AFC isotope view ================= */
+function afcRel(caC0, D, r, F){
+  // removable singularity at D = 1 - r
+  if (Math.abs(r + D - 1) < 1e-9) return 1 + caC0 * r * Math.log(F) / (r - 1);
+  const z = (r + D - 1) / (r - 1);
+  const x = Math.pow(F, -z);
+  const A = r / (r - 1 + D);
+  return x + A * caC0 * (1 - x);
+}
+
+function afcPoint(p, r, F){
+  const isDelta = p.mode === 'delta';
+  const a = isDelta ? alphaOf(p.delta, 'lin') : 1;
+  const R0 = isDelta ? d2R(p.d0) : (+p.R0 || 0);
+  const Ra = isDelta ? d2R(p.da) : (+p.Ra || 0);
+  const ca = num(p.Ca, 0) / (num(p.C0, 1) || 1);
+  const relH = afcRel(ca * Ra / R0, num(p.D, 0) * a, r, F);
+  const relL = afcRel(ca, num(p.D, 0), r, F);
+  const Rm = R0 * relH / relL;
+  return { R: Rm, d: R2d(Rm), C: relL };
+}
+
+function afcSimpleR(p, r, F){
+  const isDelta = p.mode === 'delta';
+  const R0 = isDelta ? d2R(p.d0) : (+p.R0 || 0);
+  const Ra = isDelta ? d2R(p.da) : (+p.Ra || 0);
+  const rel = afcRel(num(p.Ca, 0) / (num(p.C0, 1) || 1), num(p.D, 0), r, F);
+  const z = (r + num(p.D, 0) - 1) / (r - 1);
+  const x = Math.pow(F, -z);
+  return R0 + (Ra - R0) * (1 - x / rel);
+}
+
+function parseRList(str){
+  const raw = String(str || '').split(/[,，;\s]+/).map(x => +x).filter(x => Number.isFinite(x) && x >= 0);
+  return raw.filter(x => Math.abs(x - 1) > 1e-6).slice(0, 8);
+}
+
+function renderAFC(){
+  const p = state.afc;
+  const isDelta = p.mode === 'delta';
+  const left = $('#left-afc');
+  const right = $('#right-afc');
+
+  left.innerHTML = `
+    <div class="block">
+      <h2>输入量 <span class="tag">${isDelta ? 'δ (‰)' : '比值 R'}</span></h2>
+      <select id="amode" class="wide-select">
+        <option value="delta" ${isDelta ? 'selected' : ''}>稳定同位素 δ (‰)</option>
+        <option value="ratio" ${p.mode === 'ratio' ? 'selected' : ''}>放射性成因比值 R（如 ⁸⁷Sr/⁸⁶Sr）</option>
+      </select>
+      <p class="note">AFC 用同化端元与初始岩浆的元素浓度、同位素组成做质量平衡；Δ 只影响结晶相带走的同位素。</p>
+    </div>
+
+    <div class="block">
+      <h2>端元</h2>
+      <div class="params">
+        ${isDelta ? `
+          <label class="field">δ₀ 初始岩浆<input id="ad0" type="number" step="0.1" value="${p.d0}"></label>
+          <label class="field">δ_a 同化端元<input id="ada" type="number" step="0.1" value="${p.da}"></label>` : `
+          <label class="field">R₀ 初始岩浆<input id="aR0" type="number" step="0.0001" value="${p.R0}"></label>
+          <label class="field">R_a 同化端元<input id="aRa" type="number" step="0.0001" value="${p.Ra}"></label>`}
+        <label class="field">C₀ 初始浓度<input id="aC0" type="number" step="0.1" value="${p.C0}"></label>
+        <label class="field">C_a 同化端元浓度<input id="aCa" type="number" step="0.1" value="${p.Ca}"></label>
+        <label class="field">D 固/熔<input id="aD" type="number" step="0.05" value="${p.D}"></label>
+        ${isDelta ? `<label class="field">Δ 矿物−熔体 (‰)<input id="adelta" type="number" step="0.01" value="${p.delta}"></label>` : ''}
+      </div>
+    </div>
+
+    <div class="block">
+      <h2>过程参数</h2>
+      <label class="field">r = M_a/M_c（逗号分隔）
+        <input id="arList" type="text" value="${esc(p.rList)}">
+      </label>
+      <div class="params three">
+        <label class="field">F 最小<input id="aFmin" type="number" step="0.01" value="${p.Fmin}"></label>
+        <label class="field">F 最大<input id="aFmax" type="number" step="0.01" value="${p.Fmax}"></label>
+        <label class="field">点数<input id="aN" type="number" step="10" min="4" max="400" value="${p.N}"></label>
+      </div>
+      <label class="inline-toggle"><input type="checkbox" id="aShowSimple" ${p.showSimple ? 'checked' : ''}>叠加“不含分馏”的简化曲线</label>
+      <p class="note">r → 1 时方程奇异，程序会跳过 r = 1。F 为残余熔体分数。</p>
+    </div>
+
+    <div class="block">
+      <h2>当前方程</h2>
+      <div class="formula">${esc(isDelta
+        ? 'z = (r+D−1)/(r−1)\nC_h/C_h0 = F^(−z) + r/(r−1+D_h)·(C_a,h/C_h0)(1−F^(−z))\nD_h = D·α，D_l = D\nδ_熔体 = [(R₀·C_h/C_h0)/(C_l/C_l0) − 1]·1000'
+        : 'R_熔体 = R₀·(C_h/C_h0)/(C_l/C_l0)\n（D_h = D，α = 1；即纯质量平衡）')}</div>
+    </div>`;
+
+  right.innerHTML = `
+    <div class="chart-head"><h2>${isDelta ? 'δ – F' : 'R – F'}</h2><span class="tag" id="afcTag"></span></div>
+    <div class="chart-wrap" id="afcWrap"><canvas id="afcChart"></canvas><div class="tooltip" id="afcTip" hidden></div></div>
+    <div class="legend" id="afcLegend"></div>
+    <div class="summary" id="afcSummary"></div>
+    <div class="tbl-out" id="afcTable"></div>
+    <p class="note" id="afcMsg"></p>`;
+
+  bindAFC();
+  charts.afc = makeChart('#afcChart', '#afcWrap', '#afcTip');
+  updateAFC();
+}
+
+function bindAFC(){
+  const left = $('#left-afc');
+  left.oninput = afcEdit;
+  left.onchange = afcEdit;
+}
+
+function afcEdit(e){
+  const t = e.target;
+  const p = state.afc;
+  if (t.id === 'amode'){ p.mode = t.value; renderAFC(); return; }
+  const map = { ad0: 'd0', ada: 'da', aR0: 'R0', aRa: 'Ra', aC0: 'C0', aCa: 'Ca', aD: 'D', adelta: 'delta',
+    arList: 'rList', aFmin: 'Fmin', aFmax: 'Fmax', aN: 'N' };
+  if (map[t.id]){
+    const k = map[t.id];
+    if (k === 'rList') p[k] = t.value;
+    else p[k] = num(t.value, p[k]);
+    updateAFC();
+    return;
+  }
+  if (t.id === 'aShowSimple'){ p.showSimple = t.checked; updateAFC(); }
+}
+
+function updateAFC(){
+  const p = state.afc;
+  const isDelta = p.mode === 'delta';
+  const rs = parseRList(p.rList);
+  const msg = $('#afcMsg');
+  const tag = $('#afcTag');
+  if (!msg || !tag) return;
+  if (!rs.length){
+    if (charts.afc) drawChart(charts.afc, [], { xMin: 0, xMax: 1, xLabel: 'F', yLabel: isDelta ? 'δ (‰)' : 'R' });
+    $('#afcLegend').innerHTML = ''; $('#afcSummary').innerHTML = ''; $('#afcTable').innerHTML = '';
+    msg.className = 'warnline bad';
+    msg.textContent = 'r 列表为空或只含 r=1。请输入例如 0.3, 0.5。';
+    return;
+  }
+  const N = clamp(Math.round(p.N), 4, 400);
+  const Fmin = clamp(p.Fmin, 1e-3, 0.999);
+  const Fmax = clamp(p.Fmax, Fmin + 1e-4, 1);
+  const Fs = [];
+  for (let i = 0; i <= N; i++) Fs.push(Fmin + (Fmax - Fmin) * i / N);
+
+  const curves = rs.map((r, ri) => {
+    const pts = Fs.map(F => {
+      const q = afcPoint(p, r, F);
+      return { x: F, y: isDelta ? q.d : q.R, C: q.C };
+    });
+    return { r, pts, color: PALETTE[ri % PALETTE.length] };
+  });
+
+  const series = curves.map(c => ({
+    points: c.pts.map(q => ({ x: q.x, y: q.y })),
+    color: c.color, dash: [], label: `r = ${fmt(c.r, 3)}`
+  }));
+
+  if (p.showSimple && isDelta && Math.abs(num(p.delta, 0)) > 1e-12){
+    const c0 = curves[0];
+    series.push({
+      points: c0.pts.map(q => ({ x: q.x, y: R2d(afcSimpleR(p, c0.r, q.x)) })),
+      color: '#94a3b8', dash: [2, 3], label: `r = ${fmt(c0.r, 3)} 简化（α=1）`
+    });
+  }
+
+  const opt = { xMin: Fmin, xMax: Fmax, xLabel: 'F（残余熔体分数）', yLabel: isDelta ? 'δ (‰)' : 'R', xTag: 'F', yDigits: isDelta ? 3 : 5 };
+  if (charts.afc) drawChart(charts.afc, series, opt);
+  renderLegend($('#afcLegend'), series);
+
+  const first = curves[0];
+  const end = first.pts[0];
+  $('#afcSummary').innerHTML = `
+    <div class="stat"><b>${isDelta ? fmt(p.d0, 3) : fmt(p.R0, 5)}</b><span>${isDelta ? 'δ₀' : 'R₀'}</span></div>
+    <div class="stat"><b>${isDelta ? fmt(end.y, 3) : fmt(end.y, 5)}</b><span>最演化值（F=${fmt(Fmin, 3)}）</span></div>
+    <div class="stat"><b>${fmt(end.C, 3)}</b><span>C/C₀（F_min）</span></div>
+    <div class="stat"><b>${rs.length}</b><span>条 r 曲线</span></div>`;
+
+  const sample = [];
+  for (let k = 0; k < 9; k++) sample.push(Math.round(k * (N) / 8));
+  const rows = [];
+  for (const i of sample){
+    const F = Fs[i];
+    if (F === undefined) continue;
+    const cells = curves.map(c => `<td>${fmt(isDelta ? c.pts[i].y : c.pts[i].y, isDelta ? 3 : 5)}</td>`);
+    rows.push(`<tr><td>${fmt(F, 4)}</td>${cells.join('')}<td>${fmt(curves[0].pts[i].C, 3)}</td></tr>`);
+  }
+  $('#afcTable').innerHTML = `<table><thead><tr><th>F</th>${curves.map(c => `<th>${isDelta ? 'δ' : 'R'} r=${fmt(c.r, 3)}</th>`).join('')}<th>C/C₀</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+
+  tag.textContent = `${isDelta ? 'δ' : 'R'} · ${rs.length} 条 r`;
+  const dropped = String(p.rList).split(/[,，;\s]+/).map(Number).filter(x => Math.abs(x - 1) <= 1e-6).length;
+  msg.className = dropped ? 'warnline bad' : 'note';
+  msg.textContent = dropped ? 'r = 1 会使解析解奇异，已跳过。' : '曲线颜色代表 r；表中最右列是 C/C₀（元素浓度，不是同位素）。';
+}
+
+/* ================= docs & verification ================= */
+const TESTS = [
+  {
+    name: 'Si 分离结晶（Savage 2011）', detail: 'δ₀ = −0.34‰，Δ = −0.15‰，F = 0.5',
+    got: () => computePoint('fc', { d0: -0.34, delta: -0.15, D: 1 }, 0.5, 'lin').dm,
+    ref: -0.236022517632332, tol: 1e-3, src: 'Si isotope!D16'
+  },
+  {
+    name: 'Fe 分离结晶（McCoy-West 2018）', detail: 'δ₀ = 0.076‰，Δ = +0.22‰，F = 0.5',
+    got: () => computePoint('fc', { d0: 0.076, delta: 0.22, D: 1 }, 0.5, 'lin').dm,
+    ref: -0.07648075335125577, tol: 1e-3, src: 'Fe isotope01!B16'
+  },
+  {
+    name: 'Fe 分离结晶（Δ = −0.15‰）', detail: 'δ₀ = 0.076‰，Δ = −0.15‰，F = 0.5',
+    got: () => computePoint('fc', { d0: 0.076, delta: -0.15, D: 1 }, 0.5, 'lin').dm,
+    ref: 0.17997748236766803, tol: 1e-3, src: 'Fe isotope01!D16'
+  },
+  {
+    name: 'Zr 锆石分离结晶（Table 5）', detail: 'δ₀ = 0.007573‰，Δ = −0.081008‰，f = 0.5',
+    got: () => computePoint('fc', { d0: 0.007573418050283745, delta: -0.08100845228403475, D: 1 }, 0.5, 'lin').dm,
+    ref: 0.06372392567482166, tol: 1e-4, src: 'Zr Rayleigh!F20'
+  },
+  {
+    name: 'Zr 分离结晶（f = 0.25）', detail: 'δ₀ = 0.042270‰，Δ = −0.1‰，F = 0.25',
+    got: () => computePoint('fc', { d0: 0.042269541875, delta: -0.1, D: 1 }, 0.25, 'lin').dm,
+    ref: 0.1809144477003397, tol: 1e-4, src: 'Zr isotope!C16'
+  },
+  {
+    name: 'Fe 去气（Du 2017）', detail: 'δ₀ = 0.1‰，Δ = −0.13473‰，D = 3.83，F_v = 0.01',
+    got: () => computePoint('degas', { d0: 0.1, delta: -0.13472954791372202, D: 3.83 }, 0.01, 'lin').dm,
+    ref: 0.10518629837690696, tol: 1e-3, src: 'Fe Isotope melt-vapor!B43'
+  },
+  {
+    name: 'Li 流体出溶（Teng 2006）', detail: 'δ₀ = 0，Δ = −4‰，D = 1，F_v = 0.01',
+    got: () => computePoint('degas', { d0: 0, delta: -4, D: 1 }, 0.01, 'lin').dm,
+    ref: 0.04020215149887463, tol: 1e-6, src: 'Li isotope!B20'
+  },
+  {
+    name: 'B 分离结晶（Marschall 2009）', detail: 'δ₀ = −10.5‰，Δ = +10‰，F = 0.9',
+    got: () => computePoint('fc', { d0: -10.5, delta: 10, D: 1 }, 0.9, 'lin').dm,
+    ref: -11.54199328129539, tol: 1e-6, src: 'B isotope!B7'
+  },
+  {
+    name: 'Δ(T) 恒温退化为解析解', detail: 'Zr Δ(700°C)，D = 1，F = 0.1',
+    got: () => {
+      const m = { formula: 'zr', Tstart: 700, Tend: 700, d0: 0.0422695, D: 1, Fmin: 0.1, Fmax: 1, N: 60 };
+      const pts = solveDT(m);
+      const del = dTAt('zr', 700, m);
+      return Math.abs(pts[0].melt - computePoint('fc', { d0: m.d0, delta: del, D: 1 }, 0.1, 'lin').dm);
+    },
+    ref: 0, tol: 1e-6, src: '数值积分 vs 解析恒等式'
+  },
+  {
+    name: '变 α 在 b = 0 时退化为常数 α', detail: 'a = 0.999919，b = 0，f = 0.05',
+    got: () => {
+      const a = 0.999919, b = 0, d0 = 0.0422695, f = 0.05;
+      const ex = (a - 1) * Math.log(f) + b * (f - 1);
+      return Math.abs(R2d(d2R(d0) * Math.exp(ex)) - computePoint('fc', { d0, delta: (a - 1) * 1000, D: 1 }, f, 'lin').dm);
+    },
+    ref: 0, tol: 1e-9, src: '解析恒等式'
+  },
+  {
+    name: '质量平衡（熔体 + 累积晶体）', detail: 'δ₀ = 0.076‰，Δ = +0.22‰，D = 1，F = 0.4',
+    got: () => {
+      const s = { d0: 0.076, delta: 0.22, D: 1 };
+      const q = computePoint('fc', s, 0.4, 'lin');
+      const R0 = d2R(s.d0), RL = d2R(q.dm), Racc = d2R(q.dacc);
+      return Math.abs(R0 - (q.f * RL + (1 - q.f) * Racc));
+    },
+    ref: 0, tol: 1e-9, src: '解析恒等式'
+  },
+  {
+    name: '平衡结晶 F = 1 回到 δ₀', detail: 'δ₀ = 6‰，Δ = +0.8‰，D = 1，F = 1',
+    got: () => Math.abs(computePoint('eqcryst', { d0: 6, delta: 0.8, D: 1 }, 1, 'lin').dm - 6),
+    ref: 0, tol: 1e-12, src: '解析恒等式'
+  },
+  {
+    name: 'AFC α = 1 与 DePaolo A2 等价', detail: 'δ₀ = 6‰，δ_a = 18‰，C_a/C₀ = 1，D = 0.5，r = 0.3，F = 0.4',
+    got: () => {
+      const p = { mode: 'delta', d0: 6, da: 18, C0: 1, Ca: 1, D: 0.5, delta: 0, R0: 0, Ra: 0 };
+      return Math.abs(afcPoint(p, 0.3, 0.4).d - R2d(afcSimpleR(p, 0.3, 0.4)));
+    },
+    ref: 0, tol: 1e-9, src: '解析恒等式'
+  },
+  {
+    name: 'AFC r = 0 退化为瑞利分离结晶', detail: 'δ₀ = 6‰，Δ = +0.4‰，D = 0.5，F = 0.4',
+    got: () => {
+      const p = { mode: 'delta', d0: 6, da: 18, C0: 1, Ca: 1, D: 0.5, delta: 0.4, R0: 0, Ra: 0 };
+      return Math.abs(afcPoint(p, 0, 0.4).d - computePoint('fc', { d0: 6, delta: 0.4, D: 0.5 }, 0.4, 'lin').dm);
+    },
+    ref: 0, tol: 1e-9, src: '解析恒等式'
+  },
+  {
+    name: 'AFC F = 1 回到 δ₀', detail: 'δ₀ = 6‰，δ_a = 18‰，D = 0.5，r = 0.3，F = 1',
+    got: () => {
+      const p = { mode: 'delta', d0: 6, da: 18, C0: 1, Ca: 1, D: 0.5, delta: 0.4, R0: 0, Ra: 0 };
+      return Math.abs(afcPoint(p, 0.3, 1).d - 6);
+    },
+    ref: 0, tol: 1e-12, src: '解析恒等式'
+  }
+];
+
+function runTests(){
+  const results = TESTS.map(t => {
+    let got;
+    try { got = t.got(); } catch (e) { got = NaN; }
+    const diff = got - t.ref;
+    const ok = Math.abs(diff) <= t.tol;
+    return { ...t, got, diff, ok };
+  });
+  const pass = results.filter(r => r.ok).length;
+  const html = `
+    <div style="margin-bottom:10px"><b>${pass}/${results.length}</b> 项通过。参考值取自工作区表格的缓存值或解析恒等式；容差按量级给出。</div>
+    <table>
+      <thead><tr><th>校验项</th><th>计算值</th><th>参考值</th><th>差值</th><th>状态</th></tr></thead>
+      <tbody>
+        ${results.map(r => `<tr>
+          <td>${esc(r.name)}<small style="display:block;color:#94a3b8;font-size:10.5px">${esc(r.detail)} · ${esc(r.src)}</small></td>
+          <td>${fmt(r.got, 8)}</td>
+          <td>${fmt(r.ref, 8)}</td>
+          <td>${fmt(r.diff, 8)}</td>
+          <td class="${r.ok ? 'ok' : 'bad'}">${r.ok ? '通过' : '偏差'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  const dlg = $('#testBody');
+  if (dlg) dlg.innerHTML = html;
+  const box = $('#docTests');
+  if (box) box.innerHTML = html;
+  return { pass, total: results.length };
+}
+
+function renderDocs(){
+  const body = $('#docBody');
+  body.innerHTML = `
+    <h1>同位素瑞利分馏模拟器 · 说明</h1>
+    <p class="kv">单文件离线工具 · 适用于 Fe、Si、Zr、O、B、Li、Ti、V、Mg、Zn、S、Mo 等体系的瑞利型分馏正演。</p>
+
+    <div class="callout">
+      这个程序把工作区里分散在 Excel 的瑞利分馏算式集中成一套可交互的计算器：
+      <b>分离结晶 / 去气 / 平衡结晶 / 批次熔融 / 分离熔融</b>、<b>多矿物 Δ 加权</b>、<b>Δ(T)</b>、
+      <b>α = a + b·f</b> 与 <b>AFC 同位素</b>。它与“地球化学模拟套件”互补：套件管微量元素浓度与 Sr–Nd 比值，本程序管稳定同位素分馏。
+    </div>
+
+    <h2>1. 符号与约定</h2>
+    <table>
+      <tr><th>符号</th><th>含义</th><th>约定</th></tr>
+      <tr><td><code>δ</code></td><td>同位素组成</td><td>‰；<code>R = 1 + δ/1000</code>，<code>δ = (R−1)×1000</code></td></tr>
+      <tr><td><code>Δ</code></td><td>分馏值（‰）</td><td>结晶：δ<sub>矿物</sub>−δ<sub>熔体</sub>；去气：δ<sub>蒸气</sub>−δ<sub>熔体</sub>；熔融：δ<sub>熔体</sub>−δ<sub>残余相</sub>。正号 = 该相富重同位素</td></tr>
+      <tr><td><code>α</code></td><td>分馏因子</td><td><code>α = 1 + Δ/1000</code>（默认）或 <code>exp(Δ/1000)</code>，可在主视图切换</td></tr>
+      <tr><td><code>D</code></td><td>总分配系数</td><td>结晶：固/熔；去气：气/熔；熔融：残余固相/熔体；质量比</td></tr>
+      <tr><td><code>F</code></td><td>熔体（或蒸气）分数</td><td>0–1；结晶时为残余熔体分数，去气时为蒸气分数</td></tr>
+      <tr><td><code>f</code></td><td>元素剩余分数</td><td>所在储库中该元素的剩余质量分数：结晶/去气为熔体（<code>F^D</code>、<code>(1−F_v)^D</code>）；分离熔融为残余相（<code>(1−F)^(1/D)</code>）</td></tr>
+      <tr><td><code>r</code></td><td>同化/结晶速率比</td><td><code>r = M_a/M_c</code>；r = 1 时 AFC 方程奇异</td></tr>
+    </table>
+    <p>所有公式在 R 空间做质量平衡，再换算回 δ。这样即使 δ 较大（如 O 的 +6‰）也不会引入近似误差。</p>
+
+    <h2>2. 方程清单</h2>
+    <h3>2.1 分离结晶（Rayleigh FC）</h3>
+    <div class="eq">f = F^D
+δ_melt = (δ₀+1000)·f^(α−1) − 1000
+δ_instant = (δ_melt+1000)·α − 1000
+δ_cumulative = [(δ₀+1000) − f·(δ_melt+1000)] / (1−f) − 1000
+C_melt/C₀ = F^(D−1)</div>
+    <p>D = 1 时就是最常见的 <code>δ = (δ₀+1000)·F^(α−1) − 1000</code>。工作区多数表格默认 D = 1；本程序把 D 显式保留，因此 Fe、Zr、V 这类中等相容元素也能算。</p>
+
+    <h3>2.2 去气 / 流体出溶</h3>
+    <div class="eq">f = (1−F_v)^(D_v)
+δ_melt = (δ₀+1000)·f^(α−1) − 1000
+δ_vapor,instant = (δ_melt+1000)·α − 1000
+δ_vapor,cumulative = [(δ₀+1000) − f·(δ_melt+1000)] / (1−f) − 1000
+C_melt/C₀ = (1−F_v)^(D_v−1)</div>
+    <p>对应 Fe melt–vapor 表与 Li 流体出溶表：D 是元素在蒸气/流体与熔体之间的分配系数，Δ 是蒸气−熔体分馏。</p>
+
+    <h3>2.3 平衡结晶（晶体不分离）</h3>
+    <div class="eq">C_melt/C₀ = 1/[D + F(1−D)]
+R_melt/R₀ = [F+(1−F)D] / [F+(1−F)D·α]
+δ_crystal = (δ_melt+1000)·α − 1000</div>
+    <p>适用于 O 同位素表“平衡结晶”一栏。注意它与瑞利式的区别：F 很小时熔体只偏离 δ₀ 约 −Δ，而不是持续发散。</p>
+
+    <h3>2.4 批次熔融与分离熔融</h3>
+    <div class="eq">批次：C_melt/C₀ = 1/[D + F(1−D)]
+     R_melt/R₀ = [F+(1−F)D] / [F+(1−F)D/α]
+
+分离：C_res/C₀ = (1−F)^(1/D−1)，C_melt = C_res/D
+     f_res = (1−F)^(1/D)
+     R_res/R₀ = f_res^(α−1)，R_melt = α·R_res</div>
+    <p>熔融时 Δ 的方向要反过来：输入 δ<sub>熔体</sub>−δ<sub>残余相</sub>，程序内部用 α = R<sub>熔体</sub>/R<sub>残余相</sub>。</p>
+
+    <h3>2.5 Δ(T) 与变 α</h3>
+    <div class="eq">d lnR = D·(α(T)−1)·d lnF          （数值积分）
+α(f) = a + b·f
+δ_melt = (δ₀+1000)·exp[(a−1)ln f + b(f−1)] − 1000
+δ_inst = (δ₀+1000)·(a+b·f)·exp[(a−1)ln f + b(f−1)] − 1000</div>
+    <p>Δ(T) 模式内置：Zr 锆石–熔体（Inglis 2019 多项式）、Ti 氧化物–熔体（Johnson 2019）、Fe 蒸气–熔体（Du 2017）、V 矿物–熔体（Prytulak 2016），也可自定义 A/T² + B/T⁴ + C/T⁶。变 α 模式对应 Zr 表格 Table 5 的“动力→平衡线性过渡”。</p>
+
+    <h3>2.6 AFC 同位素</h3>
+    <div class="eq">z = (r+D−1)/(r−1)
+C_h/C_h0 = F^(−z) + [r/(r−1+D_h)]·(C_a,h/C_h0)·(1−F^(−z))，D_h = D·α
+C_l/C_l0 同式，D_l = D
+R_melt = R₀·(C_h/C_h0)/(C_l/C_l0)</div>
+    <p>分别对重、轻同位素做 DePaolo (1981) AFC 的线性解，再相除得到比值。α = 1 时它与常用的简化式
+    <code>R = R₀ + (R_a−R₀)[1 − (C₀/C_m)F^(−z)]</code> 完全等价（内置校验会验证这一点）。</p>
+
+    <h3>2.7 多矿物加权</h3>
+    <div class="eq">D_bulk = Σ XᵢDᵢ
+Δ_bulk = Σ XᵢDᵢΔᵢ / Σ XᵢDᵢ</div>
+    <p>整体分馏值要按“元素质量分数”XᵢDᵢ 加权，而不是只按矿物模态 Xᵢ。工作区 V isotope 表正是这样做的；当各矿物 D 相同时，两者才相同。</p>
+
+    <h2>3. 与工作区表格的对应</h2>
+    <table>
+      <tr><th>工作区文件 / 工作表</th><th>模型</th><th>在本程序中</th></tr>
+      <tr><td>General Rayleigh fractionation model… / Si、Fe isotope01、B isotope</td><td>D = 1 的瑞利分离结晶</td><td>瑞利分馏 → 分离结晶（D 设为 1）</td></tr>
+      <tr><td>同上 / Zr isotope</td><td>锆石–熔体瑞利分馏</td><td>瑞利分馏 → 分离结晶，或 Δ(T) 模式</td></tr>
+      <tr><td>同上 / Fe Isotope melt-vapor</td><td>岩浆去气（蒸气–熔体）</td><td>瑞利分馏 → 去气 / 流体出溶</td></tr>
+      <tr><td>同上 / Li isotope</td><td>流体出溶，D_fluid/melt 可变</td><td>去气 / 流体出溶（D 逐行设置）</td></tr>
+      <tr><td>同上 / O isotope（平衡结晶列）</td><td>平衡结晶</td><td>平衡结晶</td></tr>
+      <tr><td>同上 / O isotope AFC</td><td>AFC 同位素</td><td>AFC 同位素（δ 模式）</td></tr>
+      <tr><td>同上 / Ti isotope、V isotope</td><td>Δ(T) 随温度变化</td><td>多矿物 / Δ(T) / 变 α → Δ(T) 或 V 多矿物</td></tr>
+      <tr><td>Zr isotope Rayleight modelling_Li Zhenxin / Table 5</td><td>平衡、动力、变 α 三种 Zr 模型</td><td>变 α 模式；Δ(T) 模式</td></tr>
+      <tr><td>S isotope the devolatilization model-Bucholz 2020</td><td>多物种（H₂S/SO₂）硫去气</td><td>未内置；请用原表</td></tr>
+      <tr><td>General Rayleigh distillation…-Mejia 2019</td><td>晶体生长与 f 的不确定性</td><td>未内置晶体生长；变 α 模式覆盖“α 随 f 变化”</td></tr>
+    </table>
+
+    <h2>4. 与表格算式的差别（使用时注意）</h2>
+    <ol>
+      <li><b>一阶近似 vs 精确式。</b>工作区多数表用 <code>1000·F^(Δ/1000) − 1000 + δ₀</code>；本程序用 <code>(δ₀+1000)·f^(α−1) − 1000</code>。两者相差 <code>δ₀·(f^(Δ/1000)−1)</code>，在 |δ₀| &lt; 10‰、|Δ| &lt; 1‰ 时通常小于 10⁻⁴‰，内置校验按 10⁻³‰ 容差比对。</li>
+      <li><b>D 通常被当作 1。</b>Fe、Si、Zr 的表格多数直接以 F 作横轴；本程序保留 D，D = 1 时可复现原表。若 D ≠ 1，横轴 F 与元素剩余分数 f = F^D 不再相同，表和图会同时给出两者。</li>
+      <li><b>Zr 表的 f。</b>“Zr isotope”表的 B 列由 A² 得到；“Table 5”则直接把 f 当横轴。本程序按定义 <code>f = F^D</code>（元素剩余分数）计算，与 Table 5 的曲线一致。</li>
+      <li><b>O 平衡结晶的符号。</b>O isotope 表平衡结晶列的分母用 <code>F+(1−Δ)(1−F)</code>。本程序按 <code>F+(1−F)α</code>、α = 1+Δ/1000 计算；若你的 Δ 定义为“矿物−熔体”，平衡结晶应使熔体变轻，请核对原表的 Δ 符号。</li>
+      <li><b>AFC 的简化式。</b>O isotope AFC 表用的是 White 型近似式 <code>δ = δ₀ + (δ_a−δ₀ + C_a/(C₀r))(1−F^(r/(1−r)))</code>。它与本程序的双同位素质量平衡在 F→1 时一致，但低 F 有系统偏差（例如 F=0.8 时约高 0.35‰），且 F→0 时趋于 δ_a+C_a/(C₀r) 而不是 δ_a。本程序用 DePaolo (1981) 线性解；α = 1 时与 A2 式完全等价（见校验）。</li>
+      <li><b>S 去气未内置。</b>Bucholz (2020) 的 S 模型含 H₂S/SO₂ 物种分配与 fO₂ 依赖，不是单一 α 的瑞利式，需要专门程序。</li>
+    </ol>
+
+    <h2>5. 使用建议</h2>
+    <ul>
+      <li>先确定过程：晶体是否分离（分离 vs 平衡）、熔体是否抽离（批次 vs 分离熔融）、体系是否开放（去气）。</li>
+      <li>Δ 的符号要统一：以“新相 − 熔体”为正。若文献给的是 1000lnα，则 Δ ≈ 1000lnα；程序可切换 α 的换算方式。</li>
+      <li>D 要按元素与矿物组合分别给出；多矿物时用 Δ(T) 模式或 V 型 D 加权，避免把 Δ 简单按模态平均。</li>
+      <li>F → 0 时瑞利曲线会发散，这是模型性质而非数值错误；绘图范围建议 F ≥ 0.01–0.02。</li>
+      <li>去气模型的 F_v 是“已逃逸蒸气占初始体系的质量分数”，不是熔体分数；横轴标签会随过程切换。</li>
+      <li>把程序结果与工作区原表对照时，先设 D = 1、Δ 与 δ₀ 相同，再比较。</li>
+    </ul>
+
+    <h2>6. 内置校验</h2>
+    <p>参考值来自工作区表格的缓存值（例如 <code>Si isotope!D16</code>、<code>Fe Isotope melt-vapor!B43</code>）与解析恒等式。</p>
+    <p><button class="btn" id="btnRunTests">运行校验</button></p>
+    <div id="docTests"></div>
+
+    <h2>7. 参考</h2>
+    <ul>
+      <li>DePaolo, D.J. (1981) Trace element and isotopic effects of combined wallrock assimilation and fractional crystallization. <i>EPSL</i> 53, 189–202.</li>
+      <li>Savage, P.S. et al. (2011) Silicon isotope fractionation during magmatic differentiation. <i>GCA</i> 75, 6124–6139.</li>
+      <li>McCoy-West, A.J. et al. (2018) The Fe and Zn isotope composition of deep mantle source regions. <i>GCA</i> 238, 542–562.</li>
+      <li>Inglis, E.C. et al. (2019) Isotopic fractionation of zirconium during magmatic differentiation. <i>GCA</i> 250, 311–323.</li>
+      <li>Du, D.-H. et al. (2017) Origin of heavy Fe isotope compositions in high-silica igneous rocks. <i>GCA</i> 218, 58–72.</li>
+      <li>Teng, F.-Z. et al. (2006)；Fan et al. (2020) 锂同位素流体出溶（工作区 Li isotope 表）。</li>
+      <li>Marschall, H.R. et al. (2009) Boron isotope fractionation between tourmaline and fluid. <i>CMP</i> 158, 675–681.</li>
+      <li>Johnson, A.C. et al. (2019) Titanium isotopic fractionation in Kilauea Iki lava lake. <i>GCA</i> 264, 180–190.</li>
+      <li>Prytulak, J. et al. (2016) Stable vanadium isotopes as a redox proxy. <i>Geochem. Persp. Lett.</i></li>
+      <li>White, W.M. (2015) <i>Isotope Geochemistry</i>（O isotope AFC 表）。</li>
+      <li>Mejía, L.M. et al. (2019) General Rayleigh distillation accounting for crystal growth. <i>SA</i>（工作区表格）。</li>
+      <li>Bucholz, C.E. et al. (2020) Sulfur devolatilization modeling. <i>EPSL</i>（工作区表格）。</li>
+    </ul>
+    <p class="kv">本工具用于正演估算与教学；分配系数、Δ 与 D 的选取需结合具体体系判断。</p>`;
+
+  const btn = $('#btnRunTests');
+  if (btn) btn.onclick = () => { runTests(); };
+  runTests();
+}
+
+/* ================= CSV ================= */
+function download(filename, text){
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+
+function csvCell(v){
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function exportCSV(){
+  const lines = [];
+  if (state.view === 'main'){
+    const s = state.main;
+    lines.push(['process', 'system', 'isotope', 'F', 'f', 'delta_melt', 'delta_inst', 'delta_acc', 'C_over_C0']);
+    const vis = s.systems.filter(x => x.on);
+    const Fs = mainGrid(s);
+    for (const sys of vis){
+      for (const F of Fs){
+        const p = computePoint(s.proc, sys, F, s.alphaMode);
+        if (!p) continue;
+        lines.push([s.proc, sys.name, sys.iso, p.F, p.f, p.dm, p.di, p.dacc, p.C]);
+      }
+    }
+    download('同位素瑞利分馏_主视图.csv', '\ufeff' + lines.map(r => r.map(csvCell).join(',')).join('\r\n'));
+    return;
+  }
+
+  if (state.view === 'mineral'){
+    const m = state.mineral;
+    if (m.mode === 'multi'){
+      const minerals = m.minerals.map(x => ({ X: Math.max(0, num(x.X, 0)), delta: num(x.delta, 0), D: Math.max(0, num(x.D, 0)) }));
+      let sx = 0, sxd = 0, sxdD = 0;
+      for (const mi of minerals){ sx += mi.X; sxd += mi.X * mi.D; sxdD += mi.X * mi.D * mi.delta; }
+      const Db = sx > 0 ? sxd / sx : 0;
+      const dbulk = sxd > 1e-12 ? sxdD / sxd : 0;
+      const sys = { d0: m.d0, delta: dbulk, D: Db };
+      lines.push(['mode', 'system', 'isotope', 'F', 'f', 'delta_melt', 'delta_inst', 'delta_acc', 'C_over_C0']);
+      const N = clamp(Math.round(m.N), 4, 400);
+      const Fmin = Math.max(1e-4, Math.min(m.Fmin, 0.999));
+      const Fmax = clamp(m.Fmax, Fmin + 1e-4, 1);
+      for (let i = 0; i <= N; i++){
+        const F = Fmin + (Fmax - Fmin) * i / N;
+        const p = computePoint('fc', sys, F, 'lin');
+        if (p) lines.push(['multi', m.name, m.iso, p.F, p.f, p.dm, p.di, p.dacc, p.C]);
+      }
+    } else if (m.mode === 'dT'){
+      lines.push(['mode', 'system', 'isotope', 'F', 'T_C', 'delta_phase', 'delta_melt', 'delta_inst', 'C_over_C0']);
+      for (const p of solveDT(m)){
+        lines.push(['dT', m.name, m.iso, p.F, p.T, p.dT, p.melt, p.inst, p.C]);
+      }
+    } else {
+      lines.push(['mode', 'system', 'isotope', 'f', 'alpha_f', 'delta_melt', 'delta_inst', 'delta_const_alpha']);
+      const N = clamp(Math.round(m.N), 4, 400);
+      const fmin = Math.max(1e-4, Math.min(m.fmin, 0.9999));
+      const fmax = clamp(m.fmax, fmin + 1e-4, 1);
+      const a = num(m.a, 1), b = num(m.b, 0), R0 = d2R(m.d0);
+      for (let i = 0; i <= N; i++){
+        const f = fmin + (fmax - fmin) * i / N;
+        const ex = (a - 1) * Math.log(f) + b * (f - 1);
+        lines.push(['alphaF', m.name, m.iso, f, a + b * f, R2d(R0 * Math.exp(ex)), R2d(R0 * (a + b * f) * Math.exp(ex)), R2d(R0 * Math.pow(f, a - 1))]);
+      }
+    }
+    download('同位素瑞利分馏_多矿物与变α.csv', '\ufeff' + lines.map(r => r.map(csvCell).join(',')).join('\r\n'));
+    return;
+  }
+
+  if (state.view === 'afc'){
+    const p = state.afc;
+    const rs = parseRList(p.rList);
+    const isDelta = p.mode === 'delta';
+    lines.push(['mode', 'r', 'F', isDelta ? 'delta_melt' : 'R_melt', 'C_over_C0']);
+    const N = clamp(Math.round(p.N), 4, 400);
+    const Fmin = clamp(p.Fmin, 1e-3, 0.999);
+    const Fmax = clamp(p.Fmax, Fmin + 1e-4, 1);
+    for (const r of rs){
+      for (let i = 0; i <= N; i++){
+        const F = Fmin + (Fmax - Fmin) * i / N;
+        const q = afcPoint(p, r, F);
+        lines.push([p.mode, r, F, isDelta ? q.d : q.R, q.C]);
+      }
+    }
+    download('同位素瑞利分馏_AFC.csv', '\ufeff' + lines.map(r => r.map(csvCell).join(',')).join('\r\n'));
+  }
+}
+
+/* ================= shell ================= */
+function populatePresets(){
+  const sel = $('#preset');
+  const list = PRESETS[state.view] || [];
+  sel.disabled = !list.length;
+  sel.innerHTML = list.length
+    ? list.map(p => `<option value="${p.key}" ${p.key === state.presetKey[state.view] ? 'selected' : ''}>${esc(p.label)}</option>`).join('')
+    : '<option>—</option>';
+}
+
+function applyPreset(key){
+  const list = PRESETS[state.view] || [];
+  const p = list.find(x => x.key === key);
+  if (!p) return;
+  state[state.view] = deepClone(p.state);
+  state.presetKey[state.view] = key;
+  renderView();
+}
+
+function renderView(){
+  $$('.view').forEach(v => v.classList.toggle('hidden', v.id !== 'view-' + state.view));
+  $$('#viewNav .mod-btn').forEach(b => b.classList.toggle('active', b.dataset.view === state.view));
+  document.body.dataset.view = state.view;
+  $('#subtitle').textContent = SUBTITLES[state.view];
+  $('#btnCSV').disabled = state.view === 'docs';
+  populatePresets();
+  if (state.view === 'main') renderMain();
+  else if (state.view === 'mineral') renderMineral();
+  else if (state.view === 'afc') renderAFC();
+  else renderDocs();
+}
+
+function init(){
+  $$('#viewNav .mod-btn').forEach(b => {
+    b.onclick = () => {
+      if (state.view === b.dataset.view) return;
+      state.view = b.dataset.view;
+      renderView();
+    };
+  });
+  $('#preset').onchange = e => applyPreset(e.target.value);
+  $('#btnTest').onclick = () => {
+    runTests();
+    $('#testDialog').showModal();
+  };
+  $('#dlgClose').onclick = () => $('#testDialog').close();
+  $('#btnCSV').onclick = exportCSV;
+
+  let raf = null;
+  window.addEventListener('resize', () => {
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      if (state.view === 'main') updateMain();
+      else if (state.view === 'mineral') updateMineral();
+      else if (state.view === 'afc') updateAFC();
+    });
+  });
+
+  renderView();
+}
+
+init();
+</script>
+</body>
+</html>

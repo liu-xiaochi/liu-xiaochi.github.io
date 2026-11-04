@@ -1,0 +1,2514 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>地球化学模拟套件 · 熔融 / 结晶 / AFC</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --panel:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e3e8f0;
+    --accent:#2563eb; --accent-soft:#eff5ff; --danger:#dc2626; --warn:#b45309; --ok:#15803d;
+    --radius:14px; --shadow:0 1px 2px rgba(15,23,42,.05),0 10px 28px rgba(15,23,42,.06);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --logo-a:#2563eb; --logo-b:#0ea5e9;
+  }
+  body[data-mod="cryst"]{ --accent:#dc2626; --accent-soft:#fef2f2; --logo-a:#dc2626; --logo-b:#f59e0b; }
+  body[data-mod="afc"]{ --accent:#0d9488; --accent-soft:#effcf9; --logo-a:#0d9488; --logo-b:#0ea5e9; }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:14px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{margin:0;font-weight:650;letter-spacing:.2px}
+  button,input,select{font:inherit;color:inherit}
+  .hidden{display:none !important}
+
+  .topbar{
+    position:sticky;top:0;z-index:30;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:10px 20px;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:11px;margin-right:4px}
+  .logo{
+    width:36px;height:36px;border-radius:10px;flex:none;
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;letter-spacing:.3px;
+    background:linear-gradient(135deg,var(--logo-a),var(--logo-b));
+    box-shadow:0 6px 16px rgba(37,99,235,.22);transition:.2s;
+  }
+  .brand h1{font-size:15px}
+  .sub{margin:0;color:var(--muted);font-size:11.5px}
+
+  .modules{display:flex;gap:3px;background:#eef2f7;padding:3px;border-radius:11px;flex-wrap:wrap}
+  .mod-btn{
+    border:0;background:transparent;padding:6px 12px;border-radius:9px;
+    font-size:12.5px;color:#475569;cursor:pointer;transition:.15s;white-space:nowrap;
+  }
+  .mod-btn:hover{color:#0f172a}
+  .mod-btn.active{background:#fff;color:var(--accent);font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.1)}
+
+  .top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+  .preset{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}
+  .preset select{
+    max-width:250px;padding:6px 10px;border:1px solid var(--line);border-radius:9px;
+    background:#fff;font-size:12.5px;color:var(--ink);
+  }
+  .btn{
+    border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 11px;
+    cursor:pointer;font-size:12.5px;transition:.15s;white-space:nowrap;
+  }
+  .btn:hover{border-color:#c9d4e5;background:#f8fafc}
+  .btn.ghost{color:#334155}
+  .btn:active{transform:translateY(1px)}
+
+  .layout{
+    display:grid;grid-template-columns:minmax(390px,470px) minmax(0,1fr);
+    gap:18px;padding:18px 22px 34px;max-width:1600px;margin:0 auto;align-items:start;
+  }
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .left{padding:16px 16px 18px;position:sticky;top:72px;max-height:calc(100vh - 92px);overflow:auto}
+  .right{padding:16px 18px 20px;min-width:0}
+
+  .tabs{display:flex;gap:6px;margin-bottom:12px}
+  .tab{
+    flex:1;padding:8px 10px;border:1px solid var(--line);background:#fff;border-radius:9px;
+    cursor:pointer;font-size:12.5px;color:#475569;transition:.15s;
+  }
+  .tab:hover{border-color:#cbd5e1}
+  .tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+  .block{padding:12px 0;border-bottom:1px dashed var(--line)}
+  .block:last-child{border-bottom:0;padding-bottom:0}
+  .block:first-child{padding-top:0}
+  .block h2{font-size:13px;color:#334155;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .block h2 .tag{font-size:11px;font-weight:500;color:var(--muted);background:#f1f5f9;border-radius:6px;padding:2px 6px}
+
+  .models{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
+  .model{display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;user-select:none}
+  .model input{accent-color:var(--accent);width:15px;height:15px}
+  .model .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .model.wide{grid-column:1 / -1}
+
+  .params{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:10px}
+  .field{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted)}
+  .field input,.field select{
+    width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;
+    font-family:var(--mono);font-size:12.5px;color:var(--ink);
+  }
+  .field select{font-family:inherit;font-size:12.5px}
+  .field input:focus,.field select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  .inline-toggle{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#334155;margin-top:8px}
+  .inline-toggle input{accent-color:var(--accent)}
+
+  .tbl-scroll{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:290px}
+  table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+  th,td{padding:0;border-bottom:1px solid #eef2f7;text-align:left;white-space:nowrap}
+  thead th{
+    position:sticky;top:0;z-index:1;background:#f8fafc;color:#475569;font-weight:600;font-size:11px;
+    padding:7px 5px;border-bottom:1px solid var(--line);
+  }
+  tbody td{padding:3px 3px}
+  tbody tr:last-child td{border-bottom:0}
+  td input[type=text],td input[type=number]{
+    width:100%;min-width:46px;border:1px solid transparent;border-radius:6px;background:transparent;
+    padding:5px 4px;font-size:12px;
+  }
+  td input[type=text]:hover,td input[type=number]:hover{background:#f8fafc;border-color:#eef2f7}
+  td input[type=text]:focus,td input[type=number]:focus{background:#fff;border-color:var(--accent);outline:2px solid var(--accent-soft)}
+  td input.num{font-family:var(--mono);text-align:right;min-width:46px}
+  td.name input{min-width:80px;font-weight:500}
+  td.iso input{min-width:60px;text-align:right;font-family:var(--mono);font-size:11.5px}
+  td.kd input{min-width:50px;text-align:right;font-family:var(--mono)}
+  th.kd{text-align:right}
+  .del{
+    border:0;background:transparent;color:#94a3b8;cursor:pointer;font-size:15px;line-height:1;
+    padding:2px 5px;border-radius:6px;
+  }
+  .del:hover{color:var(--danger);background:#fef2f2}
+  .row-add{
+    margin-top:8px;border:1px dashed #cbd5e1;background:#fbfdff;color:#475569;border-radius:9px;
+    padding:6px 10px;width:100%;cursor:pointer;font-size:12.5px;
+  }
+  .row-add:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .note{font-size:11.5px;color:var(--muted);margin:8px 0 0;line-height:1.5}
+  .warnline{font-size:11.5px;margin:8px 0 0;line-height:1.5}
+  .warnline.bad{color:var(--warn)}
+  .warnline.ok{color:var(--ok)}
+
+  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .stat{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+  .stat b{display:block;font-family:var(--mono);font-size:13.5px;font-weight:600}
+  .stat span{font-size:10.5px;color:var(--muted);letter-spacing:.3px}
+
+  .chart-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .chart-head h2{font-size:14px;margin-right:auto}
+  .chart-wrap{position:relative;width:100%;height:380px;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+  .chart-wrap canvas{display:block;width:100%;height:100%}
+  .tooltip{
+    position:absolute;pointer-events:none;z-index:5;background:rgba(15,23,42,.92);color:#fff;
+    border-radius:9px;padding:8px 10px;font-size:11.5px;line-height:1.5;max-width:260px;
+    box-shadow:0 6px 20px rgba(15,23,42,.25);transform:translate(10px,-50%);
+  }
+  .tooltip b{font-weight:600}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:11.5px;color:#334155}
+  .legend .item{display:flex;align-items:center;gap:6px}
+  .legend svg{overflow:visible}
+
+  .tbl-out{margin-top:14px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  .tbl-out table{font-size:12px}
+  .tbl-out th,.tbl-out td{padding:6px 9px;text-align:right}
+  .tbl-out th:first-child,.tbl-out td:first-child{text-align:left}
+  .tbl-out thead th{background:#f8fafc;border-bottom:1px solid var(--line)}
+  .tbl-out td{font-family:var(--mono);font-size:11.5px}
+  .tbl-out td small{display:block;color:var(--muted);font-family:system-ui,sans-serif;font-size:10px}
+  .empty{padding:28px 12px;text-align:center;color:var(--muted);font-size:12.5px}
+
+  .refc{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+  .refc .params{margin-bottom:10px}
+
+  details.help{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:#fbfdff}
+  details.help summary{cursor:pointer;padding:9px 12px;font-size:12.5px;color:#334155;font-weight:600}
+  details.help .body{padding:2px 14px 14px;font-size:12px;color:#475569;line-height:1.65}
+  details.help code{font-family:var(--mono);background:#eef2f7;border-radius:4px;padding:1px 5px;font-size:11.5px}
+  details.help ul{margin:6px 0 0;padding-left:18px}
+  details.help li{margin:4px 0}
+
+  dialog{
+    border:1px solid var(--line);border-radius:16px;padding:0;max-width:600px;width:calc(100% - 40px);
+    box-shadow:0 24px 70px rgba(15,23,42,.3);
+  }
+  dialog::backdrop{background:rgba(15,23,42,.35);backdrop-filter:blur(2px)}
+  .dlg-head{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .dlg-head h3{font-size:14px;margin-right:auto}
+  .dlg-body{padding:14px 18px 18px;font-size:13px;color:#334155}
+  .dlg-body table{width:100%;font-size:12px;margin-top:8px}
+  .dlg-body th,.dlg-body td{padding:6px 8px;border-bottom:1px solid #eef2f7;text-align:right}
+  .dlg-body th:first-child,.dlg-body td:first-child{text-align:left}
+  .ok{color:var(--ok);font-weight:600}
+  .bad{color:var(--danger);font-weight:600}
+
+  @media (max-width:1080px){
+    .layout{grid-template-columns:1fr}
+    .left{position:static;max-height:none}
+  }
+  @media (max-width:640px){
+    .topbar{padding:10px 12px}
+    .layout{padding:12px}
+    .models,.params{grid-template-columns:1fr}
+    .summary{grid-template-columns:1fr}
+    .chart-wrap{height:320px}
+  }
+</style>
+</head>
+<body data-mod="melt">
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">GE</div>
+    <div>
+      <h1>地球化学模拟套件</h1>
+      <p class="sub" id="subtitle">部分熔融 · 结晶 · AFC / 开放体系</p>
+    </div>
+  </div>
+  <nav class="modules" id="moduleNav">
+    <button class="mod-btn active" data-mod="melt">部分熔融</button>
+    <button class="mod-btn" data-mod="cryst">结晶</button>
+    <button class="mod-btn" data-mod="afc">AFC / 开放体系</button>
+  </nav>
+  <div class="top-actions">
+    <label class="preset">预设
+      <select id="preset"></select>
+    </label>
+    <button class="btn ghost" id="btnTest">方程校验</button>
+    <button class="btn ghost" id="btnCSV">导出 CSV</button>
+  </div>
+</header>
+
+<main class="layout">
+  <aside class="panel left" id="left"></aside>
+  <section class="panel right" id="right"></section>
+</main>
+
+<dialog id="testDialog">
+  <div class="dlg-head"><h3 id="testTitle">方程校验</h3><button class="btn ghost" id="dlgClose">关闭</button></div>
+  <div class="dlg-body" id="testBody"></div>
+</dialog>
+
+<script>
+'use strict';
+
+/* ================= common ================= */
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (v, d = 3) => {
+  if (v === null || v === undefined || Number.isNaN(v)) return '—';
+  if (!isFinite(v)) return '∞';
+  const a = Math.abs(v);
+  if (a !== 0 && (a < 1e-3 || a >= 1e5)) return v.toExponential(2);
+  return v.toFixed(d).replace(/\.?0+$/, '') || '0';
+};
+const deepClone = o => JSON.parse(JSON.stringify(o));
+
+function niceTicks(min, max, count){
+  const span = max - min;
+  if (span <= 0) return [min];
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 5) step = 5; else step = 10;
+  step *= mag;
+  const start = Math.ceil(min / step - 1e-9) * step;
+  const out = [];
+  for (let v = start; v <= max + 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+
+function logTicks(min, max){
+  const out = [];
+  const a = Math.ceil(Math.log10(min) - 1e-9);
+  const b = Math.floor(Math.log10(max) + 1e-9);
+  for (let e = a; e <= b; e++){
+    const v = Math.pow(10, e);
+    out.push(v);
+    if (b - a <= 2) for (let k = 2; k <= 9; k++){
+      const vv = k * v;
+      if (vv <= max) out.push(vv);
+    }
+  }
+  return out.sort((x, y) => x - y);
+}
+
+function tickText(v, span){
+  if (v === 0) return '0';
+  const a = Math.abs(v);
+  if (a >= 1e5 || (a > 0 && a < 1e-4)) return v.toExponential(1);
+  const d = Math.max(0, Math.min(6, Math.ceil(-Math.log10(Math.max(span, 1e-12))) + 1));
+  return v.toFixed(d);
+}
+
+function xTickText(v, xMax){
+  if (xMax > 2) return String(Math.round(v));
+  return v.toFixed(2).replace(/\.?0+$/, '') || '0';
+}
+
+function valueAt(points, x){
+  if (!points.length) return null;
+  let lo = 0, hi = points.length - 1;
+  if (x <= points[0].x) return points[0].y;
+  if (x >= points[hi].x) return points[hi].y;
+  while (hi - lo > 1){
+    const mid = (lo + hi) >> 1;
+    if (points[mid].x <= x) lo = mid; else hi = mid;
+  }
+  const a = points[lo], b = points[hi];
+  const t = (x - a.x) / ((b.x - a.x) || 1);
+  return a.y + (b.y - a.y) * t;
+}
+
+function makeChart(canvasSel, wrapSel, tipSel){
+  const ch = { canvas: $(canvasSel), wrap: $(wrapSel), tip: $(tipSel), cache: null, hover: null };
+  ch.wrap.addEventListener('mousemove', e => {
+    if (!ch.cache) return;
+    const r = ch.wrap.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const c = ch.cache;
+    if (mx < c.x0 || mx > c.x1){ ch.tip.hidden = true; return; }
+    const x = c.xMin + (mx - c.x0) / (c.x1 - c.x0) * (c.xMax - c.xMin);
+    ch.hover = x;
+    drawChart(ch, c.series, c.opt);
+    showTip(ch, e.clientX - r.left, e.clientY - r.top, x);
+  });
+  ch.wrap.addEventListener('mouseleave', () => {
+    ch.hover = null; ch.tip.hidden = true;
+    if (ch.cache) drawChart(ch, ch.cache.series, ch.cache.opt);
+  });
+  return ch;
+}
+
+function drawChart(ch, series, opt){
+  const canvas = ch.canvas, wrap = ch.wrap;
+  const W = Math.max(320, wrap.clientWidth);
+  const H = Math.max(200, wrap.clientHeight);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 66, r: 18, t: 16, b: 44 };
+  const x0 = pad.l, x1 = W - pad.r, y0 = pad.t, y1 = H - pad.b;
+  const plotW = x1 - x0, plotH = y1 - y0;
+  const xMin = opt.xMin, xMax = opt.xMax;
+
+  const ys = [];
+  for (const s of series) for (const p of s.points){
+    if (isFinite(p.y) && (!opt.logY || p.y > 0)) ys.push(p.y);
+  }
+  if (!ys.length){
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '13px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('没有可绘制的数据', W / 2, H / 2);
+    ch.cache = null;
+    return;
+  }
+
+  let vMin = Math.min(...ys), vMax = Math.max(...ys);
+  if (opt.logY){
+    const lo = Math.pow(10, Math.floor(Math.log10(Math.max(vMin, 1e-12))));
+    const hi = Math.pow(10, Math.ceil(Math.log10(Math.max(vMax, lo * 10))));
+    vMin = lo; vMax = hi;
+  } else {
+    const padY = (vMax - vMin) * 0.06 || Math.abs(vMax) * 0.06 || 1;
+    vMin = vMin - padY * 0.2;
+    vMax = vMax + padY;
+  }
+
+  const yv = v => {
+    if (opt.logY){
+      const t = (Math.log10(Math.max(v, 1e-12)) - Math.log10(vMin)) / (Math.log10(vMax) - Math.log10(vMin));
+      return y1 - t * plotH;
+    }
+    return y1 - ((v - vMin) / (vMax - vMin || 1)) * plotH;
+  };
+  const xv = x => x0 + ((x - xMin) / (xMax - xMin || 1)) * plotW;
+
+  ctx.lineWidth = 1;
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.fillStyle = '#64748b';
+
+  const xTicks = niceTicks(xMin, xMax, 6);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const t of xTicks){
+    if (t < xMin - 1e-9 || t > xMax + 1e-9) continue;
+    const x = xv(t);
+    ctx.strokeStyle = '#eef2f7';
+    ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke();
+    ctx.fillText(xTickText(t, xMax), x, y1 + 8);
+  }
+
+  const yTicks = opt.logY ? logTicks(vMin, vMax) : niceTicks(vMin, vMax, 6);
+  const ySpan = vMax - vMin;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const t of yTicks){
+    if (t < vMin - 1e-12 || t > vMax + 1e-12) continue;
+    const y = yv(t);
+    if (y < y0 - 1 || y > y1 + 1) continue;
+    ctx.strokeStyle = '#eef2f7';
+    ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+    ctx.fillStyle = '#64748b';
+    ctx.fillText(opt.logY ? (t >= 1 ? String(Math.round(t)) : t.toExponential(0)) : tickText(t, ySpan), x0 - 8, y);
+  }
+
+  if (vMin <= 1 && vMax >= 1){
+    ctx.strokeStyle = '#cbd5e1'; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(x0, yv(1)); ctx.lineTo(x1, yv(1)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0, y1); ctx.lineTo(x1, y1); ctx.stroke();
+
+  for (const s of series){
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 1.9;
+    ctx.setLineDash(s.dash || []);
+    ctx.beginPath();
+    let started = false;
+    for (const p of s.points){
+      if (!isFinite(p.y) || (opt.logY && p.y <= 0)){ started = false; continue; }
+      const X = xv(p.x), Y = yv(p.y);
+      if (!started){ ctx.moveTo(X, Y); started = true; }
+      else ctx.lineTo(X, Y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  if (ch.hover !== null && ch.hover >= xMin && ch.hover <= xMax){
+    const hx = xv(ch.hover);
+    ctx.strokeStyle = '#94a3b8'; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(hx, y0); ctx.lineTo(hx, y1); ctx.stroke();
+    ctx.setLineDash([]);
+    for (const s of series){
+      const y = valueAt(s.points, ch.hover);
+      if (!isFinite(y) || (opt.logY && y <= 0)) continue;
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(hx, yv(y), 3.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+
+  ctx.fillStyle = '#475569';
+  ctx.font = '12px system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText(opt.xLabel, (x0 + x1) / 2, H - 18);
+  ctx.save();
+  ctx.translate(16, (y0 + y1) / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(opt.yLabel, 0, 0);
+  ctx.restore();
+
+  ch.cache = { series, opt, x0, x1, y0, y1, xMin, xMax, vMin, vMax, yv, xv, W, H };
+}
+
+function showTip(ch, xPix, yPix, x){
+  const c = ch.cache;
+  const rows = c.series
+    .map(s => ({ s, y: valueAt(s.points, x) }))
+    .filter(o => isFinite(o.y))
+    .sort((a, b) => b.y - a.y);
+  if (!rows.length){ ch.tip.hidden = true; return; }
+  ch.tip.hidden = false;
+  ch.tip.style.left = Math.max(4, Math.min(xPix, c.W - 280)) + 'px';
+  ch.tip.style.top = Math.max(40, Math.min(yPix, c.H - 30)) + 'px';
+  const xTag = c.opt.xTag || 'x';
+  const dig = c.opt.yDigits || 3;
+  ch.tip.innerHTML = `<div style="color:#cbd5e1;margin-bottom:4px">${esc(xTag)} = <b style="color:#fff">${fmt(x, 3)}</b></div>` +
+    rows.map(o => `<div><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${o.s.color};margin-right:6px"></span>${esc(o.s.label)} <b>${fmt(o.y, dig)}</b></div>`).join('');
+}
+
+function renderLegend(el, series){
+  el.innerHTML = series.map(s => `
+    <span class="item">
+      <svg width="22" height="8"><line x1="1" y1="4" x2="21" y2="4" stroke="${s.color}" stroke-width="2" stroke-dasharray="${(s.dash || []).join(',')}"></line></svg>
+      ${esc(s.label)}
+    </span>`).join('');
+}
+
+/* ================= modules (injected below) ================= */
+/* ================= module: partial melting ================= */
+const MeltModule = (() => {
+  const EPS = 1e-12;
+
+  function modeSums(minerals){
+    let sx = 0, sp = 0;
+    for (const m of minerals){ sx += Math.max(0, +m.x || 0); sp += Math.max(0, +m.p || 0); }
+    return { sx, sp };
+  }
+
+  function DP(minerals, el, opts){
+    opts = opts || {};
+    const phi = Math.max(0, Math.min(1, opts.phi || 0));
+    const { sx, sp } = modeSums(minerals);
+    const xn = sx > 0 ? 1 / sx : 0;
+    const pn = sp > 0 ? 1 / sp : 0;
+    let D = 0, P = 0;
+    for (const m of minerals){
+      const k = +((m.kd || {})[el]) || 0;
+      D += Math.max(0, +m.x || 0) * xn * k;
+      P += Math.max(0, +m.p || 0) * pn * k;
+    }
+    if (opts.crit) D = (1 - phi) * D + phi;
+    return { D, P, sx, sp, phi };
+  }
+
+  function batchCl(f, D){
+    if (f <= 0) return 1;
+    D = Math.max(D, EPS);
+    return 1 / (f + D * (1 - f));
+  }
+
+  function nonmodalCl(f, D, P){
+    if (f <= 0) return 1;
+    D = Math.max(D, EPS);
+    return 1 / (f + D - f * P);
+  }
+
+  function fracCl(f, D, P){
+    if (f <= 0) return 1;
+    D = Math.max(D, EPS);
+    if (P < 1e-9) return (1 / f) * (1 - Math.exp(-f / D));
+    const q = P * f / D;
+    if (q >= 1) return NaN;
+    return (1 / f) * (1 - Math.pow(1 - q, 1 / P));
+  }
+
+  function residCl(f, cl){
+    if (f >= 1) return NaN;
+    if (!isFinite(cl)) return NaN;
+    return (1 - f * cl) / (1 - f);
+  }
+
+  function incrementalSeries(minerals, el, fMax, fInc){
+    const { sx } = modeSums(minerals);
+    const xs = minerals.map(m => sx > 0 ? Math.max(0, +m.x || 0) / sx : 0);
+    let ps = minerals.map(m => Math.max(0, +m.p || 0));
+    const sp0 = ps.reduce((a, b) => a + b, 0);
+    ps = ps.map(p => sp0 > 0 ? p / sp0 : 0);
+
+    let Cs = 1, F = 0, agg = 0, guard = 0;
+    const out = [{ f: 0, cl: 1, cs: 1 }];
+
+    while (F < fMax - 1e-9 && guard++ < 200000){
+      const remain = 1 - F;
+      if (remain < 1e-4) break;
+      const dF = Math.min(fInc, fMax - F, remain * 0.5);
+      if (dF <= 0) break;
+      const f = dF / remain;
+
+      let D = 0;
+      for (let i = 0; i < minerals.length; i++) D += xs[i] * (+((minerals[i].kd || {})[el]) || 0);
+      D = Math.max(D, EPS);
+
+      const cl = Cs / (f + D * (1 - f));
+      Cs = (Cs - f * cl) / (1 - f);
+
+      let dead = false;
+      for (let i = 0; i < xs.length; i++){
+        const nx = (xs[i] - f * ps[i]) / (1 - f);
+        if (nx <= 0){ xs[i] = 0; if (ps[i] > 0){ ps[i] = 0; dead = true; } }
+        else xs[i] = nx;
+      }
+      const s2 = xs.reduce((a, b) => a + b, 0);
+      if (s2 > 0) for (let i = 0; i < xs.length; i++) xs[i] /= s2;
+      if (dead){
+        const p2 = ps.reduce((a, b) => a + b, 0);
+        if (p2 > 0) ps = ps.map(p => p / p2);
+        else break;
+      }
+
+      F += dF;
+      agg += dF * cl;
+      out.push({ f: F, cl: agg / F, cs: Cs });
+    }
+    return out;
+  }
+
+  function gridSeries(minerals, el, model, grid, opts){
+    opts = opts || {};
+    const phi = opts.phi || 0;
+    const pts = [];
+    if (model === 'critical' && (phi <= 0 || phi >= 1)) return pts;
+    const { D, P } = DP(minerals, el, { phi, crit: model === 'critical' });
+    for (const f of grid){
+      let cl;
+      if (model === 'batch') cl = batchCl(f, D);
+      else if (model === 'nonmodal') cl = nonmodalCl(f, D, P);
+      else cl = fracCl(f, D, P);
+      pts.push({ f, cl, cs: residCl(f, cl) });
+    }
+    return pts;
+  }
+
+  function selfTest(){
+    const m = [
+      { x: 0.60, p: 0.20, kd: { Sr: 0.01 } },
+      { x: 0.25, p: 0.10, kd: { Sr: 0.05 } },
+      { x: 0.15, p: 0.70, kd: { Sr: 0.20 } }
+    ];
+    const f = 0.2;
+    const { D, P } = DP(m, 'Sr', {});
+    const batchModal = batchCl(f, D) * 10;
+    const batchNon = nonmodalCl(f, D, P) * 10;
+    const frac = fracCl(f, D, P) * 10;
+    const dc = DP(m, 'Sr', { phi: 0.02, crit: true });
+    const crit = fracCl(f, dc.D, dc.P) * 10;
+    return {
+      D, P, batchModal, batchNon, batchExp: 45.64, frac, fracExp: 49.9, crit, critExp: 49.0,
+      ok: Math.abs(batchNon - 45.64) < 0.15 && Math.abs(frac - 49.9) < 0.15 && Math.abs(crit - 49.0) < 0.15
+    };
+  }
+
+  const PRESETS = {
+    spinel: {
+      label: '尖晶石二辉橄榄岩（Pearce 教程例）',
+      elements: [
+        { name: 'Rb', c0: 0.6, on: false }, { name: 'Ba', c0: 6.6, on: false },
+        { name: 'Sr', c0: 10, on: true }, { name: 'La', c0: 0.65, on: true },
+        { name: 'Nd', c0: 1.25, on: false }, { name: 'Sm', c0: 0.4, on: false },
+        { name: 'Yb', c0: 0.44, on: true }
+      ],
+      minerals: [
+        { name: '橄榄石 Ol', x: 0.60, p: 0.20, kd: { Rb: 0.0002, Ba: 0.0002, Sr: 0.010, La: 0.0005, Nd: 0.001, Sm: 0.0015, Yb: 0.020 } },
+        { name: '斜方辉石 Opx', x: 0.25, p: 0.10, kd: { Rb: 0.0005, Ba: 0.0005, Sr: 0.050, La: 0.002, Nd: 0.006, Sm: 0.010, Yb: 0.050 } },
+        { name: '单斜辉石 Cpx', x: 0.15, p: 0.70, kd: { Rb: 0.003, Ba: 0.001, Sr: 0.200, La: 0.050, Nd: 0.190, Sm: 0.290, Yb: 0.430 } }
+      ]
+    },
+    garnet: {
+      label: '石榴石二辉橄榄岩',
+      elements: [
+        { name: 'Rb', c0: 0.6, on: false }, { name: 'Ba', c0: 6.6, on: false },
+        { name: 'Sr', c0: 10, on: true }, { name: 'La', c0: 0.65, on: true },
+        { name: 'Nd', c0: 1.25, on: false }, { name: 'Sm', c0: 0.4, on: false },
+        { name: 'Yb', c0: 0.44, on: true }
+      ],
+      minerals: [
+        { name: '橄榄石 Ol', x: 0.55, p: 0.15, kd: { Rb: 0.0002, Ba: 0.0002, Sr: 0.010, La: 0.0005, Nd: 0.001, Sm: 0.0015, Yb: 0.020 } },
+        { name: '斜方辉石 Opx', x: 0.25, p: 0.25, kd: { Rb: 0.0005, Ba: 0.0005, Sr: 0.050, La: 0.002, Nd: 0.006, Sm: 0.010, Yb: 0.050 } },
+        { name: '单斜辉石 Cpx', x: 0.15, p: 0.40, kd: { Rb: 0.003, Ba: 0.001, Sr: 0.200, La: 0.050, Nd: 0.190, Sm: 0.290, Yb: 0.430 } },
+        { name: '石榴石 Gt', x: 0.05, p: 0.20, kd: { Rb: 0.0002, Ba: 0.0005, Sr: 0.012, La: 0.001, Nd: 0.026, Sm: 0.102, Yb: 6.17 } }
+      ]
+    },
+    eclogite: {
+      label: 'MORB 质榴辉岩（Gt + Cpx）',
+      elements: [
+        { name: 'Rb', c0: 1.0, on: false }, { name: 'Ba', c0: 15, on: false },
+        { name: 'Sr', c0: 120, on: true }, { name: 'La', c0: 3.0, on: true },
+        { name: 'Nd', c0: 8.0, on: false }, { name: 'Sm', c0: 3.0, on: false },
+        { name: 'Yb', c0: 3.0, on: true }
+      ],
+      minerals: [
+        { name: '石榴石 Gt', x: 0.50, p: 0.60, kd: { Rb: 0.0002, Ba: 0.0005, Sr: 0.012, La: 0.001, Nd: 0.026, Sm: 0.102, Yb: 6.17 } },
+        { name: '单斜辉石 Cpx', x: 0.45, p: 0.35, kd: { Rb: 0.003, Ba: 0.001, Sr: 0.200, La: 0.050, Nd: 0.190, Sm: 0.290, Yb: 0.430 } },
+        { name: '石英/其他', x: 0.05, p: 0.05, kd: { Rb: 0, Ba: 0, Sr: 0, La: 0, Nd: 0, Sm: 0, Yb: 0 } }
+      ]
+    }
+  };
+
+  const MODELS = {
+    batch:       { label: '批式（实比）',   short: '批式',  color: '#2563eb' },
+    nonmodal:    { label: '批式（非实比）', short: '非实比', color: '#0891b2' },
+    frac:        { label: '分离（聚集）熔融', short: '分离', color: '#dc2626' },
+    critical:    { label: '临界熔融',       short: '临界',  color: '#7c3aed' },
+    incremental: { label: '增量熔融',       short: '增量',  color: '#ea580c' }
+  };
+  const MODEL_KEYS = Object.keys(MODELS);
+  const DASHES = [[], [7, 4], [2, 3], [9, 3, 2, 3], [4, 3, 1, 3], [10, 4]];
+
+  const state = {
+    elements: deepClone(PRESETS.spinel.elements),
+    minerals: deepClone(PRESETS.spinel.minerals),
+    models: new Set(['nonmodal', 'frac']),
+    fMin: 0.01, fMax: 0.5, nPts: 160,
+    phi: 0.02, fInc: 0.01,
+    showResidue: false, logY: false,
+    primary: 'Sr', preset: 'spinel'
+  };
+
+  let chart = null, ro = null, rafPending = false;
+
+  function markCustom(){}
+
+  const LEFT = `
+    <div class="block">
+      <h2>模型 <span class="tag">可多选叠加</span></h2>
+      <div class="models" id="modelBox"></div>
+      <div class="params" style="margin-top:12px">
+        <label class="field">F 最小<input type="number" id="fMin" min="0" max="1" step="0.01"></label>
+        <label class="field">F 最大<input type="number" id="fMax" min="0.01" max="1" step="0.01"></label>
+        <label class="field">曲线点数<input type="number" id="nPts" min="20" max="800" step="10"></label>
+        <label class="field">孔隙度 φ（临界）<input type="number" id="phi" min="0" max="0.5" step="0.005"></label>
+        <label class="field">增量步长 ΔF<input type="number" id="fInc" min="0.001" max="0.1" step="0.001"></label>
+      </div>
+      <label class="inline-toggle"><input type="checkbox" id="showResidue"> 显示残余体 C_S / C₀（默认熔体）</label>
+      <label class="inline-toggle"><input type="checkbox" id="logY"> 对数纵轴</label>
+    </div>
+
+    <div class="block">
+      <h2>元素与源区浓度 <span class="tag">C₀ ppm</span></h2>
+      <div class="tbl-scroll" style="max-height:240px">
+        <table id="elTable">
+          <thead><tr><th>元素</th><th>C₀</th><th>显示</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <button class="row-add" id="addEl">＋ 添加元素</button>
+    </div>
+
+    <div class="block">
+      <h2>矿物 · 熔融模式 · Kd <span class="tag">Xᵢ 模态 / pᵢ 熔融比例</span></h2>
+      <div class="tbl-scroll" style="max-height:330px">
+        <table id="minTable"><thead></thead><tbody></tbody></table>
+      </div>
+      <button class="row-add" id="addMin">＋ 添加矿物</button>
+      <p class="warnline" id="sumWarn"></p>
+      <div class="summary" id="stats"></div>
+    </div>
+
+    <details class="help">
+      <summary>方程与假定（M1–M6）</summary>
+      <div class="body">
+        <p><b>M1 批式（实比）</b><br><code>C_L/C₀ = 1/(F + D₀(1−F))</code></p>
+        <p><b>M2 非实比批式</b><br><code>C_L/C₀ = 1/(F + D₀ − F·P)</code>，<code>D₀=ΣXᵢKᵢ</code>，<code>P=ΣpᵢKᵢ</code></p>
+        <p><b>M3 分离（聚集）熔融</b><br><code>C_L/C₀ = (1/F)[1 − (1 − P·F/D₀)^(1/P)]</code></p>
+        <p><b>M4 临界熔融</b><br>同 M3，但把孔隙熔体当作 D=1、p=0 的相：<code>D₀′=(1−φ)D₀+φ</code>，P 不变</p>
+        <p><b>M5 增量熔融</b><br>每步用 M1，随后 <code>C_S′=(C_S−ΔF·C_L)/(1−ΔF)</code>、<code>Xᵢ′=(Xᵢ−ΔF·pᵢ)/(1−ΔF)</code>；聚集熔体按质量加权</p>
+        <p><b>M6 残余体</b><br><code>C_S/C₀ = (1 − F·C_L/C₀)/(1 − F)</code>；分离/临界熔融与此等价于 <code>(1−PF/D₀)^(1/P)/(1−F)</code></p>
+        <ul>
+          <li>熔体与残余体均为质量分数归一化后的结果；Xᵢ、pᵢ 输入后自动归一化。</li>
+          <li>M1（实比）与 M2（非实比）只有在 pᵢ ≠ Xᵢ 时才有差别；pᵢ = Xᵢ 时两式完全等价。</li>
+          <li>M3/M4 在 <code>P·F/D₀ ≥ 1</code> 时无实数解，曲线在该 F 处中断。</li>
+          <li>M5 中某矿物耗尽时，其 pᵢ 置零并在剩余矿物中重新归一化（近似处理）。</li>
+          <li>M5 的步长 ΔF 越小越接近 M3 的解析解（ΔF = 0.001 时在 0.1% 以内）。</li>
+          <li>P→0 的极限用 <code>(1/F)(1−e^(−F/D₀))</code>；D₀→0 时按极小值处理。</li>
+          <li>参考：Shaw (1970)；Pearce《Trace Element Modelling Short Course》§2；Rollinson《Using Geochemical Data》。</li>
+        </ul>
+      </div>
+    </details>`;
+
+  const RIGHT = `
+    <div class="chart-head">
+      <h2>C/C₀ – F 曲线</h2>
+      <span class="note" id="chartMeta" style="margin:0"></span>
+    </div>
+    <div class="chart-wrap" id="chartWrap" style="height:400px">
+      <canvas id="chart"></canvas>
+      <div class="tooltip" id="tooltip" hidden></div>
+    </div>
+    <div class="legend" id="legend"></div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap">
+      <h2 style="font-size:13px;margin-right:auto">数值结果</h2>
+      <label class="preset">主元素 <select id="primaryEl" style="max-width:120px"></select></label>
+    </div>
+    <div class="tbl-out" id="outTable"></div>
+
+    <details class="help">
+      <summary>读图提示</summary>
+      <div class="body">
+        <ul>
+          <li>同一颜色代表同一模型，不同虚线样式代表不同元素。</li>
+          <li>批式熔融在 F=0 处从 1 开始；F→0 时分离熔融的富集最强。</li>
+          <li>把“显示残余体”打开后，曲线切换为 C_S/C₀；分离熔融的残余体下降最快。</li>
+          <li>数值表中括号内为 ppm（C₀ × 比值）。</li>
+        </ul>
+      </div>
+    </details>`;
+
+  function gridF(){
+    const fMin = Math.max(0, Math.min(0.999, state.fMin));
+    const fMax = Math.max(fMin + 1e-4, Math.min(1, state.fMax));
+    const n = Math.max(20, Math.min(800, Math.round(state.nPts)));
+    const pts = [];
+    for (let i = 0; i <= n; i++) pts.push(fMin + (fMax - fMin) * i / n);
+    return pts;
+  }
+
+  function computeAll(){
+    const grid = gridF();
+    const els = state.elements.filter(e => e.on && e.name.trim());
+    const out = [];
+    els.forEach((el, ei) => {
+      MODEL_KEYS.forEach(key => {
+        if (!state.models.has(key)) return;
+        let pts;
+        if (key === 'incremental'){
+          pts = incrementalSeries(state.minerals, el.name, state.fMax, state.fInc)
+            .filter(p => p.f >= state.fMin - 1e-9);
+        } else {
+          pts = gridSeries(state.minerals, el.name, key, grid, { phi: state.phi });
+        }
+        out.push({
+          key, model: key, el: el.name, c0: el.c0,
+          color: MODELS[key].color,
+          dash: DASHES[ei % DASHES.length],
+          label: `${el.name} · ${MODELS[key].short}`,
+          points: pts
+        });
+      });
+    });
+    return out;
+  }
+
+  function atF(points, f){
+    if (!points.length) return null;
+    let lo = 0, hi = points.length - 1;
+    if (f <= points[0].f) return points[0];
+    if (f >= points[hi].f) return points[hi];
+    while (hi - lo > 1){
+      const mid = (lo + hi) >> 1;
+      if (points[mid].f <= f) lo = mid; else hi = mid;
+    }
+    const a = points[lo], b = points[hi];
+    const t = (f - a.f) / ((b.f - a.f) || 1);
+    return { f, cl: a.cl + (b.cl - a.cl) * t, cs: a.cs + (b.cs - a.cs) * t };
+  }
+
+  function toChartSeries(raw){
+    return raw.map(s => ({
+      key: s.key, el: s.el, label: s.label, color: s.color, dash: s.dash,
+      points: s.points.map(p => ({ x: p.f, y: state.showResidue ? p.cs : p.cl }))
+    }));
+  }
+
+  function renderElementTable(){
+    $('#elTable tbody').innerHTML = state.elements.map((e, i) => `
+      <tr data-i="${i}">
+        <td class="name"><input type="text" data-f="name" value="${esc(e.name)}" spellcheck="false"></td>
+        <td><input class="num" type="number" data-f="c0" value="${e.c0}" step="any" min="0"></td>
+        <td style="text-align:center"><input type="checkbox" data-f="on" ${e.on ? 'checked' : ''}></td>
+        <td><button class="del" data-del title="删除">×</button></td>
+      </tr>`).join('');
+  }
+
+  function renderMineralTable(){
+    const els = state.elements;
+    $('#minTable thead').innerHTML = `<tr>
+      <th>矿物</th><th>Xᵢ</th><th>pᵢ</th>
+      ${els.map(e => `<th class="kd">${esc(e.name)}</th>`).join('')}
+      <th></th></tr>`;
+    $('#minTable tbody').innerHTML = state.minerals.map((m, i) => `
+      <tr data-i="${i}">
+        <td class="name"><input type="text" data-f="name" value="${esc(m.name)}" spellcheck="false"></td>
+        <td><input class="num" type="number" data-f="x" value="${m.x}" step="0.01" min="0" max="1"></td>
+        <td><input class="num" type="number" data-f="p" value="${m.p}" step="0.01" min="0" max="1"></td>
+        ${els.map(e => `<td class="kd"><input type="number" data-f="kd" data-el="${esc(e.name)}" value="${m.kd[e.name] ?? 0}" step="any" min="0"></td>`).join('')}
+        <td><button class="del" data-del title="删除">×</button></td>
+      </tr>`).join('');
+  }
+
+  function renderModelBox(){
+    $('#modelBox').innerHTML = MODEL_KEYS.map(k => `
+      <label class="model">
+        <input type="checkbox" data-model="${k}" ${state.models.has(k) ? 'checked' : ''}>
+        <span class="dot" style="background:${MODELS[k].color}"></span>${MODELS[k].label}
+      </label>`).join('');
+  }
+
+  function renderPrimaryOptions(){
+    const sel = $('#primaryEl');
+    const on = state.elements.filter(e => e.on);
+    if (!on.length){ sel.innerHTML = '<option>—</option>'; return; }
+    if (!on.some(e => e.name === state.primary)) state.primary = on[0].name;
+    sel.innerHTML = on.map(e => `<option value="${esc(e.name)}" ${e.name === state.primary ? 'selected' : ''}>${esc(e.name)}</option>`).join('');
+  }
+
+  function renderStats(){
+    const el = state.elements.find(e => e.name === state.primary) || state.elements.find(e => e.on);
+    const box = $('#stats');
+    if (!el){ box.innerHTML = ''; return; }
+    const base = DP(state.minerals, el.name, {});
+    const crit = DP(state.minerals, el.name, { phi: state.phi, crit: true });
+    box.innerHTML = `
+      <div class="stat"><span>D₀（${esc(el.name)}）</span><b>${fmt(base.D, 4)}</b></div>
+      <div class="stat"><span>P（${esc(el.name)}）</span><b>${fmt(base.P, 4)}</b></div>
+      <div class="stat"><span>D₀′ 临界</span><b>${fmt(crit.D, 4)}</b></div>`;
+    const { sx, sp } = modeSums(state.minerals);
+    const w = $('#sumWarn');
+    const msgs = [];
+    if (Math.abs(sx - 1) > 0.005) msgs.push(`ΣXᵢ = ${fmt(sx, 3)}（已自动归一化）`);
+    if (Math.abs(sp - 1) > 0.005) msgs.push(`Σpᵢ = ${fmt(sp, 3)}（已自动归一化）`);
+    if (msgs.length){ w.className = 'warnline bad'; w.textContent = '⚠ ' + msgs.join('；'); }
+    else { w.className = 'warnline ok'; w.textContent = '✓ ΣXᵢ = 1，Σpᵢ = 1'; }
+  }
+
+  function renderTable(raw){
+    const box = $('#outTable');
+    const el = state.elements.find(e => e.name === state.primary && e.on) || state.elements.find(e => e.on);
+    if (!el){ box.innerHTML = '<div class="empty">请先选择要显示的元素。</div>'; return; }
+    const models = MODEL_KEYS.filter(k => state.models.has(k));
+    if (!models.length){ box.innerHTML = '<div class="empty">请至少启用一个模型。</div>'; return; }
+
+    const fmax = Math.max(0.01, Math.min(1, state.fMax));
+    const rows = [0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9].filter(f => f <= fmax + 1e-9);
+    const head = `<tr><th>F</th>${models.map(k => `<th>${MODELS[k].short}<br><small style="font-weight:400;color:#94a3b8">${state.showResidue ? 'C_S/C₀' : 'C_L/C₀'} (ppm)</small></th>`).join('')}</tr>`;
+    const body = rows.map(f => {
+      const tds = models.map(k => {
+        const s = raw.find(x => x.model === k && x.el === el.name);
+        if (!s) return '<td>—</td>';
+        const v = atF(s.points, f);
+        const val = v ? (state.showResidue ? v.cs : v.cl) : NaN;
+        if (!isFinite(val)) return '<td>—</td>';
+        return `<td>${fmt(val, 3)}<small>${fmt(val * el.c0, 3)}</small></td>`;
+      }).join('');
+      return `<tr><td>${fmt(f, 2)}</td>${tds}</tr>`;
+    }).join('');
+    box.innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  }
+
+  function scheduleCompute(){
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+      rafPending = false;
+      if (!chart) return;
+      const raw = computeAll();
+      const cs = toChartSeries(raw);
+      drawChart(chart, cs, {
+        xMin: Math.max(0, state.fMin), xMax: Math.max(state.fMin + 1e-4, state.fMax),
+        xLabel: 'F（熔融程度）', xTag: 'F',
+        yLabel: state.showResidue ? 'C_S / C₀' : 'C_L / C₀',
+        logY: state.logY, yDigits: 3
+      });
+      renderLegend($('#legend'), cs);
+      renderTable(raw);
+      renderPrimaryOptions();
+      renderStats();
+
+      const truncated = cs.some(s => (s.model === 'frac' || s.model === 'critical')
+        && s.points.some(p => p.x < 0.999 && !isFinite(p.y)));
+      $('#chartMeta').textContent = truncated ? '注意：分离/临界熔融在 P·F/D₀ ≥ 1 处无实数解，曲线在该处中断' : '';
+    });
+  }
+
+  function renderAll(){
+    renderModelBox();
+    renderElementTable();
+    renderMineralTable();
+    renderPrimaryOptions();
+    renderStats();
+    scheduleCompute();
+  }
+
+  function loadPreset(key){
+    const p = PRESETS[key];
+    if (!p) return;
+    const d = deepClone(p);
+    state.elements = d.elements;
+    state.minerals = d.minerals;
+    state.preset = key;
+    state.primary = state.elements.find(e => e.on)?.name || state.elements[0]?.name || '';
+    if (chart) renderAll();
+  }
+
+  function bindEvents(){
+    $('#modelBox').addEventListener('change', e => {
+      const k = e.target.dataset.model;
+      if (!k) return;
+      if (e.target.checked) state.models.add(k); else state.models.delete(k);
+      scheduleCompute();
+    });
+
+    const num = (id, key, min, max) => {
+      $(id).addEventListener('input', e => {
+        const v = parseFloat(e.target.value);
+        if (!isFinite(v)) return;
+        state[key] = Math.max(min, Math.min(max, v));
+        scheduleCompute();
+      });
+    };
+    num('#fMin', 'fMin', 0, 0.99);
+    num('#fMax', 'fMax', 0.01, 1);
+    num('#nPts', 'nPts', 20, 800);
+    num('#phi', 'phi', 0, 0.5);
+    num('#fInc', 'fInc', 0.001, 0.1);
+
+    $('#showResidue').addEventListener('change', e => { state.showResidue = e.target.checked; scheduleCompute(); });
+    $('#logY').addEventListener('change', e => { state.logY = e.target.checked; scheduleCompute(); });
+    $('#primaryEl').addEventListener('change', e => { state.primary = e.target.value; renderStats(); scheduleCompute(); });
+
+    $('#elTable').addEventListener('input', e => {
+      const tr = e.target.closest('tr'); if (!tr) return;
+      const i = +tr.dataset.i;
+      const f = e.target.dataset.f;
+      if (!f || !state.elements[i]) return;
+      if (f === 'name'){
+        const old = state.elements[i].name;
+        const nv = e.target.value.trim() || '元素';
+        if (nv !== old){
+          for (const m of state.minerals) if (old in m.kd){ m.kd[nv] = m.kd[old]; delete m.kd[old]; }
+        }
+        state.elements[i].name = nv;
+        renderMineralTable();
+        renderPrimaryOptions();
+        markCustom();
+      } else if (f === 'c0'){
+        state.elements[i].c0 = Math.max(0, parseFloat(e.target.value) || 0);
+        markCustom();
+      }
+      scheduleCompute();
+    });
+
+    $('#elTable').addEventListener('change', e => {
+      if (e.target.dataset.f !== 'on') return;
+      const i = +e.target.closest('tr').dataset.i;
+      if (state.elements[i]) state.elements[i].on = e.target.checked;
+      renderPrimaryOptions();
+      markCustom();
+      scheduleCompute();
+    });
+
+    $('#elTable').addEventListener('click', e => {
+      if (!e.target.classList.contains('del')) return;
+      const i = +e.target.closest('tr').dataset.i;
+      state.elements.splice(i, 1);
+      renderElementTable(); renderMineralTable(); renderPrimaryOptions();
+      markCustom(); scheduleCompute();
+    });
+
+    $('#addEl').addEventListener('click', () => {
+      const name = prompt('元素名（如 Zr、Ti、Hf）', 'Zr');
+      if (!name) return;
+      const nm = name.trim();
+      if (!nm) return;
+      if (state.elements.some(e => e.name === nm)){ alert('该元素已存在'); return; }
+      state.elements.push({ name: nm, c0: 1, on: true });
+      for (const m of state.minerals) m.kd[nm] = 0;
+      renderElementTable(); renderMineralTable(); renderPrimaryOptions();
+      markCustom(); scheduleCompute();
+    });
+
+    $('#minTable').addEventListener('input', e => {
+      const tr = e.target.closest('tr'); if (!tr) return;
+      const m = state.minerals[+tr.dataset.i]; if (!m) return;
+      const f = e.target.dataset.f;
+      if (f === 'name') m.name = e.target.value;
+      else if (f === 'x') m.x = Math.max(0, parseFloat(e.target.value) || 0);
+      else if (f === 'p') m.p = Math.max(0, parseFloat(e.target.value) || 0);
+      else if (f === 'kd') m.kd[e.target.dataset.el] = Math.max(0, parseFloat(e.target.value) || 0);
+      markCustom(); scheduleCompute();
+    });
+
+    $('#minTable').addEventListener('click', e => {
+      if (!e.target.classList.contains('del')) return;
+      const i = +e.target.closest('tr').dataset.i;
+      state.minerals.splice(i, 1);
+      renderMineralTable();
+      markCustom(); scheduleCompute();
+    });
+
+    $('#addMin').addEventListener('click', () => {
+      const name = prompt('矿物名（如 角闪石 Amph）', '角闪石 Amph');
+      if (!name) return;
+      const kd = {};
+      for (const e of state.elements) kd[e.name] = 0;
+      state.minerals.push({ name: name.trim() || '新矿物', x: 0, p: 0, kd });
+      renderMineralTable();
+      markCustom(); scheduleCompute();
+    });
+
+    ro = new ResizeObserver(() => {
+      if (chart && chart.cache) drawChart(chart, chart.cache.series, chart.cache.opt);
+    });
+    ro.observe($('#chartWrap'));
+  }
+
+  function mount(){
+    chart = makeChart('#chart', '#chartWrap', '#tooltip');
+    $('#fMin').value = state.fMin;
+    $('#fMax').value = state.fMax;
+    $('#nPts').value = state.nPts;
+    $('#phi').value = state.phi;
+    $('#fInc').value = state.fInc;
+    $('#showResidue').checked = state.showResidue;
+    $('#logY').checked = state.logY;
+    bindEvents();
+    renderAll();
+  }
+
+  function unmount(){
+    if (ro){ ro.disconnect(); ro = null; }
+    chart = null;
+  }
+
+  function testHTML(){
+    const r = selfTest();
+    return `
+      <p>条件：尖晶石二辉橄榄岩（Ol 0.60 / Opx 0.25 / Cpx 0.15；熔融比例 0.2 : 0.1 : 0.7；Kd(Sr) 0.01 / 0.05 / 0.20；C₀ = 10 ppm；F = 0.2；φ = 0.02）。</p>
+      <p>D₀ = <b>${fmt(r.D, 4)}</b>，P = <b>${fmt(r.P, 4)}</b></p>
+      <table>
+        <thead><tr><th>模型</th><th>计算值 (ppm)</th><th>参考值 (ppm)</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>M2 批式（非实比）</td><td>${fmt(r.batchNon, 2)}</td><td>${r.batchExp}</td><td class="${Math.abs(r.batchNon - r.batchExp) < 0.15 ? 'ok' : 'bad'}">${Math.abs(r.batchNon - r.batchExp) < 0.15 ? '通过' : '偏差'}</td></tr>
+          <tr><td>M3 分离（聚集）</td><td>${fmt(r.frac, 2)}</td><td>${r.fracExp}</td><td class="${Math.abs(r.frac - r.fracExp) < 0.15 ? 'ok' : 'bad'}">${Math.abs(r.frac - r.fracExp) < 0.15 ? '通过' : '偏差'}</td></tr>
+          <tr><td>M4 临界（φ=0.02）</td><td>${fmt(r.crit, 2)}</td><td>${r.critExp}</td><td class="${Math.abs(r.crit - r.critExp) < 0.15 ? 'ok' : 'bad'}">${Math.abs(r.crit - r.critExp) < 0.15 ? '通过' : '偏差'}</td></tr>
+          <tr><td>M1 批式（实比，参考）</td><td>${fmt(r.batchModal, 2)}</td><td>—</td><td class="ok">—</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px;color:#64748b;font-size:12px">说明：讲义 §2.4 的 45.64 ppm 用的是含 P 的非实比式；实比式（P = D₀）对应 41.88 ppm，两者都对，区别只在熔融模式。</p>
+      <p style="margin-top:6px;color:${r.ok ? '#15803d' : '#b45309'}">${r.ok ? '✓ 三个算例均与讲义一致，计算内核可用。' : '⚠ 存在偏差，请检查输入或公式。'}</p>`;
+  }
+
+  function csv(){
+    const raw = computeAll();
+    const head = ['model', 'element', 'F', 'Cl_over_C0', 'Cl_ppm', 'Cs_over_C0', 'Cs_ppm'];
+    const lines = [head.join(',')];
+    for (const s of raw){
+      const el = state.elements.find(e => e.name === s.el);
+      for (const p of s.points){
+        lines.push([
+          MODELS[s.model].label, s.el, p.f.toFixed(5),
+          isFinite(p.cl) ? p.cl.toPrecision(8) : '',
+          isFinite(p.cl) ? (p.cl * el.c0).toPrecision(8) : '',
+          isFinite(p.cs) ? p.cs.toPrecision(8) : '',
+          isFinite(p.cs) ? (p.cs * el.c0).toPrecision(8) : ''
+        ].join(','));
+      }
+    }
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `partial_melting_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  }
+
+  return {
+    key: 'melt', label: '部分熔融',
+    subtitle: '部分熔融 · M1–M6',
+    presets: PRESETS, state,
+    left: () => LEFT, right: () => RIGHT,
+    mount, unmount, loadPreset, test: testHTML, csv
+  };
+})();
+/* ================= module: crystallization ================= */
+const CrystModule = (() => {
+  function modeSum(minerals){
+    let sx = 0;
+    for (const m of minerals) sx += Math.max(0, +m.x || 0);
+    return sx;
+  }
+
+  function DOf(minerals, el){
+    const sx = modeSum(minerals);
+    if (sx <= 0) return 0;
+    let D = 0;
+    for (const m of minerals) D += Math.max(0, +m.x || 0) / sx * (+((m.kd || {})[el]) || 0);
+    return D;
+  }
+
+  function eqCl(f, D){
+    if (f <= 0) return 1 / Math.max(D, 1e-12);
+    return 1 / (D + f * (1 - D));
+  }
+
+  function fcCl(f, D){
+    if (f <= 0){
+      if (D > 1) return 0;
+      if (D < 1) return Infinity;
+      return 1;
+    }
+    return Math.pow(f, D - 1);
+  }
+
+  function inSituCl(f, D, ftr){
+    if (ftr >= 1) return fcCl(f, D);
+    if (ftr <= 0) return 1;
+    if (f <= 0) return fcCl(f, D);
+    const e = ftr * (D - 1) / (D * (1 - ftr) + ftr);
+    return Math.pow(f, e);
+  }
+
+  function twoStageCl(f, D, F1, k){
+    if (f <= 0) return fcCl(f, D);
+    if (f >= F1) return Math.pow(f, D - 1);
+    return Math.pow(F1, D - 1) * Math.pow(f / F1, k * D - 1);
+  }
+
+  function cumCl(f, cl, D){
+    if (f >= 1 - 1e-9) return D;
+    return (1 - f * cl) / (1 - f);
+  }
+
+  function solidCl(cl, D){ return D * cl; }
+  function mushCl(cl, D, ft){ return ft * cl + (1 - ft) * D * cl; }
+
+  function refcCl(N, D, x, cre){
+    const X = 1 - x * (1 - D);
+    if (X <= 0) return NaN;
+    if (N <= 0) return 1;
+    return cre / X - (cre / X - 1) * Math.exp(-N * X);
+  }
+
+  function selfTest(){
+    const D = 0.778562, C0 = 4700, F = 0.05;
+    const cl = fcCl(F, D);
+    const cum = cumCl(F, cl, D);
+    const eq = eqCl(0.5, 2);
+    const ins1 = inSituCl(0.5, 0.1, 1);
+    const fc01 = fcCl(0.5, 0.1);
+    const r0 = refcCl(0, D, 0.8, 1);
+    const X = 1 - 0.8 * (1 - D);
+    const rss = refcCl(1e4, D, 0.8, 1);
+    return {
+      fcPpm: cl * C0, fcExp: 9124.21,
+      cumPpm: cum * C0, cumExp: 4467.15,
+      eq, eqExp: 1 / 1.5, ins1, fc01, r0, rss, rssExp: 1 / X,
+      ok: Math.abs(cl * C0 - 9124.21) < 1.0 &&
+          Math.abs(cum * C0 - 4467.15) < 1.0 &&
+          Math.abs(eq - 1 / 1.5) < 1e-9 &&
+          Math.abs(ins1 - fc01) < 1e-12 &&
+          Math.abs(r0 - 1) < 1e-12 &&
+          Math.abs(rss - 1 / X) < 1e-3
+    };
+  }
+
+  const PRESETS = {
+    basalt: {
+      label: '玄武质岩浆（Ol + Cpx + Pl + Mt）',
+      elements: [
+        { name: 'Rb', c0: 20, on: false }, { name: 'Ba', c0: 200, on: false },
+        { name: 'Sr', c0: 400, on: true }, { name: 'La', c0: 12, on: true },
+        { name: 'Nd', c0: 25, on: false }, { name: 'Sm', c0: 5, on: false },
+        { name: 'Yb', c0: 2, on: true }
+      ],
+      minerals: [
+        { name: '橄榄石 Ol', x: 0.20, kd: { Rb: 0.0002, Ba: 0.0002, Sr: 0.01, La: 0.0005, Nd: 0.001, Sm: 0.0015, Yb: 0.02 } },
+        { name: '单斜辉石 Cpx', x: 0.40, kd: { Rb: 0.003, Ba: 0.001, Sr: 0.10, La: 0.05, Nd: 0.19, Sm: 0.29, Yb: 0.43 } },
+        { name: '斜长石 Pl', x: 0.30, kd: { Rb: 0.05, Ba: 0.20, Sr: 2.00, La: 0.10, Nd: 0.09, Sm: 0.07, Yb: 0.05 } },
+        { name: '磁铁矿 Mt', x: 0.10, kd: { Rb: 0.01, Ba: 0.01, Sr: 0.01, La: 0.10, Nd: 0.20, Sm: 0.30, Yb: 0.30 } }
+      ]
+    },
+    andesite: {
+      label: '安山质岩浆（Pl + Amph + Cpx + Opx + Mt）',
+      elements: [
+        { name: 'Rb', c0: 40, on: false }, { name: 'Ba', c0: 500, on: false },
+        { name: 'Sr', c0: 600, on: true }, { name: 'La', c0: 20, on: true },
+        { name: 'Nd', c0: 30, on: false }, { name: 'Sm', c0: 6, on: false },
+        { name: 'Yb', c0: 2.5, on: true }
+      ],
+      minerals: [
+        { name: '斜长石 Pl', x: 0.35, kd: { Rb: 0.07, Ba: 0.23, Sr: 1.80, La: 0.19, Nd: 0.09, Sm: 0.07, Yb: 0.05 } },
+        { name: '角闪石 Amph', x: 0.25, kd: { Rb: 0.30, Ba: 0.42, Sr: 0.46, La: 0.50, Nd: 0.33, Sm: 0.52, Yb: 1.20 } },
+        { name: '单斜辉石 Cpx', x: 0.20, kd: { Rb: 0.03, Ba: 0.03, Sr: 0.08, La: 0.05, Nd: 0.18, Sm: 0.38, Yb: 0.63 } },
+        { name: '斜方辉石 Opx', x: 0.10, kd: { Rb: 0.02, Ba: 0.01, Sr: 0.04, La: 0.03, Nd: 0.03, Sm: 0.28, Yb: 0.25 } },
+        { name: '磁铁矿 Mt', x: 0.10, kd: { Rb: 0.01, Ba: 0.01, Sr: 0.01, La: 0.10, Nd: 0.20, Sm: 0.30, Yb: 0.30 } }
+      ]
+    },
+    granite: {
+      label: '花岗质岩浆（Pl + Kfs + Qtz + Bt + Ms）',
+      elements: [
+        { name: 'Rb', c0: 200, on: false }, { name: 'Ba', c0: 300, on: false },
+        { name: 'Sr', c0: 100, on: true }, { name: 'La', c0: 30, on: true },
+        { name: 'Nd', c0: 35, on: false }, { name: 'Sm', c0: 7, on: false },
+        { name: 'Yb', c0: 3, on: true }
+      ],
+      minerals: [
+        { name: '斜长石 Pl', x: 0.25, kd: { Rb: 0.07, Ba: 0.23, Sr: 1.80, La: 0.19, Nd: 0.09, Sm: 0.07, Yb: 0.05 } },
+        { name: '钾长石 Kfs', x: 0.30, kd: { Rb: 0.30, Ba: 6.00, Sr: 3.00, La: 0.05, Nd: 0.03, Sm: 0.02, Yb: 0.01 } },
+        { name: '石英 Qtz', x: 0.30, kd: { Rb: 0, Ba: 0, Sr: 0, La: 0, Nd: 0, Sm: 0, Yb: 0 } },
+        { name: '黑云母 Bt', x: 0.10, kd: { Rb: 3.00, Ba: 6.00, Sr: 0.10, La: 0.10, Nd: 0.10, Sm: 0.10, Yb: 1.50 } },
+        { name: '白云母 Ms', x: 0.05, kd: { Rb: 1.50, Ba: 0.50, Sr: 0.05, La: 0.05, Nd: 0.05, Sm: 0.05, Yb: 0.10 } }
+      ]
+    }
+  };
+
+  const MODELS = {
+    eq:      { label: '平衡结晶',       short: '平衡',   color: '#2563eb' },
+    fc:      { label: '瑞利分离结晶',   short: '瑞利',   color: '#dc2626' },
+    insitu:  { label: '原位结晶',       short: '原位',   color: '#7c3aed' },
+    two:     { label: '两阶段分离',     short: '两阶段', color: '#0891b2' },
+    refc:    { label: 'REFC（开放体系）', short: 'REFC', color: '#ea580c' }
+  };
+  const F_MODELS = ['eq', 'fc', 'insitu', 'two'];
+  const DASHES = [[], [7, 4], [2, 3], [9, 3, 2, 3], [4, 3, 1, 3], [10, 4]];
+
+  const state = {
+    elements: deepClone(PRESETS.basalt.elements),
+    minerals: deepClone(PRESETS.basalt.minerals),
+    models: new Set(['eq', 'fc']),
+    fMin: 0.05, fMax: 0.95, nPts: 160,
+    ftrap: 0.25, ftMush: 0.20, F1: 0.5, k: 1.5,
+    quantity: 'melt', logY: false,
+    primary: 'Sr', preset: 'basalt',
+    xly: 0.8, cre: 1, nmax: 20
+  };
+
+  let charts = null, ro = null, rafPending = false;
+
+  const LEFT = `
+    <div class="block">
+      <h2>模型 <span class="tag">可多选叠加</span></h2>
+      <div class="models" id="modelBox"></div>
+      <p class="note">C1 平衡 · C2 瑞利 · C4 原位 · C7 两阶段；C10 REFC 在下方单独作图。C3 堆晶、C6 晶粥作为“输出量”。</p>
+      <div class="params">
+        <label class="field">F 最小<input type="number" id="fMin" min="0" max="1" step="0.01"></label>
+        <label class="field">F 最大<input type="number" id="fMax" min="0.01" max="1" step="0.01"></label>
+        <label class="field">曲线点数<input type="number" id="nPts" min="20" max="800" step="10"></label>
+        <label class="field">原位 f（C4）<input type="number" id="ftrap" min="0" max="1" step="0.01"></label>
+        <label class="field">晶粥 f_t（C6）<input type="number" id="ftMush" min="0" max="1" step="0.01"></label>
+        <label class="field">两阶段 F₁（C7）<input type="number" id="F1" min="0.01" max="0.99" step="0.01"></label>
+        <label class="field">阶段2 D 倍率 k<input type="number" id="kfac" min="0.1" max="5" step="0.1"></label>
+      </div>
+      <label class="field" style="margin-top:8px">输出量
+        <select id="quantity">
+          <option value="melt">熔体 C_L</option>
+          <option value="solid">瞬时晶体 C_S</option>
+          <option value="cum">堆晶平均 C_cum（C3）</option>
+          <option value="mush">晶粥（含捕获熔体，C6）</option>
+        </select>
+      </label>
+      <label class="inline-toggle"><input type="checkbox" id="logY"> 对数纵轴</label>
+    </div>
+
+    <div class="block">
+      <h2>元素与初始浓度 <span class="tag">C₀ ppm</span></h2>
+      <div class="tbl-scroll" style="max-height:240px">
+        <table id="elTable">
+          <thead><tr><th>元素</th><th>C₀</th><th>显示</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <button class="row-add" id="addEl">＋ 添加元素</button>
+    </div>
+
+    <div class="block">
+      <h2>结晶矿物组合 · Kd <span class="tag">Xᵢ 模态 / Kd 分配系数</span></h2>
+      <div class="tbl-scroll" style="max-height:330px">
+        <table id="minTable"><thead></thead><tbody></tbody></table>
+      </div>
+      <button class="row-add" id="addMin">＋ 添加矿物</button>
+      <p class="warnline" id="sumWarn"></p>
+      <div class="summary" id="stats"></div>
+    </div>
+
+    <details class="help">
+      <summary>方程与假定（C1–C4、C6–C7、C10）</summary>
+      <div class="body">
+        <p><b>C1 平衡结晶</b><br><code>C_L/C₀ = 1/(D + F(1−D))</code>，<code>C_S = D·C_L</code></p>
+        <p><b>C2 瑞利分离结晶</b><br><code>C_L/C₀ = F^(D−1)</code></p>
+        <p><b>C3 堆晶平均</b><br><code>C_cum/C₀ = (1 − F^D)/(1 − F)</code>，等价于质量平衡 <code>(1 − F·C_L/C₀)/(1 − F)</code></p>
+        <p><b>C4 原位结晶</b>（Langmuir, 1989）<br><code>C_L/C₀ = F^[f(D−1)/(D(1−f)+f)]</code>；f = 1 时退化为 C2</p>
+        <p><b>C6 晶粥（捕获熔体）</b><br><code>C_mush/C₀ = f_t·C_L/C₀ + (1−f_t)·D·C_L/C₀</code></p>
+        <p><b>C7 两阶段分离</b><br>F ≥ F₁：<code>F^(D−1)</code>；F &lt; F₁：<code>F₁^(D−1)·(F/F₁)^(kD−1)</code></p>
+        <p><b>C10 REFC（开放体系）</b><br><code>C/C₀ = C_re/X − (C_re/X − 1)·e^(−N·X)</code>，<code>X = 1 − x(1−D)</code></p>
+        <ul>
+          <li>F 为残余熔体分数：F = 1 表示未结晶，F → 0 表示高度结晶。</li>
+          <li>D 由矿物模态与 Kd 自动归一化计算；输出量“瞬时晶体”用 D·C_L，“晶粥”用 f_t 加权。</li>
+          <li>C7 的阶段 2 用 k·D 近似表示矿物组合变化；k = 1 时与 C2 完全一致。</li>
+          <li>C5（含水体系原位结晶）、C8（AIFC）、C9（流体/硫化物）未纳入本版。</li>
+          <li>参考：DePaolo (1981)；Langmuir (1989)；Rollinson《Using Geochemical Data》；Lee et al. (2014) REFC。</li>
+        </ul>
+      </div>
+    </details>`;
+
+  const RIGHT = `
+    <div class="chart-head">
+      <h2 id="mainTitle">C/C₀ – F 曲线</h2>
+    </div>
+    <div class="chart-wrap" id="chartWrap" style="height:400px">
+      <canvas id="chart"></canvas>
+      <div class="tooltip" id="tooltip" hidden></div>
+    </div>
+    <div class="legend" id="legend"></div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap">
+      <h2 style="font-size:13px;margin-right:auto">数值结果</h2>
+      <label class="preset">主元素 <select id="primaryEl" style="max-width:120px"></select></label>
+    </div>
+    <div class="tbl-out" id="outTable"></div>
+
+    <div class="refc hidden" id="refcPanel">
+      <div class="chart-head"><h2>C/C₀ – 翻转次数 N（REFC 开放体系）</h2></div>
+      <div class="params">
+        <label class="field">每次翻转结晶分数 x<input type="number" id="xly" min="0.01" max="1" step="0.01"></label>
+        <label class="field">补给浓度 / C₀<input type="number" id="cre" min="0" max="10" step="0.05"></label>
+        <label class="field">N 上限<input type="number" id="nmax" min="1" max="500" step="1"></label>
+      </div>
+      <div class="chart-wrap" id="refcWrap" style="height:300px">
+        <canvas id="chartRefc"></canvas>
+        <div class="tooltip" id="tooltipRefc" hidden></div>
+      </div>
+      <div class="legend" id="legendRefc"></div>
+    </div>
+
+    <details class="help">
+      <summary>读图提示</summary>
+      <div class="body">
+        <ul>
+          <li>横轴 F 是残余熔体分数：左端结晶程度高，右端 F=1 为未结晶。</li>
+          <li>同一颜色代表同一模型，虚线样式区分元素。</li>
+          <li>把“输出量”切到“瞬时晶体”“堆晶平均”“晶粥”可看不同产物。</li>
+          <li>数值表中括号内为 ppm（C₀ × 比值）。</li>
+          <li>REFC 的横轴是翻转次数 N，而不是 F。</li>
+        </ul>
+      </div>
+    </details>`;
+
+  function gridF(){
+    const fMin = Math.max(0, Math.min(0.999, state.fMin));
+    const fMax = Math.max(fMin + 1e-4, Math.min(1, state.fMax));
+    const n = Math.max(20, Math.min(800, Math.round(state.nPts)));
+    const pts = [];
+    for (let i = 0; i <= n; i++) pts.push(fMin + (fMax - fMin) * i / n);
+    return pts;
+  }
+
+  function effectiveD(key, f, D){
+    if (key === 'two' && f < state.F1) return state.k * D;
+    return D;
+  }
+
+  function computeMain(){
+    const grid = gridF();
+    const els = state.elements.filter(e => e.on && e.name.trim());
+    const out = [];
+    els.forEach((el, ei) => {
+      const D = DOf(state.minerals, el.name);
+      F_MODELS.forEach(key => {
+        if (!state.models.has(key)) return;
+        const pts = grid.map(f => {
+          let cl;
+          if (key === 'eq') cl = eqCl(f, D);
+          else if (key === 'fc') cl = fcCl(f, D);
+          else if (key === 'insitu') cl = inSituCl(f, D, state.ftrap);
+          else cl = twoStageCl(f, D, state.F1, state.k);
+
+          const De = effectiveD(key, f, D);
+          let y;
+          if (state.quantity === 'melt') y = cl;
+          else if (state.quantity === 'solid') y = solidCl(cl, De);
+          else if (state.quantity === 'cum') y = cumCl(f, cl, D);
+          else y = mushCl(cl, De, state.ftMush);
+          return { x: f, y, cl };
+        });
+        out.push({
+          key, el: el.name, c0: el.c0,
+          color: MODELS[key].color,
+          dash: DASHES[ei % DASHES.length],
+          label: `${el.name} · ${MODELS[key].short}`,
+          points: pts
+        });
+      });
+    });
+    return out;
+  }
+
+  function computeRefc(){
+    const els = state.elements.filter(e => e.on && e.name.trim());
+    const n = 240;
+    const Ns = [];
+    for (let i = 0; i <= n; i++) Ns.push(state.nmax * i / n);
+    return els.map((el, ei) => {
+      const D = DOf(state.minerals, el.name);
+      return {
+        key: 'refc', el: el.name, c0: el.c0,
+        color: MODELS.refc.color,
+        dash: DASHES[ei % DASHES.length],
+        label: `${el.name} · REFC`,
+        points: Ns.map(N => ({ x: N, y: refcCl(N, D, state.xly, state.cre) }))
+      };
+    });
+  }
+
+  function renderElementTable(){
+    $('#elTable tbody').innerHTML = state.elements.map((e, i) => `
+      <tr data-i="${i}">
+        <td class="name"><input type="text" data-f="name" value="${esc(e.name)}" spellcheck="false"></td>
+        <td><input class="num" type="number" data-f="c0" value="${e.c0}" step="any" min="0"></td>
+        <td style="text-align:center"><input type="checkbox" data-f="on" ${e.on ? 'checked' : ''}></td>
+        <td><button class="del" data-del title="删除">×</button></td>
+      </tr>`).join('');
+  }
+
+  function renderMineralTable(){
+    const els = state.elements;
+    $('#minTable thead').innerHTML = `<tr>
+      <th>矿物</th><th>Xᵢ</th>
+      ${els.map(e => `<th class="kd">${esc(e.name)}</th>`).join('')}
+      <th></th></tr>`;
+    $('#minTable tbody').innerHTML = state.minerals.map((m, i) => `
+      <tr data-i="${i}">
+        <td class="name"><input type="text" data-f="name" value="${esc(m.name)}" spellcheck="false"></td>
+        <td><input class="num" type="number" data-f="x" value="${m.x}" step="0.01" min="0" max="1"></td>
+        ${els.map(e => `<td class="kd"><input type="number" data-f="kd" data-el="${esc(e.name)}" value="${m.kd[e.name] ?? 0}" step="any" min="0"></td>`).join('')}
+        <td><button class="del" data-del title="删除">×</button></td>
+      </tr>`).join('');
+  }
+
+  function renderModelBox(){
+    $('#modelBox').innerHTML = Object.entries(MODELS).map(([k, v]) => `
+      <label class="model ${k === 'refc' ? 'wide' : ''}">
+        <input type="checkbox" data-model="${k}" ${state.models.has(k) ? 'checked' : ''}>
+        <span class="dot" style="background:${v.color}"></span>${v.label}
+      </label>`).join('');
+  }
+
+  function renderPrimaryOptions(){
+    const sel = $('#primaryEl');
+    const on = state.elements.filter(e => e.on);
+    if (!on.length){ sel.innerHTML = '<option>—</option>'; return; }
+    if (!on.some(e => e.name === state.primary)) state.primary = on[0].name;
+    sel.innerHTML = on.map(e => `<option value="${esc(e.name)}" ${e.name === state.primary ? 'selected' : ''}>${esc(e.name)}</option>`).join('');
+  }
+
+  function renderStats(){
+    const el = state.elements.find(e => e.name === state.primary) || state.elements.find(e => e.on);
+    const box = $('#stats');
+    if (!el){ box.innerHTML = ''; return; }
+    const D = DOf(state.minerals, el.name);
+    box.innerHTML = `
+      <div class="stat"><span>D（${esc(el.name)}）</span><b>${fmt(D, 4)}</b></div>
+      <div class="stat"><span>D₂（两阶段）</span><b>${fmt(state.k * D, 4)}</b></div>
+      <div class="stat"><span>ΣXᵢ</span><b>${fmt(modeSum(state.minerals), 3)}</b></div>`;
+    const sx = modeSum(state.minerals);
+    const w = $('#sumWarn');
+    if (Math.abs(sx - 1) > 0.005){ w.className = 'warnline bad'; w.textContent = `⚠ ΣXᵢ = ${fmt(sx, 3)}（已自动归一化）`; }
+    else { w.className = 'warnline ok'; w.textContent = '✓ ΣXᵢ = 1'; }
+  }
+
+  function quantityLabel(){
+    return { melt: 'C_L/C₀', solid: 'C_S/C₀', cum: 'C_cum/C₀', mush: 'C_mush/C₀' }[state.quantity];
+  }
+
+  function renderTable(series){
+    const box = $('#outTable');
+    const el = state.elements.find(e => e.name === state.primary && e.on) || state.elements.find(e => e.on);
+    if (!el){ box.innerHTML = '<div class="empty">请先选择要显示的元素。</div>'; return; }
+    const models = F_MODELS.filter(k => state.models.has(k));
+    if (!models.length){ box.innerHTML = '<div class="empty">请至少启用一个 F 轴模型。</div>'; return; }
+
+    const fmax = Math.max(0.01, Math.min(1, state.fMax));
+    const rows = [0.95, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05].filter(f => f <= fmax + 1e-9);
+    const head = `<tr><th>F</th>${models.map(k => `<th>${MODELS[k].short}<br><small style="font-weight:400;color:#94a3b8">${quantityLabel()} (ppm)</small></th>`).join('')}</tr>`;
+    const body = rows.map(f => {
+      const tds = models.map(k => {
+        const s = series.find(x => x.key === k && x.el === el.name);
+        if (!s) return '<td>—</td>';
+        const v = valueAt(s.points, f);
+        if (!isFinite(v)) return '<td>—</td>';
+        return `<td>${fmt(v, 3)}<small>${fmt(v * el.c0, 3)}</small></td>`;
+      }).join('');
+      return `<tr><td>${fmt(f, 2)}</td>${tds}</tr>`;
+    }).join('');
+    box.innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  }
+
+  function scheduleCompute(){
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+      rafPending = false;
+      if (!charts) return;
+      const main = computeMain();
+      drawChart(charts.main, main, {
+        xMin: Math.max(0, state.fMin), xMax: Math.max(state.fMin + 1e-4, state.fMax),
+        xLabel: 'F（残余熔体分数）', xTag: 'F',
+        yLabel: quantityLabel(), logY: state.logY, yDigits: 3
+      });
+      renderLegend($('#legend'), main);
+      renderTable(main);
+      renderPrimaryOptions();
+      renderStats();
+
+      const showRefc = state.models.has('refc');
+      $('#refcPanel').classList.toggle('hidden', !showRefc);
+      if (showRefc){
+        const refc = computeRefc();
+        drawChart(charts.refc, refc, {
+          xMin: 0, xMax: state.nmax,
+          xLabel: 'N（翻转次数）', xTag: 'N',
+          yLabel: 'C/C₀', logY: state.logY, yDigits: 3
+        });
+        renderLegend($('#legendRefc'), refc);
+      }
+      $('#mainTitle').textContent = `C/C₀ – F 曲线（${quantityLabel()}）`;
+    });
+  }
+
+  function renderAll(){
+    renderModelBox();
+    renderElementTable();
+    renderMineralTable();
+    renderPrimaryOptions();
+    renderStats();
+    scheduleCompute();
+  }
+
+  function loadPreset(key){
+    const p = PRESETS[key];
+    if (!p) return;
+    const d = deepClone(p);
+    state.elements = d.elements;
+    state.minerals = d.minerals;
+    state.preset = key;
+    state.primary = state.elements.find(e => e.on)?.name || state.elements[0]?.name || '';
+    if (charts) renderAll();
+  }
+
+  function bindEvents(){
+    $('#modelBox').addEventListener('change', e => {
+      const k = e.target.dataset.model;
+      if (!k) return;
+      if (e.target.checked) state.models.add(k); else state.models.delete(k);
+      scheduleCompute();
+    });
+
+    const num = (id, key, min, max) => {
+      $(id).addEventListener('input', e => {
+        const v = parseFloat(e.target.value);
+        if (!isFinite(v)) return;
+        state[key] = Math.max(min, Math.min(max, v));
+        scheduleCompute();
+      });
+    };
+    num('#fMin', 'fMin', 0, 0.999);
+    num('#fMax', 'fMax', 0.001, 1);
+    num('#nPts', 'nPts', 20, 800);
+    num('#ftrap', 'ftrap', 0, 1);
+    num('#ftMush', 'ftMush', 0, 1);
+    num('#F1', 'F1', 0.01, 0.99);
+    num('#kfac', 'k', 0.1, 5);
+    num('#xly', 'xly', 0.01, 1);
+    num('#cre', 'cre', 0, 10);
+    num('#nmax', 'nmax', 1, 500);
+
+    $('#quantity').addEventListener('change', e => { state.quantity = e.target.value; scheduleCompute(); });
+    $('#logY').addEventListener('change', e => { state.logY = e.target.checked; scheduleCompute(); });
+    $('#primaryEl').addEventListener('change', e => { state.primary = e.target.value; renderStats(); scheduleCompute(); });
+
+    $('#elTable').addEventListener('input', e => {
+      const tr = e.target.closest('tr'); if (!tr) return;
+      const i = +tr.dataset.i;
+      const f = e.target.dataset.f;
+      if (!f || !state.elements[i]) return;
+      if (f === 'name'){
+        const old = state.elements[i].name;
+        const nv = e.target.value.trim() || '元素';
+        if (nv !== old) for (const m of state.minerals) if (old in m.kd){ m.kd[nv] = m.kd[old]; delete m.kd[old]; }
+        state.elements[i].name = nv;
+        renderMineralTable();
+        renderPrimaryOptions();
+      } else if (f === 'c0'){
+        state.elements[i].c0 = Math.max(0, parseFloat(e.target.value) || 0);
+      }
+      scheduleCompute();
+    });
+
+    $('#elTable').addEventListener('change', e => {
+      if (e.target.dataset.f !== 'on') return;
+      const i = +e.target.closest('tr').dataset.i;
+      if (state.elements[i]) state.elements[i].on = e.target.checked;
+      renderPrimaryOptions();
+      scheduleCompute();
+    });
+
+    $('#elTable').addEventListener('click', e => {
+      if (!e.target.classList.contains('del')) return;
+      const i = +e.target.closest('tr').dataset.i;
+      state.elements.splice(i, 1);
+      renderElementTable(); renderMineralTable(); renderPrimaryOptions();
+      scheduleCompute();
+    });
+
+    $('#addEl').addEventListener('click', () => {
+      const name = prompt('元素名（如 Zr、Ti、Hf）', 'Zr');
+      if (!name) return;
+      const nm = name.trim();
+      if (!nm) return;
+      if (state.elements.some(e => e.name === nm)){ alert('该元素已存在'); return; }
+      state.elements.push({ name: nm, c0: 1, on: true });
+      for (const m of state.minerals) m.kd[nm] = 0;
+      renderElementTable(); renderMineralTable(); renderPrimaryOptions();
+      scheduleCompute();
+    });
+
+    $('#minTable').addEventListener('input', e => {
+      const tr = e.target.closest('tr'); if (!tr) return;
+      const m = state.minerals[+tr.dataset.i]; if (!m) return;
+      const f = e.target.dataset.f;
+      if (f === 'name') m.name = e.target.value;
+      else if (f === 'x') m.x = Math.max(0, parseFloat(e.target.value) || 0);
+      else if (f === 'kd') m.kd[e.target.dataset.el] = Math.max(0, parseFloat(e.target.value) || 0);
+      scheduleCompute();
+    });
+
+    $('#minTable').addEventListener('click', e => {
+      if (!e.target.classList.contains('del')) return;
+      const i = +e.target.closest('tr').dataset.i;
+      state.minerals.splice(i, 1);
+      renderMineralTable();
+      scheduleCompute();
+    });
+
+    $('#addMin').addEventListener('click', () => {
+      const name = prompt('矿物名（如 石榴石 Gt）', '石榴石 Gt');
+      if (!name) return;
+      const kd = {};
+      for (const e of state.elements) kd[e.name] = 0;
+      state.minerals.push({ name: name.trim() || '新矿物', x: 0, kd });
+      renderMineralTable();
+      scheduleCompute();
+    });
+
+    let rt = null;
+    ro = new ResizeObserver(() => {
+      clearTimeout(rt);
+      rt = setTimeout(() => {
+        if (charts){
+          if (charts.main.cache) drawChart(charts.main, charts.main.cache.series, charts.main.cache.opt);
+          if (charts.refc.cache) drawChart(charts.refc, charts.refc.cache.series, charts.refc.cache.opt);
+        }
+      }, 80);
+    });
+    ro.observe($('#chartWrap'));
+    ro.observe($('#refcWrap'));
+  }
+
+  function mount(){
+    charts = {
+      main: makeChart('#chart', '#chartWrap', '#tooltip'),
+      refc: makeChart('#chartRefc', '#refcWrap', '#tooltipRefc')
+    };
+    $('#fMin').value = state.fMin;
+    $('#fMax').value = state.fMax;
+    $('#nPts').value = state.nPts;
+    $('#ftrap').value = state.ftrap;
+    $('#ftMush').value = state.ftMush;
+    $('#F1').value = state.F1;
+    $('#kfac').value = state.k;
+    $('#quantity').value = state.quantity;
+    $('#logY').checked = state.logY;
+    $('#xly').value = state.xly;
+    $('#cre').value = state.cre;
+    $('#nmax').value = state.nmax;
+    bindEvents();
+    renderAll();
+  }
+
+  function unmount(){
+    if (ro){ ro.disconnect(); ro = null; }
+    charts = null;
+  }
+
+  function testHTML(){
+    const r = selfTest();
+    return `
+      <p>1）Deering (2011) 安山岩 Ba 算例：D = 0.778562，C₀ = 4700 ppm，F = 0.05。</p>
+      <table>
+        <thead><tr><th>核对项</th><th>计算值</th><th>参考值</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>瑞利分离 C_L</td><td>${fmt(r.fcPpm, 2)} ppm</td><td>${r.fcExp} ppm</td><td class="${Math.abs(r.fcPpm - r.fcExp) < 1 ? 'ok' : 'bad'}">${Math.abs(r.fcPpm - r.fcExp) < 1 ? '通过' : '偏差'}</td></tr>
+          <tr><td>堆晶平均 C_cum</td><td>${fmt(r.cumPpm, 2)} ppm</td><td>${r.cumExp} ppm</td><td class="${Math.abs(r.cumPpm - r.cumExp) < 1 ? 'ok' : 'bad'}">${Math.abs(r.cumPpm - r.cumExp) < 1 ? '通过' : '偏差'}</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px">2）解析恒等式核对。</p>
+      <table>
+        <thead><tr><th>核对项</th><th>计算值</th><th>期望值</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>C1 平衡结晶（D=2, F=0.5）</td><td>${fmt(r.eq, 4)}</td><td>${fmt(r.eqExp, 4)}</td><td class="${Math.abs(r.eq - r.eqExp) < 1e-9 ? 'ok' : 'bad'}">${Math.abs(r.eq - r.eqExp) < 1e-9 ? '通过' : '偏差'}</td></tr>
+          <tr><td>C4 原位 f=1 退化为 C2</td><td>${fmt(r.ins1, 6)}</td><td>${fmt(r.fc01, 6)}</td><td class="${Math.abs(r.ins1 - r.fc01) < 1e-12 ? 'ok' : 'bad'}">${Math.abs(r.ins1 - r.fc01) < 1e-12 ? '通过' : '偏差'}</td></tr>
+          <tr><td>REFC N=0</td><td>${fmt(r.r0, 6)}</td><td>1</td><td class="${Math.abs(r.r0 - 1) < 1e-12 ? 'ok' : 'bad'}">${Math.abs(r.r0 - 1) < 1e-12 ? '通过' : '偏差'}</td></tr>
+          <tr><td>REFC 稳态（N→大）</td><td>${fmt(r.rss, 4)}</td><td>${fmt(r.rssExp, 4)}</td><td class="${Math.abs(r.rss - r.rssExp) < 1e-3 ? 'ok' : 'bad'}">${Math.abs(r.rss - r.rssExp) < 1e-3 ? '通过' : '偏差'}</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px;color:${r.ok ? '#15803d' : '#b45309'}">${r.ok ? '✓ 全部核对通过，计算内核可用。' : '⚠ 存在偏差，请检查输入或公式。'}</p>`;
+  }
+
+  function csv(){
+    const main = computeMain();
+    const head = ['system', 'model', 'element', 'x', 'C_over_C0', 'ppm'];
+    const lines = [head.join(',')];
+    for (const s of main){
+      for (const p of s.points){
+        if (!isFinite(p.y)) continue;
+        lines.push(['F', MODELS[s.key].label, s.el, p.x.toFixed(5), p.y.toPrecision(8), (p.y * s.c0).toPrecision(8)].join(','));
+      }
+    }
+    if (state.models.has('refc')){
+      for (const s of computeRefc()){
+        for (const p of s.points){
+          if (!isFinite(p.y)) continue;
+          lines.push(['REFC', MODELS.refc.label, s.el, p.x.toFixed(5), p.y.toPrecision(8), (p.y * s.c0).toPrecision(8)].join(','));
+        }
+      }
+    }
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `crystallization_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  }
+
+  return {
+    key: 'cryst', label: '结晶',
+    subtitle: '结晶 · C1–C4 / C6–C7 / C10',
+    presets: PRESETS, state,
+    left: () => LEFT, right: () => RIGHT,
+    mount, unmount, loadPreset, test: testHTML, csv
+  };
+})();
+/* ================= module: AFC / open system ================= */
+const AfcModule = (() => {
+  const RCLAMP = 0.99;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  function afcCl(F, D, r, C0, Ca){
+    F = clamp(F, 1e-6, 1);
+    if (F >= 1) return C0;
+    r = clamp(r, 0, RCLAMP);
+    const e = r + D - 1;
+    if (Math.abs(e) < 1e-9) return C0 + r * Ca * Math.log(F) / (r - 1);
+    const z = e / (r - 1);
+    const Fz = Math.pow(F, -z);
+    return C0 * Fz + (r / e) * Ca * (1 - Fz);
+  }
+
+  function afcIso(F, D, r, C0, Ca, R0, Ra){
+    F = clamp(F, 1e-6, 1);
+    if (F >= 1) return R0;
+    r = clamp(r, 0, RCLAMP);
+    const Cm = afcCl(F, D, r, C0, Ca);
+    if (!isFinite(Cm) || Cm === 0) return NaN;
+    const e = r + D - 1;
+    const Fz = Math.abs(e) < 1e-9 ? 1 : Math.pow(F, -e / (r - 1));
+    return R0 + (Ra - R0) * (1 - (C0 / Cm) * Fz);
+  }
+
+  function rfcSeries(el, p){
+    const F = clamp(p.F, 0.01, 0.999);
+    const I = Math.max(0, p.I);
+    const E = Math.max(0, p.E);
+    const r = clamp(p.r, 0, RCLAMP);
+    const A = r * (1 - F);
+    const N = Math.max(1, Math.min(500, Math.round(p.N)));
+    const cre = el.cre / el.c0;
+    const ca = el.ca / el.c0;
+
+    let C = 1, M = 1;
+    const out = [{ x: 0, y: 1, m: 1 }];
+    for (let n = 1; n <= N; n++){
+      const C1 = C * Math.pow(F, el.d - 1);
+      const Mr = F + I;
+      if (Mr <= 0) break;
+      const C2 = (F * C1 + I * cre) / Mr;
+      const Ma = Mr + A;
+      const C3 = Ma > 0 ? (Mr * C2 + A * ca) / Ma : C2;
+      const Mnew = Ma - E;
+      if (Mnew <= 1e-9) break;
+      C = C3; M = Mnew;
+      out.push({ x: n, y: C, m: M });
+    }
+    return out;
+  }
+
+  function rfcSteady(el, p){
+    if (p.r > 0 || p.I <= 0) return null;
+    const F = clamp(p.F, 0.01, 0.999);
+    const den = F + p.I - Math.pow(F, el.d);
+    if (den <= 0) return null;
+    return p.I * (el.cre / el.c0) / den;
+  }
+
+  function selfTest(){
+    const D = 0.5, F = 0.3, C0 = 100, Ca = 200;
+    const a0 = afcCl(F, D, 0, C0, Ca) / C0;
+    const fc = Math.pow(F, D - 1);
+    const a1 = afcCl(1, D, 0.6, C0, Ca);
+    const tpl = afcCl(0.5, 0.03045, 0.8, 60, 5);
+    const el = { c0: 100, ca: 0, cre: 100, d: 0.04 };
+    const series = rfcSeries(el, { F: 0.9, I: 0.15, E: 0.05, r: 0, N: 400 });
+    const rfcEnd = series[series.length - 1].y * 100;
+    const rfcExp = rfcSteady(el, { F: 0.9, I: 0.15, r: 0 }) * 100;
+    const isoF1 = afcIso(1, 1.8, 0.6, 350, 500, 0.7035, 0.7105);
+    const isoR0 = afcIso(0.3, 1.8, 0, 350, 500, 0.7035, 0.7105);
+    return {
+      a0, fc, a1, tpl, tplExp: 126.84773982136883,
+      rfcEnd, rfcExp, isoF1, isoR0,
+      ok: Math.abs(a0 - fc) < 1e-10 &&
+          Math.abs(a1 - C0) < 1e-9 &&
+          Math.abs(tpl - 126.84773982136883) < 0.01 &&
+          Math.abs(rfcEnd - rfcExp) < 0.05 &&
+          Math.abs(isoF1 - 0.7035) < 1e-12 &&
+          Math.abs(isoR0 - 0.7035) < 1e-12
+    };
+  }
+
+  const PRESETS = {
+    crust: {
+      label: '玄武质岩浆 + 下地壳同化（示例）',
+      elements: [
+        { name: 'Rb', c0: 10, ca: 40, cre: 12, d: 0.05, r0: 0.7040, ra: 0.7120, on: true },
+        { name: 'Sr', c0: 350, ca: 500, cre: 380, d: 1.80, r0: 0.7035, ra: 0.7105, on: true },
+        { name: 'Nd', c0: 15, ca: 25, cre: 16, d: 0.25, r0: 0.5129, ra: 0.5122, on: false }
+      ]
+    },
+    upper: {
+      label: '安山质岩浆 + 上地壳同化（示例）',
+      elements: [
+        { name: 'Rb', c0: 45, ca: 120, cre: 50, d: 0.10, r0: 0.7055, ra: 0.7250, on: true },
+        { name: 'Sr', c0: 500, ca: 250, cre: 480, d: 2.20, r0: 0.7048, ra: 0.7150, on: true },
+        { name: 'Nd', c0: 22, ca: 30, cre: 23, d: 0.35, r0: 0.5127, ra: 0.5120, on: false }
+      ]
+    }
+  };
+
+  const R_COLORS = ['#2563eb', '#dc2626', '#7c3aed', '#0891b2', '#ea580c', '#16a34a', '#be123c', '#4d7c0f'];
+  const DASHES = [[], [7, 4], [2, 3], [9, 3, 2, 3], [4, 3, 1, 3], [10, 4]];
+
+  const state = {
+    tab: 'afc',
+    elements: deepClone(PRESETS.crust.elements),
+    rList: [0, 0.3, 0.6],
+    fMin: 0.05, fMax: 1, nPts: 120,
+    showIso: true, logY: true,
+    rf: { F: 0.9, I: 0.15, E: 0.05, r: 0, N: 30 },
+    primary: 'Sr', preset: 'crust'
+  };
+
+  let charts = null, ro = null, rafPending = false;
+
+  const LEFT = `
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="afc">连续 AFC</button>
+      <button class="tab" data-tab="rfc">循环 RFC / RAFC</button>
+    </div>
+
+    <div class="block" id="afcParams">
+      <h2>连续 AFC 参数 <span class="tag">DePaolo 1981</span></h2>
+      <div class="params">
+        <label class="field" style="grid-column:1/-1">r 列表（同化/结晶速率比，逗号分隔）
+          <input type="text" id="rList" value="0, 0.3, 0.6">
+        </label>
+        <label class="field">F 最小<input type="number" id="fMin" min="0.001" max="1" step="0.01"></label>
+        <label class="field">F 最大<input type="number" id="fMax" min="0.01" max="1" step="0.01"></label>
+        <label class="field">曲线点数<input type="number" id="nPts" min="20" max="800" step="10"></label>
+      </div>
+      <label class="inline-toggle"><input type="checkbox" id="showIso" checked> 显示同位素图（主元素）</label>
+      <label class="inline-toggle"><input type="checkbox" id="logY" checked> 对数纵轴（浓度图）</label>
+      <p class="note">r = Ma/Mc；r = 0 为纯分离结晶。方程在 r = 1 处奇异，本程序限制 0 ≤ r ≤ 0.99。</p>
+    </div>
+
+    <div class="block hidden" id="rfcParams">
+      <h2>循环 RFC / RAFC 参数 <span class="tag">FRE / 补给循环</span></h2>
+      <div class="params">
+        <label class="field">每周期 F（残余熔体）<input type="number" id="rfF" min="0.05" max="0.99" step="0.01"></label>
+        <label class="field">补给 I（占当前质量）<input type="number" id="rfI" min="0" max="1" step="0.01"></label>
+        <label class="field">喷发 E（占当前质量）<input type="number" id="rfE" min="0" max="1" step="0.01"></label>
+        <label class="field">同化 r（= Ma/Mc）<input type="number" id="rfR" min="0" max="0.99" step="0.01"></label>
+        <label class="field">循环次数 N<input type="number" id="rfN" min="1" max="500" step="1"></label>
+      </div>
+      <p class="warnline" id="rfMass"></p>
+      <p class="note">每周期顺序：分离结晶 → 补给 → 同化（A = r·(1−F)）→ 喷发。I/E/A 均为当前质量的分数。</p>
+    </div>
+
+    <div class="block">
+      <h2>元素 · 浓度 · 分配系数 · 同位素 <span class="tag">ppm / D / 比值</span></h2>
+      <div class="tbl-scroll" style="max-height:280px">
+        <table id="elTable"><thead></thead><tbody></tbody></table>
+      </div>
+      <button class="row-add" id="addEl">＋ 添加元素</button>
+      <p class="note">C_a = 同化物浓度；C_re = 补给岩浆浓度；R₀ / R_a 只用于主元素的同位素图。</p>
+      <div class="summary" id="stats"></div>
+    </div>
+
+    <details class="help">
+      <summary>方程与假定（A1–A3、A6）</summary>
+      <div class="body">
+        <p><b>A1 连续 AFC</b>（DePaolo 1981）<br>
+        <code>C_m/C₀ = F^(−z) + [r/(r−1+D)]·(C_a/C₀)·(1−F^(−z))</code>，<code>z = (r + D − 1)/(r − 1)</code></p>
+        <p><b>A2 AFC 同位素</b><br><code>R_m = R₀ + (R_a − R₀)·[1 − (C₀/C_m)·F^(−z)]</code></p>
+        <p><b>A3 RFC / FRE 循环</b><br>
+        结晶 <code>C₁ = C·F^(D−1)</code>；补给 <code>C₂ = (F·C₁ + I·C_re)/(F + I)</code>；同化 <code>C₃ = ((F+I)·C₂ + A·C_a)/(F+I+A)</code>，<code>A = r(1−F)</code>；喷发不改变浓度。</p>
+        <p><b>A6 补给变体</b><br>R2 型：<code>C_re = C₀</code>；S2 型：<code>C_re ≠ C₀</code>。</p>
+        <ul>
+          <li>F 为残余熔体分数；同位素图中 r = 0 时 R 不随 F 变化。</li>
+          <li>每周期质量倍数 = <code>F + I + A − E</code>；等于 1 时恒质量。</li>
+          <li>A4（EC-AFC）、A5（EC-RAFC）、A7（EME-AFC）需要温度–潜热–相平衡输入，A8 为数值解，均未纳入本版。</li>
+          <li>参考：DePaolo (1981)；Spera & Bohrson (2001)；Bohrson & Spera (2007)；Pearce《Trace Element Modelling Short Course》§5.3–5.5。</li>
+        </ul>
+      </div>
+    </details>`;
+
+  const RIGHT = `
+    <div id="afcPanel">
+      <div class="chart-head"><h2>C/C₀ – F（连续 AFC）</h2></div>
+      <div class="chart-wrap" id="afcWrap" style="height:380px">
+        <canvas id="chartAfc"></canvas>
+        <div class="tooltip" id="tipAfc" hidden></div>
+      </div>
+      <div class="legend" id="legendAfc"></div>
+
+      <div id="isoBlock" style="margin-top:20px">
+        <div class="chart-head"><h2>同位素比值 R – F（主元素）</h2></div>
+        <div class="chart-wrap" id="isoWrap" style="height:300px">
+          <canvas id="chartIso"></canvas>
+          <div class="tooltip" id="tipIso" hidden></div>
+        </div>
+        <div class="legend" id="legendIso"></div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap">
+        <h2 style="font-size:13px;margin-right:auto">数值结果（主元素）</h2>
+        <label class="preset">主元素 <select id="primaryEl" style="max-width:120px"></select></label>
+      </div>
+      <div class="tbl-out" id="afcTable"></div>
+      <div class="tbl-out" id="isoTable" style="margin-top:10px"></div>
+    </div>
+
+    <div id="rfcPanel" class="hidden">
+      <div class="chart-head"><h2>C/C₀ – 循环次数 N（RFC / RAFC）</h2></div>
+      <div class="chart-wrap" id="rfcWrap" style="height:380px">
+        <canvas id="chartRfc"></canvas>
+        <div class="tooltip" id="tipRfc" hidden></div>
+      </div>
+      <div class="legend" id="legendRfc"></div>
+      <p class="note" id="rfcMeta"></p>
+      <div class="tbl-out" id="rfcTable"></div>
+    </div>
+
+    <details class="help">
+      <summary>读图提示</summary>
+      <div class="body">
+        <ul>
+          <li>连续 AFC 图：颜色代表 r，虚线样式代表元素；同位素图只看主元素。</li>
+          <li>r 越大（同化越强），不相容元素越富集、同位素越靠近同化物。</li>
+          <li>循环图：曲线趋于稳态；C_re 与 C₀ 相同为 R2 型，不同为 S2 型。</li>
+          <li>把“对数纵轴”关掉可以看线性尺度；同位素图始终线性。</li>
+        </ul>
+      </div>
+    </details>`;
+
+  function parseRList(txt){
+    const arr = String(txt).split(/[,，\s]+/).map(parseFloat).filter(v => isFinite(v));
+    const clean = [];
+    for (const v of arr){
+      const c = +clamp(v, 0, RCLAMP).toFixed(3);
+      if (!clean.includes(c)) clean.push(c);
+    }
+    return clean.length ? clean.slice(0, 8) : [0];
+  }
+
+  function gridF(){
+    const fMin = clamp(state.fMin, 0, 0.999);
+    const fMax = clamp(state.fMax, fMin + 1e-4, 1);
+    const n = Math.max(20, Math.min(800, Math.round(state.nPts)));
+    const pts = [];
+    for (let i = 0; i <= n; i++) pts.push(fMin + (fMax - fMin) * i / n);
+    return pts;
+  }
+
+  function computeAfc(){
+    const grid = gridF();
+    const els = state.elements.filter(e => e.on && e.name.trim());
+    const out = [];
+    state.rList.forEach((r, ri) => {
+      els.forEach((el, ei) => {
+        const pts = grid.map(F => ({ x: F, y: afcCl(F, el.d, r, el.c0, el.ca) / el.c0 }));
+        out.push({
+          key: `afc|${r}|${el.name}`, r, el: el.name, c0: el.c0,
+          color: R_COLORS[ri % R_COLORS.length],
+          dash: DASHES[ei % DASHES.length],
+          label: `${el.name} · r=${fmt(r, 2)}`,
+          points: pts
+        });
+      });
+    });
+    return out;
+  }
+
+  function computeIso(){
+    const el = state.elements.find(e => e.name === state.primary && e.on) || state.elements.find(e => e.on);
+    if (!el) return [];
+    const grid = gridF();
+    return state.rList.map((r, ri) => ({
+      key: `iso|${r}`, r, el: el.name,
+      color: R_COLORS[ri % R_COLORS.length],
+      dash: [],
+      label: `${el.name} · r=${fmt(r, 2)}`,
+      points: grid.map(F => ({ x: F, y: afcIso(F, el.d, r, el.c0, el.ca, el.r0, el.ra) }))
+    }));
+  }
+
+  function computeRfc(){
+    const els = state.elements.filter(e => e.on && e.name.trim());
+    return els.map((el, ei) => ({
+      key: `rfc|${el.name}`, el: el.name, c0: el.c0,
+      color: R_COLORS[ei % R_COLORS.length],
+      dash: [],
+      label: `${el.name}`,
+      points: rfcSeries(el, state.rf)
+    }));
+  }
+
+  function renderElementTable(){
+    $('#elTable thead').innerHTML = `<tr>
+      <th>元素</th><th>C₀</th><th>C_a</th><th>C_re</th><th>D</th><th>R₀</th><th>R_a</th><th>显</th><th></th></tr>`;
+    $('#elTable tbody').innerHTML = state.elements.map((e, i) => `
+      <tr data-i="${i}">
+        <td class="name"><input type="text" data-f="name" value="${esc(e.name)}" spellcheck="false"></td>
+        <td><input class="num" type="number" data-f="c0" value="${e.c0}" step="any" min="0"></td>
+        <td><input class="num" type="number" data-f="ca" value="${e.ca}" step="any" min="0"></td>
+        <td><input class="num" type="number" data-f="cre" value="${e.cre}" step="any" min="0"></td>
+        <td><input class="num" type="number" data-f="d" value="${e.d}" step="any" min="0"></td>
+        <td class="iso"><input type="number" data-f="r0" value="${e.r0}" step="any"></td>
+        <td class="iso"><input type="number" data-f="ra" value="${e.ra}" step="any"></td>
+        <td style="text-align:center"><input type="checkbox" data-f="on" ${e.on ? 'checked' : ''}></td>
+        <td><button class="del" data-del title="删除">×</button></td>
+      </tr>`).join('');
+  }
+
+  function renderPrimaryOptions(){
+    const sel = $('#primaryEl');
+    const on = state.elements.filter(e => e.on);
+    if (!on.length){ sel.innerHTML = '<option>—</option>'; return; }
+    if (!on.some(e => e.name === state.primary)) state.primary = on[0].name;
+    sel.innerHTML = on.map(e => `<option value="${esc(e.name)}" ${e.name === state.primary ? 'selected' : ''}>${esc(e.name)}</option>`).join('');
+  }
+
+  function renderStats(){
+    const el = state.elements.find(e => e.name === state.primary) || state.elements.find(e => e.on);
+    const box = $('#stats');
+    if (!el){ box.innerHTML = ''; return; }
+    box.innerHTML = `
+      <div class="stat"><span>D（${esc(el.name)}）</span><b>${fmt(el.d, 4)}</b></div>
+      <div class="stat"><span>C₀ / C_a</span><b>${fmt(el.c0, 3)} / ${fmt(el.ca, 3)}</b></div>
+      <div class="stat"><span>R₀ / R_a</span><b>${fmt(el.r0, 5)} / ${fmt(el.ra, 5)}</b></div>`;
+  }
+
+  function renderAfcTable(series){
+    const box = $('#afcTable');
+    const el = state.elements.find(e => e.name === state.primary && e.on) || state.elements.find(e => e.on);
+    if (!el){ box.innerHTML = '<div class="empty">请先选择元素。</div>'; return; }
+    const fmax = Math.max(0.01, Math.min(1, state.fMax));
+    const rows = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05].filter(f => f <= fmax + 1e-9);
+    const head = `<tr><th>F</th>${state.rList.map(r => `<th>r=${fmt(r, 2)}<br><small style="font-weight:400;color:#94a3b8">C/C₀ (ppm)</small></th>`).join('')}</tr>`;
+    const body = rows.map(f => {
+      const tds = state.rList.map(r => {
+        const s = series.find(x => x.r === r && x.el === el.name);
+        if (!s) return '<td>—</td>';
+        const y = valueAt(s.points, f);
+        return isFinite(y) ? `<td>${fmt(y, 3)}<small>${fmt(y * el.c0, 3)}</small></td>` : '<td>—</td>';
+      }).join('');
+      return `<tr><td>${fmt(f, 2)}</td>${tds}</tr>`;
+    }).join('');
+    box.innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  }
+
+  function renderIsoTable(series){
+    const box = $('#isoTable');
+    if (!state.showIso){ box.innerHTML = ''; return; }
+    const el = state.elements.find(e => e.name === state.primary && e.on) || state.elements.find(e => e.on);
+    if (!el || !series.length){ box.innerHTML = ''; return; }
+    const fmax = Math.max(0.01, Math.min(1, state.fMax));
+    const rows = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05].filter(f => f <= fmax + 1e-9);
+    const head = `<tr><th>F</th>${state.rList.map(r => `<th>R · r=${fmt(r, 2)}</th>`).join('')}</tr>`;
+    const body = rows.map(f => {
+      const tds = state.rList.map(r => {
+        const s = series.find(x => x.r === r);
+        if (!s) return '<td>—</td>';
+        const y = valueAt(s.points, f);
+        return isFinite(y) ? `<td>${y.toFixed(5)}</td>` : '<td>—</td>';
+      }).join('');
+      return `<tr><td>${fmt(f, 2)}</td>${tds}</tr>`;
+    }).join('');
+    box.innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  }
+
+  function renderRfcTable(series){
+    const box = $('#rfcTable');
+    const els = state.elements.filter(e => e.on && e.name.trim());
+    if (!els.length || !series.length){ box.innerHTML = '<div class="empty">请至少选择一个元素。</div>'; return; }
+    const maxN = Math.max(...series.map(s => s.points[s.points.length - 1].x));
+    const rows = [0, 1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 80, 100].filter(n => n <= maxN);
+    const head = `<tr><th>N</th>${els.map(el => `<th>${esc(el.name)}<br><small style="font-weight:400;color:#94a3b8">C/C₀ (ppm)</small></th>`).join('')}</tr>`;
+    const body = rows.map(n => {
+      const tds = els.map(el => {
+        const s = series.find(x => x.el === el.name);
+        if (!s) return '<td>—</td>';
+        const y = valueAt(s.points, n);
+        return isFinite(y) ? `<td>${fmt(y, 3)}<small>${fmt(y * el.c0, 3)}</small></td>` : '<td>—</td>';
+      }).join('');
+      return `<tr><td>${n}</td>${tds}</tr>`;
+    }).join('');
+    box.innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  }
+
+  function scheduleCompute(){
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+      rafPending = false;
+      if (!charts) return;
+      renderPrimaryOptions();
+      renderStats();
+
+      if (state.tab === 'afc'){
+        const afc = computeAfc();
+        drawChart(charts.afc, afc, {
+          xMin: state.fMin, xMax: state.fMax,
+          xLabel: 'F（残余熔体分数）', xTag: 'F', yLabel: 'C/C₀',
+          logY: state.logY, yDigits: 3
+        });
+        renderLegend($('#legendAfc'), afc);
+        renderAfcTable(afc);
+
+        const iso = computeIso();
+        $('#isoBlock').classList.toggle('hidden', !state.showIso);
+        if (state.showIso && iso.length){
+          drawChart(charts.iso, iso, {
+            xMin: state.fMin, xMax: state.fMax,
+            xLabel: 'F（残余熔体分数）', xTag: 'F', yLabel: 'R（同位素比值）',
+            logY: false, yDigits: 5
+          });
+          renderLegend($('#legendIso'), iso);
+        }
+        renderIsoTable(iso);
+      } else {
+        const rfc = computeRfc();
+        drawChart(charts.rfc, rfc, {
+          xMin: 0, xMax: Math.max(1, state.rf.N),
+          xLabel: 'N（循环次数）', xTag: 'N', yLabel: 'C/C₀',
+          logY: state.logY, yDigits: 3
+        });
+        renderLegend($('#legendRfc'), rfc);
+        renderRfcTable(rfc);
+
+        const F = state.rf.F, I = state.rf.I, E = state.rf.E, r = state.rf.r;
+        const A = r * (1 - F);
+        const factor = F + I + A - E;
+        const massNote = Math.abs(factor - 1) < 1e-9
+          ? `每周期质量倍数 = 1.000（恒质量）`
+          : `每周期质量倍数 = ${fmt(factor, 3)}（${factor > 1 ? '岩浆房增大' : '岩浆房缩小'}；恒质量需 I + A − E = 1 − F）`;
+        const mw = $('#rfMass');
+        if (mw){
+          mw.className = 'warnline ' + (Math.abs(factor - 1) < 1e-9 ? 'ok' : 'bad');
+          mw.textContent = (Math.abs(factor - 1) < 1e-9 ? '✓ ' : '⚠ ') + massNote;
+        }
+        const el0 = state.elements.find(e => e.name === state.primary) || state.elements.find(e => e.on);
+        let ss = '';
+        if (el0){
+          const s = rfcSteady(el0, state.rf);
+          if (s !== null) ss = `；${el0.name} 稳态 C/C₀ ≈ ${fmt(s, 3)}（${fmt(s * el0.c0, 2)} ppm）`;
+        }
+        $('#rfcMeta').textContent = massNote + ss;
+      }
+    });
+  }
+
+  function applyTab(){
+    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === state.tab));
+    $('#afcParams').classList.toggle('hidden', state.tab !== 'afc');
+    $('#rfcParams').classList.toggle('hidden', state.tab !== 'rfc');
+    $('#afcPanel').classList.toggle('hidden', state.tab !== 'afc');
+    $('#rfcPanel').classList.toggle('hidden', state.tab !== 'rfc');
+  }
+
+  function setTab(t){
+    state.tab = t;
+    applyTab();
+    requestAnimationFrame(scheduleCompute);
+  }
+
+  function renderAll(){
+    renderElementTable();
+    renderPrimaryOptions();
+    renderStats();
+    scheduleCompute();
+  }
+
+  function loadPreset(key){
+    const p = PRESETS[key];
+    if (!p) return;
+    state.elements = deepClone(p.elements);
+    state.preset = key;
+    state.primary = state.elements.find(e => e.on)?.name || '';
+    if (charts) renderAll();
+  }
+
+  function bindEvents(){
+    $('#tabs').addEventListener('click', e => {
+      const b = e.target.closest('.tab');
+      if (b) setTab(b.dataset.tab);
+    });
+
+    $('#rList').addEventListener('input', e => {
+      state.rList = parseRList(e.target.value);
+      scheduleCompute();
+    });
+
+    const num = (id, fn, min, max) => {
+      $(id).addEventListener('input', e => {
+        const v = parseFloat(e.target.value);
+        if (!isFinite(v)) return;
+        fn(clamp(v, min, max));
+        scheduleCompute();
+      });
+    };
+    num('#fMin', v => state.fMin = v, 0, 0.999);
+    num('#fMax', v => state.fMax = v, 0.001, 1);
+    num('#nPts', v => state.nPts = Math.round(v), 20, 800);
+    num('#rfF', v => state.rf.F = v, 0.05, 0.99);
+    num('#rfI', v => state.rf.I = v, 0, 1);
+    num('#rfE', v => state.rf.E = v, 0, 1);
+    num('#rfR', v => state.rf.r = v, 0, RCLAMP);
+    num('#rfN', v => state.rf.N = Math.round(v), 1, 500);
+
+    $('#showIso').addEventListener('change', e => { state.showIso = e.target.checked; scheduleCompute(); });
+    $('#logY').addEventListener('change', e => { state.logY = e.target.checked; scheduleCompute(); });
+    $('#primaryEl').addEventListener('change', e => { state.primary = e.target.value; renderStats(); scheduleCompute(); });
+
+    $('#elTable').addEventListener('input', e => {
+      const tr = e.target.closest('tr'); if (!tr) return;
+      const el = state.elements[+tr.dataset.i];
+      if (!el) return;
+      const f = e.target.dataset.f;
+      if (f === 'name'){ el.name = e.target.value.trim() || '元素'; renderPrimaryOptions(); }
+      else if (f === 'c0') el.c0 = Math.max(0, parseFloat(e.target.value) || 0);
+      else if (f === 'ca') el.ca = Math.max(0, parseFloat(e.target.value) || 0);
+      else if (f === 'cre') el.cre = Math.max(0, parseFloat(e.target.value) || 0);
+      else if (f === 'd') el.d = Math.max(0, parseFloat(e.target.value) || 0);
+      else if (f === 'r0') el.r0 = parseFloat(e.target.value) || 0;
+      else if (f === 'ra') el.ra = parseFloat(e.target.value) || 0;
+      scheduleCompute();
+    });
+
+    $('#elTable').addEventListener('change', e => {
+      if (e.target.dataset.f !== 'on') return;
+      const el = state.elements[+e.target.closest('tr').dataset.i];
+      if (el) el.on = e.target.checked;
+      renderPrimaryOptions(); scheduleCompute();
+    });
+
+    $('#elTable').addEventListener('click', e => {
+      if (!e.target.classList.contains('del')) return;
+      state.elements.splice(+e.target.closest('tr').dataset.i, 1);
+      renderElementTable(); renderPrimaryOptions(); scheduleCompute();
+    });
+
+    $('#addEl').addEventListener('click', () => {
+      const name = prompt('元素名（如 Zr、Ti、Hf）', 'Zr');
+      if (!name) return;
+      const nm = name.trim();
+      if (!nm) return;
+      if (state.elements.some(e => e.name === nm)){ alert('该元素已存在'); return; }
+      state.elements.push({ name: nm, c0: 1, ca: 1, cre: 1, d: 0.1, r0: 0, ra: 0, on: true });
+      renderElementTable(); renderPrimaryOptions(); scheduleCompute();
+    });
+
+    let rt = null;
+    ro = new ResizeObserver(() => {
+      clearTimeout(rt);
+      rt = setTimeout(() => {
+        if (!charts) return;
+        [charts.afc, charts.iso, charts.rfc].forEach(ch => {
+          if (ch.cache && ch.wrap.clientWidth > 0) drawChart(ch, ch.cache.series, ch.cache.opt);
+        });
+      }, 80);
+    });
+    ['#afcWrap', '#isoWrap', '#rfcWrap'].forEach(s => ro.observe($(s)));
+  }
+
+  function mount(){
+    charts = {
+      afc: makeChart('#chartAfc', '#afcWrap', '#tipAfc'),
+      iso: makeChart('#chartIso', '#isoWrap', '#tipIso'),
+      rfc: makeChart('#chartRfc', '#rfcWrap', '#tipRfc')
+    };
+    $('#rList').value = state.rList.join(', ');
+    $('#fMin').value = state.fMin;
+    $('#fMax').value = state.fMax;
+    $('#nPts').value = state.nPts;
+    $('#showIso').checked = state.showIso;
+    $('#logY').checked = state.logY;
+    $('#rfF').value = state.rf.F;
+    $('#rfI').value = state.rf.I;
+    $('#rfE').value = state.rf.E;
+    $('#rfR').value = state.rf.r;
+    $('#rfN').value = state.rf.N;
+    bindEvents();
+    applyTab();
+    renderAll();
+  }
+
+  function unmount(){
+    if (ro){ ro.disconnect(); ro = null; }
+    charts = null;
+  }
+
+  function testHTML(){
+    const r = selfTest();
+    return `
+      <p>1）连续 AFC（A1）与独立参考值。</p>
+      <table>
+        <thead><tr><th>核对项</th><th>计算值</th><th>期望值</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>r=0 退化为瑞利 FC</td><td>${fmt(r.a0, 8)}</td><td>${fmt(r.fc, 8)}</td><td class="${Math.abs(r.a0 - r.fc) < 1e-10 ? 'ok' : 'bad'}">${Math.abs(r.a0 - r.fc) < 1e-10 ? '通过' : '偏差'}</td></tr>
+          <tr><td>F=1 时 C=C₀</td><td>${fmt(r.a1, 4)}</td><td>100</td><td class="${Math.abs(r.a1 - 100) < 1e-9 ? 'ok' : 'bad'}">${Math.abs(r.a1 - 100) < 1e-9 ? '通过' : '偏差'}</td></tr>
+          <tr><td>文件夹模板 Rb（D=0.03045, r=0.8, F=0.5）</td><td>${fmt(r.tpl, 3)} ppm</td><td>${fmt(r.tplExp, 3)} ppm</td><td class="${Math.abs(r.tpl - r.tplExp) < 0.01 ? 'ok' : 'bad'}">${Math.abs(r.tpl - r.tplExp) < 0.01 ? '通过' : '偏差'}</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px">2）RFC 稳态（Pearce 例题）与同位素恒等式。</p>
+      <table>
+        <thead><tr><th>核对项</th><th>计算值</th><th>期望值</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>第 400 周期的浓度</td><td>${fmt(r.rfcEnd, 3)} ppm</td><td>${fmt(r.rfcExp, 3)} ppm</td><td class="${Math.abs(r.rfcEnd - r.rfcExp) < 0.05 ? 'ok' : 'bad'}">${Math.abs(r.rfcEnd - r.rfcExp) < 0.05 ? '通过' : '偏差'}</td></tr>
+          <tr><td>同位素 F=1 时回到 R₀</td><td>${fmt(r.isoF1, 6)}</td><td>0.7035</td><td class="${Math.abs(r.isoF1 - 0.7035) < 1e-12 ? 'ok' : 'bad'}">${Math.abs(r.isoF1 - 0.7035) < 1e-12 ? '通过' : '偏差'}</td></tr>
+          <tr><td>r=0 时 R 不随 F 变化</td><td>${fmt(r.isoR0, 6)}</td><td>0.7035</td><td class="${Math.abs(r.isoR0 - 0.7035) < 1e-12 ? 'ok' : 'bad'}">${Math.abs(r.isoR0 - 0.7035) < 1e-12 ? '通过' : '偏差'}</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px;color:${r.ok ? '#15803d' : '#b45309'}">${r.ok ? '✓ 全部核对通过，计算内核可用。' : '⚠ 存在偏差，请检查输入或公式。'}</p>`;
+  }
+
+  function csv(){
+    const lines = [['mode', 'r', 'element', 'x', 'C_over_C0', 'ppm', 'R', 'mass_factor'].join(',')];
+    if (state.tab === 'afc'){
+      for (const s of computeAfc()){
+        const el = state.elements.find(e => e.name === s.el);
+        for (const p of s.points){
+          if (!isFinite(p.y)) continue;
+          lines.push(['AFC', s.r, s.el, p.x.toFixed(5), p.y.toPrecision(8), (p.y * el.c0).toPrecision(8), '', ''].join(','));
+        }
+      }
+      for (const s of computeIso()){
+        for (const p of s.points){
+          if (!isFinite(p.y)) continue;
+          lines.push(['AFC_iso', s.r, s.el, p.x.toFixed(5), '', '', p.y.toPrecision(8), ''].join(','));
+        }
+      }
+    } else {
+      const F = state.rf.F, I = state.rf.I, E = state.rf.E, r = state.rf.r;
+      const factor = F + I + r * (1 - F) - E;
+      for (const s of computeRfc()){
+        const el = state.elements.find(e => e.name === s.el);
+        for (const p of s.points){
+          lines.push(['RFC', r, s.el, p.x, p.y.toPrecision(8), (p.y * el.c0).toPrecision(8), '', factor.toFixed(6)].join(','));
+        }
+      }
+    }
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `afc_open_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  }
+
+  return {
+    key: 'afc', label: 'AFC / 开放体系',
+    subtitle: 'AFC / 开放体系 · A1–A3 / A6',
+    presets: PRESETS, state,
+    left: () => LEFT, right: () => RIGHT,
+    mount, unmount, loadPreset, test: testHTML, csv
+  };
+})();
+
+/* ================= shell ================= */
+const MODULES = { melt: MeltModule, cryst: CrystModule, afc: AfcModule };
+let current = null;
+
+function mountModule(name){
+  const m = MODULES[name];
+  if (!m) return;
+  if (current && current.unmount) current.unmount();
+  current = m;
+  document.body.dataset.mod = name;
+  document.querySelectorAll('.mod-btn').forEach(b => b.classList.toggle('active', b.dataset.mod === name));
+  $('#left').innerHTML = m.left();
+  $('#right').innerHTML = m.right();
+  $('#subtitle').textContent = m.subtitle || '';
+
+  const sel = $('#preset');
+  sel.innerHTML = Object.entries(m.presets).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join('');
+  if (m.state && m.presets[m.state.preset]) sel.value = m.state.preset;
+
+  m.mount();
+}
+
+$('#moduleNav').addEventListener('click', e => {
+  const b = e.target.closest('.mod-btn');
+  if (b && b.dataset.mod !== (current && current.key)) mountModule(b.dataset.mod);
+});
+
+$('#preset').addEventListener('change', e => {
+  if (!current || e.target.value === '__custom') return;
+  current.loadPreset(e.target.value);
+});
+
+$('#btnTest').addEventListener('click', () => {
+  if (!current) return;
+  $('#testTitle').textContent = (current.label || '') + ' · 方程校验';
+  $('#testBody').innerHTML = current.test();
+  $('#testDialog').showModal();
+});
+
+$('#btnCSV').addEventListener('click', () => {
+  if (current) current.csv();
+});
+
+$('#dlgClose').addEventListener('click', () => $('#testDialog').close());
+$('#testDialog').addEventListener('click', e => { if (e.target.id === 'testDialog') $('#testDialog').close(); });
+
+mountModule('melt');
+</script>
+</body>
+</html>
