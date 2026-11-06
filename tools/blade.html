@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLADE · 边界层分异模拟器</title>
+<style>
+  :root{
+    --li:#d62728; --rb:#2ca02c; --cs:#9467bd; --h2o:#1f77b4;
+    --kfs:#d95f02; --ms:#7570b3; --bt:#1b9e77;
+    --ink:#1d2329; --muted:#6b7785; --line:#e3e7ec; --bg:#f4f6f9;
+    --card:#ffffff; --accent:#0b5fff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55}
+  header{background:linear-gradient(135deg,#10243e,#1d3f66);color:#fff;padding:16px 26px 14px}
+  header h1{margin:0;font-size:19px;font-weight:600;letter-spacing:.3px}
+  header p{margin:4px 0 0;font-size:12.5px;color:#b9c8da}
+  .wrap{display:grid;grid-template-columns:430px 1fr;gap:16px;padding:16px 22px 40px;max-width:1620px;margin:0 auto}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 15px;
+    box-shadow:0 1px 2px rgba(16,36,62,.04)}
+  .card h2{margin:0 0 10px;font-size:13px;font-weight:600;color:#33414f;letter-spacing:.4px;text-transform:uppercase}
+  aside{display:flex;flex-direction:column;gap:14px}
+  main{display:flex;flex-direction:column;gap:14px;min-width:0}
+  label.row{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:#41505f;margin-top:10px}
+  label.row b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;margin:6px 0 2px;accent-color:var(--accent)}
+  .hint{font-size:11.5px;color:var(--muted);margin:2px 0 0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:14px;padding:4px 10px;font-size:12px;cursor:pointer;user-select:none}
+  .chip:hover{border-color:#c3ccd6}
+  .chip.on{background:#eaf1ff;border-color:#b9cdff;color:#123f9e;font-weight:600}
+  .chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:1px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+  th:first-child,td:first-child{text-align:left}
+  thead th{color:var(--muted);font-weight:600;font-size:11px;border-bottom:1px solid #cfd6de}
+  input.num{width:100%;border:1px solid var(--line);border-radius:5px;padding:3px 3px;font-size:11px;
+    text-align:right;font-variant-numeric:tabular-nums;background:#fbfcfd}
+  input.num:focus{outline:2px solid #cfe0ff;border-color:#9dbcf7;background:#fff}
+  #paramTable{table-layout:fixed}
+  #paramTable th,#paramTable td{padding:5px 2px;font-size:10.5px}
+  #paramTable th:first-child,#paramTable td:first-child{width:34px}
+  .badge{display:inline-block;font-size:10px;padding:1px 5px;border-radius:9px;line-height:1.5}
+  .b-measured{background:#e6f4ea;color:#1d6b34}
+  .b-inferred{background:#fff4e0;color:#8a5a00}
+  .b-assumed{background:#fdeaea;color:#9b2222}
+  .doc{margin-top:10px;font-size:12px;color:#33414f}
+  .doc h4{margin:14px 0 6px;font-size:12px;color:#1d2329;letter-spacing:.3px}
+  .doc table{font-size:11.5px}
+  .doc th,.doc td{text-align:left;padding:4px 6px;vertical-align:top}
+  .doc .eq td:first-child{color:var(--muted);white-space:nowrap;width:80px}
+  .doc code{background:#f2f4f7;padding:1px 5px;border-radius:4px;font-size:11.5px;white-space:nowrap}
+  .refs{margin:6px 0 0;padding-left:20px;font-size:11.5px;line-height:1.75;color:#41505f}
+  .refs li{margin-bottom:3px}
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .triple{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+  .panel{min-width:0;grid-column:span 2}
+  .panel.wide{grid-column:span 3}
+  .verdict{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  .vcard{border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:11.8px;background:#fbfcfd}
+  .vt{font-weight:600;margin-right:5px}
+  .v-ok{color:#1d6b34}.v-mid{color:#8a5a00}.v-bad{color:#9b2222}
+  .phead{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:0 0 2px}
+  .axedit{position:absolute;z-index:30;background:#fff;border:1px solid #c9d3de;border-radius:8px;
+    box-shadow:0 8px 22px rgba(16,36,62,.18);padding:9px 11px;font-size:11.5px;display:none;min-width:210px}
+  .axedit.open{display:block}
+  .axedit .row{display:flex;gap:6px;align-items:center;margin-top:6px}
+  .axedit input{width:78px;border:1px solid #dfe4ea;border-radius:4px;padding:3px 5px;font-size:11px}
+  .axedit button{border:1px solid var(--line);background:#fff;border-radius:5px;padding:2px 9px;font-size:11px;cursor:pointer}
+  .phead span{font-size:13px;color:#41505f;font-weight:600}
+  select{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:2px 4px;background:#fff;color:#1d2329}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:12.5px;color:#3c4a59}
+  .legend i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:3px;margin-right:5px}
+  .note{font-size:11.6px;color:var(--muted);margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}
+  .sub{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .axrow{display:flex;gap:6px;align-items:center;margin-top:4px}
+  #axTable th,#axTable td{padding:4px 2px;font-size:11px}
+  #axTable th:first-child,#axTable td:first-child{width:46px;white-space:nowrap}
+  #axTable .rr{display:flex;gap:2px}
+  #axTable input.ax{width:42px;padding:2px 1px;font-size:10.5px}
+  #axTable td{padding:3px 1px}
+  #axTable select{font-size:11px;padding:1px 2px}
+  .bars{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;align-items:end;height:140px;margin-top:20px}
+  .barcol{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+  .barwrap{display:flex;gap:3px;align-items:flex-end;height:100%;position:relative}
+  .glabel{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:10px;
+    white-space:nowrap;color:#3c4a59;font-variant-numeric:tabular-nums}
+  #enrichBars{position:relative}
+  #enrichBars::before{content:"";position:absolute;left:0;right:0;top:50%;
+    border-top:1px dashed #b9c3cd;pointer-events:none}
+  #enrichBars .barwrap{position:relative;z-index:1}
+  .bar{width:13px;border-radius:3px 3px 0 0;position:relative}
+  .barlabel{font-size:11.5px;color:#41505f;margin-top:6px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  button.act{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 11px;font-size:12.5px;cursor:pointer}
+  button.act:hover{border-color:#9dbcf7;color:#123f9e}
+  details{margin-top:6px}
+  summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
+  @media(max-width:1200px){.triple{grid-template-columns:1fr}.panel,.panel.wide{grid-column:span 1}}
+  @media(max-width:980px){.wrap{grid-template-columns:1fr}.sub{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>BLADE <span style="font-weight:400;opacity:.85">— Boundary-Layer Analysis of Differentiation &amp; Enrichment</span></h1>
+  <p>Li / Rb / Cs / H₂O 在矿物边界层中的富集、黏度与抽取判据 · Tiller (1953) 稳态解 + Giordano et al. (2008) 黏度 · 框架据 Liu et al. (2024) · v0.4 · 纯本地运行</p>
+</header>
+
+<div class="wrap">
+  <!-- ================= 左侧控制 ================= -->
+  <aside>
+    <div class="card">
+      <h2>条件</h2>
+      <label class="row"><span>岩浆温度 T</span><b id="vT">700 °C</b></label>
+      <input type="range" id="sT" min="500" max="800" step="5" value="700">
+
+      <label class="row"><span>晶体生长速率 v</span><b id="vv">1.0e-8 m/s</b></label>
+      <input type="range" id="sv" min="0" max="100" step="1" value="50">
+      <p class="hint" id="vhint">≈ 0.86 mm/day</p>
+
+      <label class="row"><span>残余熔体分数 f</span><b id="vf">0.25</b></label>
+      <input type="range" id="sf" min="0.15" max="0.95" step="0.01" value="0.25">
+      <p class="hint">f = 0.25 表示已结晶 75%（论文取值）</p>
+
+      <label class="row"><span>钾长石 Or 含量</span><b id="vOr">90 mol%</b></label>
+      <input type="range" id="sOr" min="40" max="100" step="1" value="90">
+      <p class="hint">仅影响 Rb 在钾长石中的 Kd = 0.03 + 0.01·Or</p>
+    </div>
+
+    <div class="card">
+      <h2>矿物界面</h2>
+      <div class="chips" id="mineChips"></div>
+      <div class="chips" style="margin-top:10px">
+        <div class="chip on" id="cmpFast">v×10</div>
+        <div class="chip on" id="cmpSlow">v÷10</div>
+        <div class="chip on" id="dChip">D(Li) ×0.5</div>
+      </div>
+      <p class="hint">石英、斜长石、钾长石为无水矿物；白云母、黑云母为含水矿物。默认只显示钾长石与白云母。<br>
+        D(Li) ×0.5 对应论文 Excel 剖面隐含的 1.39×10⁻¹¹ m²/s（Arrhenius 值为 2.77×10⁻¹¹）。</p>
+    </div>
+
+    <div class="card">
+      <h2>参数（可编辑）</h2>
+      <table id="paramTable">
+        <thead>
+          <tr><th>元素</th><th>C初</th><th>K体</th><th>石英</th><th>长石</th><th>白云母</th><th>黑云母</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="hint">C初：Li/Rb/Cs 为 ppm，H₂O 为 wt%。后四列为 Kd（矿物/熔体）。C₀ 按 Rayleigh 公式随 f 重算。</p>
+    </div>
+
+    <div class="card">
+      <h2>预设</h2>
+      <div class="chips">
+        <div class="chip" data-preset="paper">论文默认</div>
+        <div class="chip" data-preset="fast">快速结晶 1e-7</div>
+        <div class="chip" data-preset="slow">慢速 1e-9</div>
+        <div class="chip" data-preset="cold">低温 500 °C</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= 右侧图 ================= -->
+  <main>
+    <div class="card">
+      <h2>边界层剖面（距晶体–熔体界面）</h2>
+      <div class="triple">
+        <div class="panel">
+          <div class="phead">
+            <span>① 元素含量</span>
+            <select id="selElem">
+              <option value="Li" selected>Li</option>
+              <option value="Rb">Rb</option>
+              <option value="Cs">Cs</option>
+            </select>
+          </div>
+          <svg id="chartA" viewBox="0 0 400 334" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="panel">
+          <div class="phead"><span>② H₂O 含量</span></div>
+          <svg id="chartB" viewBox="0 0 400 334" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="panel">
+          <div class="phead"><span>③ 熔体黏度 η</span></div>
+          <svg id="chartC" viewBox="0 0 400 334" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="panel wide">
+          <div class="phead"><span>④ 迁移所需压力梯度 dP/dz</span></div>
+          <svg id="chartD" viewBox="0 0 400 334" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="panel wide">
+          <div class="phead"><span>⑤ 所需差应力 Δσ</span></div>
+          <svg id="chartE" viewBox="0 0 400 334" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
+      <div class="verdict" id="verdict"></div>
+      <div class="legend" id="legend"></div>
+      <p class="note">
+        曲线对应所选矿物界面，默认显示钾长石与白云母，可在左侧另开石英、斜长石与黑云母。
+        ①② 为线性纵轴，③④⑤ 为对数纵轴。黏度由 Giordano et al. (2008) 模型逐点计算：用该点的 H₂O 与 Li 含量重算熔体组成，Li 按 Na₂O 当量计入。
+        ④⑤ 按论文 Eq. 4 与 Rubin (1995) 计算：以 6 cm/yr 的流动速率，求驱动厚度 l 的熔体层所需的最小压力梯度与差应力；曲线的最低点即最易迁移的层厚。
+        ④ 中两条实线是可用压力梯度的参考：静岩–静水 172 bar/km（静岩压力梯度 270 减去静水压力梯度 98，理想上限）与静岩–岩浆 54 bar/km（仅熔体自身浮力，270 − 216，现实下限）。
+        Cs 的扩散系数为外推值，其不确定区间以浅色带显示。
+      </p>
+    </div>
+
+    <div class="sub">
+      <div class="card">
+        <h2>界面富集倍数 1/Kd</h2>
+        <div class="bars" id="enrichBars"></div>
+        <p class="note">以 1 为中性线（虚线）：向上富集、向下亏损。顺序为钾长石 / 白云母 / 黑云母。</p>
+      </div>
+      <div class="card">
+        <h2>边界层厚度 λ = D/v</h2>
+        <div class="bars" id="lambdaBars"></div>
+        <p class="note">e-folding 距离，取对数高度。λ 只与 D 和 v 有关，与矿物种类无关。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>计算结果</h2>
+      <table id="resultTable">
+        <thead>
+          <tr><th>元素</th><th>D (m²/s)</th><th>C₀</th>
+              <th>Kd 长石</th><th>Kd 白云母</th><th>Kd 黑云母</th>
+              <th>富集 长石</th><th>富集 白云母</th><th>富集 黑云母</th>
+              <th>λ</th><th>D 置信度</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="toolbar" style="margin-top:12px">
+        <button class="act" id="btnCsv">导出 CSV</button>
+        <button class="act" id="btnPrint">打印 / 存 PDF</button>
+      </div>
+      <details>
+        <summary>方法与参数说明（方程 · 参数 · 文献）</summary>
+        <div class="doc">
+          <h4>1　计算方程</h4>
+          <table class="eq">
+            <tr><td>边界层剖面</td>
+                <td><code>C<sub>i</sub>(x) = C<sub>i,0</sub> · [1 + (1 − K<sub>i</sub>)/K<sub>i</sub> · exp(−v·x/D<sub>i</sub>)]</code></td>
+                <td>Tiller et al. (1953)；Liu et al. (2024) Eq. 1</td></tr>
+            <tr><td>母熔体演化</td>
+                <td><code>C<sub>i,0</sub> = C<sub>i,init</sub> · f<sup>(K<sub>bulk,i</sub> − 1)</sup></code>，f 为残余熔体分数</td>
+                <td>Rayleigh 分异</td></tr>
+            <tr><td>扩散系数</td>
+                <td><code>D<sub>i</sub>(T) = exp(A<sub>i</sub> − B<sub>i</sub>/T)</code>，T 为 K</td>
+                <td>Arrhenius</td></tr>
+            <tr><td>界面富集</td>
+                <td><code>C(0)/C<sub>0</sub> = 1/K<sub>d</sub></code></td>
+                <td>边界层剖面在 x = 0 处</td></tr>
+            <tr><td>边界层厚度</td>
+                <td><code>λ = D/v</code>（e-folding 距离）</td>
+                <td>与矿物种类无关</td></tr>
+            <tr><td>熔体黏度</td>
+                <td><code>log<sub>10</sub>η = −4.55 + B<sub>m</sub>/(T − C<sub>m</sub>)</code>，
+                    B<sub>m</sub>、C<sub>m</sub> 由熔体摩尔分数求得</td>
+                <td>Giordano et al. (2008)</td></tr>
+            <tr><td>迁移压力梯度</td>
+                <td><code>dP/dz = 12·η̄·v / l²</code>，η̄ 为 0–l 的平均黏度，v = 6 cm/yr</td>
+                <td>Liu et al. (2024) Eq. 4</td></tr>
+            <tr><td>所需差应力</td>
+                <td><code>Δσ = (12·η̄·v·M² / l)<sup>1/3</sup></code>，M = 40 GPa（花岗质熔体）</td>
+                <td>Rubin (1995) Eq. 8，除以 4</td></tr>            <tr><td>Li 当量换算</td>
+                <td><code>Na<sub>2</sub>O* = Na<sub>2</sub>O + w<sub>Li</sub> · M(Na<sub>2</sub>O) / (2 × 10<sup>4</sup> · M(Li))</code></td>
+                <td>Li 按等摩尔 Na<sub>2</sub>O 参与黏度计算</td></tr>
+          </table>
+
+          <h4>2　参数</h4>
+          <table>
+            <thead><tr><th>参数</th><th>取值</th><th>来源</th><th>置信度</th></tr></thead>
+            <tbody>
+              <tr><td>D(Li)</td><td>2.77 × 10<sup>−11</sup> m²/s @700 °C</td>
+                  <td>Zhang, Ni &amp; Chen (2010)</td><td><span class="badge b-measured">实测</span></td></tr>
+              <tr><td>D(Rb)</td><td>2.99 × 10<sup>−14</sup> m²/s @700 °C</td>
+                  <td>Zhang, Ni &amp; Chen (2010)</td><td><span class="badge b-measured">实测</span></td></tr>
+              <tr><td>D(Cs)</td><td>1.95 × 10<sup>−14</sup> m²/s @700 °C（区间 ×0.5–×2）</td>
+                  <td>Watson (1979)；Jambon (1982)，由 900–1300 °C 外推</td>
+                  <td><span class="badge b-inferred">外推</span></td></tr>
+              <tr><td>D(H₂O)</td><td>3.12 × 10<sup>−12</sup> m²/s @700 °C</td>
+                  <td>Zhang &amp; Ni (2010)</td><td><span class="badge b-measured">实测</span></td></tr>
+              <tr><td>K<sub>d</sub>(Li)</td><td>石英 0.02；斜长石 / 钾长石 0.05；白云母 / 黑云母 1.5</td>
+                  <td>石英：Cortes Calderon et al. (2022)；长石：Liu et al. (2024)；云母：Icenhower &amp; London (1995)</td>
+                  <td><span class="badge b-measured">实测</span></td></tr>
+              <tr><td>K<sub>d</sub>(Rb)</td><td>钾长石 0.03 + 0.01·Or(mol%)；斜长石 0.30；石英 0.02；白云母 1.6；黑云母 2.0</td>
+                  <td>Icenhower &amp; London (1996, 1995)；斜长石、石英为估计值</td>
+                  <td><span class="badge b-measured">实测</span> / <span class="badge b-assumed">假设</span></td></tr>
+              <tr><td>K<sub>d</sub>(Cs)</td><td>钾长石 0.13；斜长石 0.10；石英 0.02；白云母 0.30；黑云母 0.40</td>
+                  <td>Icenhower &amp; London (1996, 1995)；斜长石、石英为估计值</td>
+                  <td><span class="badge b-measured">实测</span> / <span class="badge b-assumed">假设</span></td></tr>
+              <tr><td>K<sub>d</sub>(H₂O)</td><td>石英 / 斜长石 / 钾长石 0.2；白云母 / 黑云母 2.5</td>
+                  <td>Liu et al. (2024)；Holtz et al. (2001)</td>
+                  <td><span class="badge b-measured">实测</span></td></tr>
+              <tr><td>初始熔体</td><td>Li 150 ppm；H₂O 2 wt%；Rb 115 ppm；Cs 5 ppm</td>
+                  <td>Li、H₂O 取自 Liu et al. (2024)；Rb、Cs 为区域典型值</td>
+                  <td><span class="badge b-assumed">假设</span></td></tr>
+              <tr><td>体分配系数</td><td>Li 0.5；H₂O 1.0；Rb 0.3；Cs 0.2</td>
+                  <td>Li、H₂O 取自 Liu et al. (2024)；Rb、Cs 按不相容元素估计</td>
+                  <td><span class="badge b-assumed">假设</span></td></tr>
+              <tr><td>黏度组成</td><td>SiO₂ 73.2、Al₂O₃ 15.6、Na₂O 4.03、K₂O 4.11、CaO 0.41（wt%）等，
+                  中位白云母淡色花岗岩</td>
+                  <td>Giordano et al. (2008)</td><td><span class="badge b-measured">实测</span></td></tr>
+            </tbody>
+          </table>
+          <p class="hint">石英与斜长石的 Rb、Cs 分配系数缺少直接实验，按同族体系估计，仅用于定性比较；三者的 Li 值均来自实验测定。</p>
+
+          <h4>3　参考文献</h4>
+          <ol class="refs">
+            <li>Liu, X.-C., Kohn, M.J., Wang, J.-M., He, S.-X., Wang, R.-C., Wu, F.-Y. (2024).
+                Formation of lithium-rich pegmatites via rapid crystallization and shearing — case study from the
+                South Tibetan Detachment, Himalaya. <i>Earth Planet. Sci. Lett.</i> 629, 118598.</li>
+            <li>Tiller, W.A., Jackson, K.A., Rutter, J.W., Chalmers, B. (1953). The redistribution of solute atoms
+                during the solidification of metals. <i>Acta Metall.</i> 1, 428–437.</li>
+            <li>Zhang, Y., Ni, H., Chen, Y. (2010). Diffusion data in silicate melts.
+                <i>Rev. Mineral. Geochem.</i> 72, 311–408.</li>
+            <li>Zhang, Y., Ni, H. (2010). Diffusion of H, C, and O components in silicate melts.
+                <i>Rev. Mineral. Geochem.</i> 72, 171–225.</li>
+            <li>Giordano, D., Russell, J.K., Dingwell, D.B. (2008). Viscosity of magmatic liquids: a model.
+                <i>Earth Planet. Sci. Lett.</i> 271, 123–134.</li>
+            <li>Hess, K.-U., Dingwell, D.B. (1996). Viscosities of hydrous leucogranitic melts:
+                a non-Arrhenian model. <i>Am. Mineral.</i> 81, 1297–1300.</li>
+            <li>Icenhower, J., London, D. (1995). An experimental study of element partitioning among biotite,
+                muscovite, and coexisting peraluminous silicic melt at 200 MPa (H₂O).
+                <i>Am. Mineral.</i> 80, 1229–1241.</li>
+            <li>Icenhower, J., London, D. (1996). Experimental partitioning of Rb, Cs, Sr, and Ba between alkali
+                feldspar and peraluminous melt. <i>Am. Mineral.</i> 81, 719–734.</li>
+            <li>Watson, E.B. (1979). Diffusion of cesium ions in H₂O-saturated granitic melt.
+                <i>Science</i> 205, 1259–1260.</li>
+            <li>Jambon, A. (1982). Tracer diffusion in granitic melts: experimental results for Na, K, Rb, Cs, Ca,
+                Sr, Ba, Ce, Eu to 1300 °C and a model of calculation.
+                <i>J. Geophys. Res.</i> 87, 10797–10810.</li>
+            <li>Holtz, F., Johannes, W., Tamic, N., Behrens, H. (2001). Maximum and minimum water contents of
+                granitic melts generated in the crust: a reevaluation and implications. <i>Lithos</i> 56, 1–14.</li>
+            <li>Wu, F.-Y., Liu, X.-C., Liu, Z.-C., et al. (2020). Highly fractionated Himalayan leucogranites and
+                associated rare-metal mineralization. <i>Lithos</i> 352–353, 105319.</li>
+            <li>Cortes Calderon, E.A., Ellis, B.S., Ulmer, P. (2022). Lithium element partitioning among
+                haplogranitic melt, fluid and quartz. <i>EGU General Assembly 2022</i>, EGU22-9668.
+                https://doi.org/10.5194/egusphere-egu22-9668</li>
+          </ol>
+        </div>
+      </details>
+    </div>
+  </main>
+</div>
+
+<!-- ================= 物理内核（无 DOM，可单独测试） ================= -->
+<script id="physics">
+"use strict";
+const ELEMENTS = ["Li", "Rb", "Cs", "H2O"];
+const ELEM_CN  = { Li:"Li", Rb:"Rb", Cs:"Cs", H2O:"H₂O" };
+const COLORS   = { Li:"#d62728", Rb:"#2ca02c", Cs:"#9467bd", H2O:"#1f77b4" };
+const MINERALS = ["Qz", "Pl", "Kfs", "Ms", "Bt"];
+const MINE_CN  = { Qz:"石英", Pl:"斜长石", Kfs:"钾长石", Ms:"白云母", Bt:"黑云母" };
+const MINE_COL = { Qz:"#7f7f7f", Pl:"#e7298a", Kfs:"#d95f02", Ms:"#7570b3", Bt:"#1b9e77" };
+const EDITABLE_MINE = ["Qz", "Kfs", "Ms", "Bt"];
+const UNIT     = { Li:"ppm", Rb:"ppm", Cs:"ppm", H2O:"wt%" };
+
+/* D(T) = exp(A - B/T)，T 单位 K，D 单位 m²/s */
+const DIFFUSION = {
+  Li : { A:-13.04,  B:10966,   quality:"measured", label:"Zhang et al. (2010)" },
+  Rb : { A:-15.42,  B:15299,   quality:"measured", label:"Zhang et al. (2010)" },
+  Cs : { A:-16.118, B:15035,   quality:"inferred", label:"Watson (1979); Jambon (1982)", factorLo:0.5, factorHi:2.0 },
+  H2O: { A:-14.758, B:11420.5, quality:"measured", label:"Zhang & Ni (2010)" }
+};
+
+const DEFAULT = {
+  T: 700, v: 1e-8, f: 0.25, or: 90, selElem: "Li",
+  init:  { Li:150, Rb:115, Cs:5,  H2O:2.0 },
+  bulkKd:{ Li:0.5, Rb:0.30, Cs:0.20, H2O:1.0 },
+  kd: {
+    "Li|Qz":0.02,   "Li|Pl":0.05,   "Li|Kfs":0.05,  "Li|Ms":1.50,  "Li|Bt":1.50,
+    "Rb|Qz":0.02,   "Rb|Pl":0.30,   "Rb|Kfs":0.93,  "Rb|Ms":1.60,  "Rb|Bt":2.00,
+    "Cs|Qz":0.02,   "Cs|Pl":0.10,   "Cs|Kfs":0.13,  "Cs|Ms":0.30,  "Cs|Bt":0.40,
+    "H2O|Qz":0.20,  "H2O|Pl":0.20,  "H2O|Kfs":0.20, "H2O|Ms":2.50, "H2O|Bt":2.50
+  },
+  showMine: { Qz:false, Pl:false, Kfs:true, Ms:true, Bt:false },
+  cmpFast: true,
+  cmpSlow: true,
+  dLiFactor: 0.5,
+  axes: {
+    A: { x: { log: false, min: 0, max: 2 }, y: { log: false, min: null, max: null } },
+    B: { x: { log: false, min: 0, max: 2 }, y: { log: false, min: null, max: null } },
+    C: { x: { log: false, min: 0, max: 2 }, y: { log: true,  min: null, max: null } },
+    D: { x: { log: false, min: 0, max: 1 }, y: { log: true,  min: 1,    max: null } },
+    E: { x: { log: false, min: 0, max: 1 }, y: { log: true,  min: 1,    max: null } }
+  }
+};
+
+function diffusionCoeff(elem, T_C, liFactor) {
+  const d = DIFFUSION[elem];
+  const base = Math.exp(d.A - d.B / (T_C + 273.15));
+  return (elem === "Li" && liFactor) ? base * liFactor : base;
+}
+
+/** Rb 在钾长石中的 Kd 随 Or 含量变化 */
+function kdOf(state, elem, mineral) {
+  if (elem === "Rb" && mineral === "Kfs") return 0.03 + 0.01 * state.or;
+  return state.kd[elem + "|" + mineral];
+}
+
+/** Rayleigh 分异：C0 = C_init · f^(Kbulk-1) */
+function bulkC0(state, elem) {
+  return state.init[elem] * Math.pow(state.f, state.bulkKd[elem] - 1);
+}
+
+/** Tiller 稳态剖面 */
+function profile(state, elem, mineral, x) {
+  const D = diffusionCoeff(elem, state.T, state.dLiFactor);
+  const K = kdOf(state, elem, mineral);
+  const C0 = bulkC0(state, elem);
+  return C0 * (1 + (1 - K) / K * Math.exp(-state.v * x / D));
+}
+
+/* ---- Giordano et al. (2008) 熔体黏度模型 ----
+   log10 η = -4.55 + B/(T - C)，B、C 由熔体组成决定；
+   组成取论文的中位白云母淡色花岗岩，Li 按 Na2O 当量计入。
+   与 Excel "Viscosity calculator" 表逐值一致。 */
+const MELT = {
+  mw: [60.0843, 79.8658, 101.961276, 71.8444, 70.937449,
+       40.3044, 56.0774, 61.97894, 94.196, 141.9446],
+  wt: [73.162, 0.008, 15.621, 0.352, 0.082, 0.062, 0.413, 4.033, 4.114, 0.053]
+};
+
+/** 返回 log10(η)；T 为 °C，w 为 H2O wt%，li 为 Li ppm */
+function giordanoLog(T_C, w, li_ppm) {
+  const mw = MELT.mw;
+  const d = MELT.wt.slice();
+  d[3] = d[3] * 71.8444 / (71.8444 + 8);                       // FeO(T) → FeO
+  d[7] = d[7] + li_ppm * 61.97894 / (2 * 10000 * 6.941);       // Li → Na2O 当量
+  const sumD = d.reduce((a, b) => a + b, 0);
+  const E = d.map((v) => v * (100 - w) / sumD);
+
+  let denom = w / 18.01528;
+  E.forEach((v, i) => { denom += v / mw[i]; });
+  const F20 = 100 / denom;
+  const F = E.map((v, i) => F20 * v / mw[i]);
+  const Fw = F20 * w / 18.01528;
+
+  const [si, ti, al, fe, mn, mg, ca, na, k, p] = F;
+  const B = 159.56 * (si + ti) - 173.34 * al + 72.13 * (fe + mn + p)
+          + 75.69 * mg - 38.98 * ca - 84.08 * (na + Fw)
+          + 141.54 * (Fw + Math.log(1 + Fw))
+          - 2.43 * (ti + si) * (fe + mn + mg)
+          - 0.91 * (si + ti + al + p) * (na + k + Fw)
+          + 17.62 * al * (na + k);
+  const C = 2.75 * si + 15.72 * (ti + al) + 8.32 * (fe + mn + mg) + 10.2 * ca
+          - 12.29 * (na + k) - 99.54 * Math.log(1 + Fw)
+          + 0.3 * (al + fe + mn + mg + ca - p) * (na + k + Fw);
+  return -4.55 + B / ((T_C + 273.15) - C);
+}
+
+function viscosity(T_C, w, li_ppm) {
+  return Math.pow(10, giordanoLog(T_C, w, li_ppm));
+}
+
+/** 某矿物界面前 x 处的熔体黏度 */
+function viscosityAt(state, mineral, x) {
+  const w  = profile(state, "H2O", mineral, x);
+  const li = profile(state, "Li",  mineral, x);
+  return viscosity(state.T, w, li);
+}
+
+/** 汇总 */
+function computeAll(state) {
+  const out = { elements: {}, T: state.T, v: state.v };
+  for (const e of ELEMENTS) {
+    const D = diffusionCoeff(e, state.T, state.dLiFactor);
+    const rec = { D, C0: bulkC0(state, e), unit: UNIT[e], lambda: D / state.v,
+                  quality: DIFFUSION[e].quality, kd: {}, enrich: {} };
+    for (const m of MINERALS) {
+      const K = kdOf(state, e, m);
+      rec.kd[m] = K;
+      rec.enrich[m] = 1 / K;
+    }
+    out.elements[e] = rec;
+  }
+  out.etaBulk = viscosity(state.T, bulkC0(state, "H2O"), bulkC0(state, "Li"));
+  return out;
+}
+</script>
+
+<!-- ================= 界面 ================= -->
+<script id="ui">
+"use strict";
+const state = JSON.parse(JSON.stringify(DEFAULT));
+
+const $ = (id) => document.getElementById(id);
+const fmtE = (x, n = 2) => (x === 0 ? "0" : x.toExponential(n));
+const fmt2 = (x) => (Math.abs(x) >= 100 ? x.toFixed(0) : x.toFixed(2));
+const supMap = { "-":"⁻","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹" };
+const sup = (n) => String(n).split("").map((c) => supMap[c] || c).join("");
+
+function logspace(a, b, n) {
+  const out = [];
+  for (let i = 0; i <= n; i++) out.push(Math.pow(10, Math.log10(a) + (Math.log10(b) - Math.log10(a)) * i / n));
+  return out;
+}
+
+/** 线性轴的上界：取 1 / 1.2 / 1.5 / 2 / 2.5 / 3 / 4 / 5 / 6 / 8 / 10 × 10^k 中最近的一档 */
+function niceMax(v) {
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const cands = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+  const n = v / mag;
+  const c = cands.find((x) => n <= x + 1e-9) || 10;
+  return c * mag;
+}
+
+/* ---------------- 三栏图 ---------------- */
+const XS = logspace(1e-7, 1e-2, 240);
+/* ---- 迁移判据（论文 Eq. 4 与 Rubin 1995）----
+   dP/dz = 12·η̄·v / l²            （Poiseuille 流动）
+   Δσ    = (12·η̄·v·M² / l)^(1/3)   （Rubin 1995 Eq. 8 ÷ 4）
+   v 取 6 cm/yr，M = 40 GPa，l 为熔体层半厚度 */
+const V_FLOW = 0.06 / 31557600;   // m/s
+const M_STIFF = 40e9;             // Pa
+const L_GRID = logspace(2e-5, 1.5e-3, 170);
+const XE = logspace(1e-7, 1.7e-3, 420);
+
+/** 界面到各 x 的累计积分 ∫η dx，用于求 0–l 的平均黏度 */
+function etaCumulative(state, mineral) {
+  const eta = XE.map((x) => viscosityAt(state, mineral, x));
+  const I = [0];
+  for (let i = 1; i < XE.length; i++) I.push(I[i - 1] + 0.5 * (eta[i] + eta[i - 1]) * (XE[i] - XE[i - 1]));
+  return { eta, I };
+}
+
+function avgEtaAt(st, l) {
+  const x = XE, I = st.I, n = x.length - 1;
+  if (l <= x[0]) return st.eta[0];
+  if (l >= x[n]) return I[n] / x[n];
+  let lo = 0, hi = n;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (x[mid] <= l) lo = mid; else hi = mid; }
+  const f = (l - x[lo]) / (x[hi] - x[lo]);
+  const eL = st.eta[lo] + f * (st.eta[hi] - st.eta[lo]);
+  return (I[lo] + 0.5 * (st.eta[lo] + eL) * (l - x[lo])) / l;
+}
+
+function migrationSeries(state, mineral) {
+  const st = etaCumulative(state, mineral);
+  const dp = [], ds = [];
+  for (const l of L_GRID) {
+    const eta = avgEtaAt(st, l);
+    dp.push(12 * eta * V_FLOW / (l * l) / 100);
+    ds.push(Math.cbrt(12 * eta * V_FLOW * M_STIFF * M_STIFF / l) / 1e6);
+  }
+  return { dp, ds };
+}
+
+const AX_UNIT = { A: "ppm", B: "wt%", C: "Pa·s", D: "bar/km", E: "MPa" };
+let AXEDIT = null;
+
+function openAxisEditor(svgId, axis) {
+  const k = svgId.replace("chart", "");
+  const svg = $(svgId);
+  if (!AXEDIT) {
+    AXEDIT = document.createElement("div");
+    AXEDIT.className = "axedit";
+    document.body.appendChild(AXEDIT);
+  }
+  const cur = state.axes[k][axis];
+  const title = axis === "x" ? "X 轴（mm）" : "Y 轴（" + (AX_UNIT[k] || "") + "）";
+  AXEDIT.innerHTML = `<div style="font-weight:600;margin-bottom:2px">面板 ${k} · ${title}</div>
+    <div class="row"><select id="aeMode"><option value="lin">线性</option><option value="log">对数</option></select></div>
+    <div class="row"><input id="aeMin" placeholder="最小（留空自动）"><input id="aeMax" placeholder="最大（留空自动）"></div>
+    <div class="row" style="justify-content:flex-end"><button id="aeClose">关闭</button></div>`;
+  AXEDIT.querySelector("#aeMode").value = cur.log ? "log" : "lin";
+  AXEDIT.querySelector("#aeMin").value = cur.min === null ? "" : cur.min;
+  AXEDIT.querySelector("#aeMax").value = cur.max === null ? "" : cur.max;
+
+  const r = svg.getBoundingClientRect();
+  const left = (axis === "y" ? r.left + 6 : r.left + r.width * 0.25);
+  const top = (axis === "y" ? r.top + 40 : r.top + r.height - 150);
+  AXEDIT.style.left = Math.max(8, Math.min(window.scrollX + left, window.scrollX + window.innerWidth - 250)) + "px";
+  AXEDIT.style.top = Math.max(8, window.scrollY + top) + "px";
+  AXEDIT.classList.add("open");
+
+  const apply = () => {
+    const s = state.axes[k][axis];
+    s.log = AXEDIT.querySelector("#aeMode").value === "log";
+    const mn = AXEDIT.querySelector("#aeMin").value.trim();
+    const mx = AXEDIT.querySelector("#aeMax").value.trim();
+    const a = mn === "" ? null : parseFloat(mn);
+    const b = mx === "" ? null : parseFloat(mx);
+    s.min = (a === null || isNaN(a)) ? null : a;
+    s.max = (b === null || isNaN(b)) ? null : b;
+    render();
+  };
+  AXEDIT.querySelector("#aeMode").onchange = apply;
+  AXEDIT.querySelector("#aeMin").onchange = apply;
+  AXEDIT.querySelector("#aeMax").onchange = apply;
+  AXEDIT.querySelector("#aeClose").onclick = () => AXEDIT.classList.remove("open");
+}
+function drawPanel(id, cfg) {
+  const svg = $(id);
+  const W = 400, H = 334, L = 58, Rm = 8, Tp = 22, B = 46;
+  const iw = W - L - Rm, ih = H - Tp - B;
+  const xLog = cfg.xLog === true;
+  const hasMin = cfg.xMin !== undefined && cfg.xMin !== null && cfg.xMin !== "";
+  const hasMax = cfg.xMax !== undefined && cfg.xMax !== null && cfg.xMax !== "";
+  const xm0 = hasMin ? cfg.xMin : (xLog ? 1e-7 : 0);
+  const xm1 = hasMax ? cfg.xMax : (xLog ? 1e-2 : (cfg.defXMax || 2e-3));
+  let X0 = xm0, X1 = xm1;
+  if (xLog && X0 <= 0) X0 = 1e-7;
+  if (xLog && X1 <= X0) X1 = X0 * 10;
+  if (!xLog && X1 <= X0) X1 = X0 + 2e-3;
+  const px = xLog
+    ? (x) => L + (Math.log10(Math.max(x, X0)) - Math.log10(X0)) / (Math.log10(X1) - Math.log10(X0)) * iw
+    : (x) => L + (x - X0) / (X1 - X0) * iw;
+
+  let dmin = Infinity, dmax = -Infinity;
+  const scan = (arr) => arr.forEach((v) => { if (isFinite(v) && v > 0) { dmin = Math.min(dmin, v); dmax = Math.max(dmax, v); } });
+  cfg.series.forEach((s) => scan(s.y));
+  if (cfg.band) { scan(cfg.band.up); scan(cfg.band.dn); }
+  if (!isFinite(dmin)) { dmin = 1; dmax = 10; }
+  const logY = cfg.logY === true;
+  let ymin, ymax, py;
+
+  if (logY) {
+    const hasYmin = cfg.yMin !== undefined && cfg.yMin !== null && cfg.yMin !== "";
+    const hasYmax = cfg.yMax !== undefined && cfg.yMax !== null && cfg.yMax !== "";
+    ymin = hasYmin ? cfg.yMin : Math.pow(10, Math.floor(Math.log10(dmin)));
+    ymax = hasYmax ? cfg.yMax : Math.pow(10, Math.ceil(Math.log10(dmax)));
+    if (!hasYmax && ymax / dmax > 4) ymax = dmax * 1.6;
+    if (!hasYmin && dmin / ymin > 4) ymin = dmin / 1.6;
+    const ylo = Math.log10(ymin), yhi = Math.log10(ymax);
+    py = (y) => Tp + ih - (Math.log10(Math.max(y, ymin)) - ylo) / (yhi - ylo) * ih;
+  } else {
+    ymin = (cfg.yMin !== undefined && cfg.yMin !== null && cfg.yMin !== "") ? cfg.yMin : 0;
+    ymax = (cfg.yMax !== undefined && cfg.yMax !== null && cfg.yMax !== "") ? cfg.yMax : niceMax(dmax * 1.05);
+    py = (y) => Tp + ih - ((Math.max(ymin, Math.min(y, ymax)) - ymin) / (ymax - ymin)) * ih;
+  }
+
+  const p = [];
+  p.push(`<rect x="${L}" y="${Tp}" width="${iw}" height="${ih}" fill="#fcfdfe" stroke="#e3e7ec"/>`);
+  const clipId = "clip_" + id;
+  p.push(`<defs><clipPath id="${clipId}"><rect x="${L}" y="${Tp}" width="${iw}" height="${ih}"/></clipPath></defs>`);
+
+  // 纵轴刻度
+  let ticks = [];
+  if (logY) {
+    const ylo = Math.log10(ymin), yhi = Math.log10(ymax);
+    for (let e = Math.ceil(ylo); e <= Math.floor(yhi); e++) ticks.push(Math.pow(10, e));
+    if (ticks.length < 3) {
+      ticks = [];
+      for (let e = Math.floor(ylo); e <= Math.ceil(yhi); e++) {
+        [1, 2, 5].forEach((m) => { const v = m * Math.pow(10, e); if (v >= ymin && v <= ymax) ticks.push(v); });
+      }
+    }
+    if (ticks.length > 8) ticks = ticks.filter((_, i) => i % 2 === 0);
+  } else {
+    for (let i = 0; i <= 4; i++) ticks.push(ymax * i / 4);
+  }
+  for (const t of ticks) {
+    const y = py(t);
+    if (y < Tp - 1 || y > Tp + ih + 1) continue;
+    p.push(`<line x1="${L}" y1="${y}" x2="${L + iw}" y2="${y}" stroke="${t === 0 && !logY ? "#c8d0d8" : "#eef1f4"}"/>`);
+    let lab;
+    if (logY) {
+      const e = Math.log10(t);
+      lab = Math.abs(e - Math.round(e)) < 1e-9 ? "10" + sup(Math.round(e)) : String(+t.toPrecision(2));
+    } else {
+      lab = String(+t.toFixed(2));
+    }
+    p.push(`<text x="${L - 6}" y="${y + 3.5}" text-anchor="end" font-size="11.5" fill="#6b7785">${lab}</text>`);
+  }
+
+  // 横轴
+  if (xLog) {
+    const d0 = Math.ceil(Math.log10(X0)), d1 = Math.floor(Math.log10(X1));
+    const stepD = (d1 - d0 > 6) ? 2 : 1;
+    for (let d = d0; d <= d1; d += stepD) {
+      const x = px(Math.pow(10, d));
+      p.push(`<line x1="${x}" y1="${Tp}" x2="${x}" y2="${Tp + ih}" stroke="#eef1f4"/>`);
+      p.push(`<text x="${x}" y="${Tp + ih + 17}" text-anchor="middle" font-size="11.5" fill="#6b7785">10${sup(d)}</text>`);
+    }
+  } else {
+    for (let i = 0; i <= 4; i++) {
+      const xv = X0 + (X1 - X0) * i / 4;
+      const x = px(xv);
+      p.push(`<line x1="${x}" y1="${Tp}" x2="${x}" y2="${Tp + ih}" stroke="#eef1f4"/>`);
+      p.push(`<text x="${x}" y="${Tp + ih + 17}" text-anchor="middle" font-size="11.5" fill="#6b7785">${(xv * 1000).toFixed(1)}</text>`);
+    }
+  }
+
+  if (cfg.bandY) {
+    const y1 = py(cfg.bandY.hi), y2 = py(cfg.bandY.lo);
+    p.push(`<rect x="${L}" y="${y1}" width="${iw}" height="${Math.abs(y2 - y1)}" fill="${cfg.bandY.color || "#f0b429"}" opacity="0.2"/>`);
+    if (cfg.bandY.label) p.push(`<text x="${L + iw - 6}" y="${(y1 + y2) / 2 + 4}" text-anchor="end" font-size="11" fill="#8a5a00">${cfg.bandY.label}</text>`);
+  }
+  if (cfg.hlines) cfg.hlines.forEach((h) => {
+    const y = py(h.y);
+    p.push(`<line x1="${L}" y1="${y}" x2="${L + iw}" y2="${y}" stroke="${h.color || "#0072B2"}" stroke-width="1.4"/>`);
+    if (h.label) p.push(`<text x="${L + iw - 4}" y="${h.below ? y + 13 : y - 5}" text-anchor="end" font-size="10.5" fill="${h.color || "#0072B2"}">${h.label}</text>`);
+  });  const cv = [];
+  // 不确定带
+  if (cfg.band) {
+    const up = XS.map((x, i) => `${px(x).toFixed(1)},${py(cfg.band.up[i]).toFixed(1)}`);
+    const dn = XS.map((x, i) => `${px(x).toFixed(1)},${py(cfg.band.dn[i]).toFixed(1)}`).reverse();
+    cv.push(`<polygon points="${up.concat(dn).join(" ")}" fill="${cfg.band.color}" opacity="0.13"/>`);
+  }
+
+  // 曲线
+  cfg.series.forEach((s) => {
+    const xs = s.x || XS;
+    const pts = xs.map((x, i) => `${px(x).toFixed(1)},${py(s.y[i]).toFixed(1)}`).join(" ");
+    const dash = s.dash ? ` stroke-dasharray="${s.dash}"` : "";
+    cv.push(`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="${s.w || 2}" stroke-linejoin="round"${dash}/>`);
+  });
+
+  // 叠加对比速率
+  const cmpF = [];
+  if (state.cmpFast) cmpF.push(10);
+  if (state.cmpSlow) cmpF.push(0.1);
+  if (cmpF.length) {
+    const saved = state.v;
+    cmpF.forEach((f) => {
+      const dash = f > 1 ? "7 4" : "2 4";
+      const op = f > 1 ? 0.55 : 0.75;
+      state.v = saved * f;
+      cfg.series.forEach((s) => {
+        if (!s.mine) return;
+        const xs = s.x || XS;
+        let ys;
+        if (s.kind === "migD" || s.kind === "migE") {
+          const mg = migrationSeries(state, s.mine);
+          ys = s.kind === "migD" ? mg.dp : mg.ds;
+        } else if (s.kind === "eta") {
+          ys = xs.map((x) => viscosityAt(state, s.mine, x));
+        } else {
+          ys = xs.map((x) => profile(state, s.elem, s.mine, x));
+        }
+        const pts = xs.map((x, i) => `${px(x).toFixed(1)},${py(ys[i]).toFixed(1)}`).join(" ");
+        cv.push(`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="1.7" stroke-dasharray="${dash}" opacity="${op}"/>`);
+      });
+      state.v = saved;
+    });
+  }
+  p.push(`<g clip-path="url(#${clipId})">${cv.join("")}</g>`);
+
+  // 轴
+  p.push(`<line x1="${L}" y1="${Tp + ih}" x2="${L + iw}" y2="${Tp + ih}" stroke="#9aa6b3"/>`);
+  p.push(`<line x1="${L}" y1="${Tp}" x2="${L}" y2="${Tp + ih}" stroke="#9aa6b3"/>`);
+  p.push(`<text x="${L + iw / 2}" y="${H - 6}" text-anchor="middle" font-size="12.5" fill="#41505f">${xLog ? "距界面距离 (m)" : "距晶体–熔体界面距离 (mm)"}</text>`);
+  p.push(`<text x="12" y="${Tp + ih / 2}" text-anchor="middle" font-size="12.5" fill="#41505f"
+           transform="rotate(-90 12 ${Tp + ih / 2})">${cfg.yLabel}</text>`);
+
+  p.push(`<rect class="axhit" data-panel="${id}" data-axis="x" x="${L}" y="${Tp + ih}" width="${iw}" height="${B}" fill="transparent" style="cursor:pointer"><title>双击修改 X 轴</title></rect>`);
+  p.push(`<rect class="axhit" data-panel="${id}" data-axis="y" x="0" y="${Tp}" width="${L}" height="${ih}" fill="transparent" style="cursor:pointer"><title>双击修改 Y 轴</title></rect>`);
+
+  svg.innerHTML = p.join("");
+  svg.querySelectorAll(".axhit").forEach((r) => {
+    r.addEventListener("dblclick", (ev) => { ev.preventDefault(); openAxisEditor(id, r.dataset.axis); });
+  });
+}
+
+function drawTriple(R) {
+  const sel = state.selElem;
+  const mines = MINERALS.filter((m) => state.showMine[m]);
+
+  const W_M = { Kfs: 3.2, Ms: 4.4, Bt: 2.6 };
+  const W_MIG = { Kfs: 2.0, Ms: 2.4, Bt: 1.6, Qz: 1.6, Pl: 1.6 };
+  const conc = mines.map((m) => ({
+    color: MINE_COL[m], elem: sel, mine: m, kind: "conc", w: W_M[m],
+    y: XS.map((x) => profile(state, sel, m, x))
+  }));
+  const water = mines.map((m) => ({
+    color: MINE_COL[m], elem: "H2O", mine: m, kind: "conc", w: W_M[m],
+    y: XS.map((x) => profile(state, "H2O", m, x))
+  }));
+  const eta = mines.map((m) => ({
+    color: MINE_COL[m], elem: "H2O", mine: m, kind: "eta", w: W_M[m],
+    y: XS.map((x) => viscosityAt(state, m, x))
+  }));
+
+  let band = null;
+  if (sel === "Cs" && state.showMine.Kfs) {
+    const law = DIFFUSION.Cs, K = kdOf(state, "Cs", "Kfs"), C0 = R.elements.Cs.C0;
+    const mk = (fac) => XS.map((x) => {
+      const D = diffusionCoeff("Cs", state.T) * fac;
+      return C0 * (1 + (1 - K) / K * Math.exp(-state.v * x / D));
+    });
+    band = { color: MINE_COL.Kfs, up: mk(law.factorLo), dn: mk(law.factorHi) };
+  }
+
+  const AX = state.axes;
+  const xOpt = (k) => {
+    const a = AX[k].x;
+    return {
+      xLog: a.log,
+      xMin: (a.min === null || a.min === "") ? null : a.min * 1e-3,
+      xMax: (a.max === null || a.max === "") ? null : a.max * 1e-3,
+      defXMax: (k === "D" || k === "E") ? 1e-3 : 2e-3
+    };
+  };
+  const yOpt = (k) => ({ logY: AX[k].y.log, yMin: AX[k].y.min, yMax: AX[k].y.max });
+  drawPanel("chartA", Object.assign({ series: conc,  yLabel: sel + " (" + UNIT[sel] + ")", band }, xOpt("A"), yOpt("A")));
+  drawPanel("chartB", Object.assign({ series: water, yLabel: "H₂O (wt%)" }, xOpt("B"), yOpt("B")));
+  drawPanel("chartC", Object.assign({ series: eta,   yLabel: "η (Pa·s)" }, xOpt("C"), yOpt("C")));
+  const mig = mines.map((m) => Object.assign({ m }, migrationSeries(state, m)));
+  drawPanel("chartD", Object.assign({
+    series: mig.map((o) => ({ color: MINE_COL[o.m], y: o.dp, x: L_GRID, w: W_MIG[o.m], mine: o.m, kind: "migD" })),
+    yLabel: "dP/dz (bar/km)",
+    hlines: [{ y: 172, label: "静岩–静水 172" }, { y: 54, label: "静岩–岩浆 54", below: true }]
+  }, xOpt("D"), yOpt("D")));
+  drawPanel("chartE", Object.assign({
+    series: mig.map((o) => ({ color: MINE_COL[o.m], y: o.ds, x: L_GRID, w: W_MIG[o.m], mine: o.m, kind: "migE" })),
+    yLabel: "Δσ (MPa)",
+    bandY: { lo: 10, hi: 35, label: "STDS 10–35 MPa" }
+  }, xOpt("E"), yOpt("E")));
+  buildVerdict(mig);
+
+  const xDesc = "横轴：各面板独立可调";
+  const cmpDesc = [state.cmpFast ? "长虚线 = v×10" : "", state.cmpSlow ? "短虚线 = v÷10" : ""]
+    .filter(Boolean).join("，");
+  $("legend").innerHTML = mines.map((m) =>
+    `<span><i style="background:${MINE_COL[m]}"></i>${MINE_CN[m]}</span>`).join("")
+    + `<span style="color:#7b8896">${xDesc}；纵轴：①② 线性，③④⑤ 对数</span>`
+    + (cmpDesc ? `<span style="color:#7b8896">${cmpDesc}</span>` : "");
+}
+
+/* ---------------- 条形图 ---------------- */
+function buildVerdict(mig) {
+  const box = $("verdict");
+  box.innerHTML = "";
+  for (const o of mig) {
+    let i = 0, j = 0;
+    for (let k = 1; k < o.dp.length; k++) if (o.dp[k] < o.dp[i]) i = k;
+    for (let k = 1; k < o.ds.length; k++) if (o.ds[k] < o.ds[j]) j = k;
+    const dp = o.dp[i], ds = o.ds[j], lmm = L_GRID[i] * 1000;
+    let cls, txt;
+    if (dp < 54) { cls = "v-ok"; txt = "浮力即可迁移"; }
+    else if (dp <= 172) { cls = "v-mid"; txt = "需构造超压"; }
+    else { cls = "v-bad"; txt = "仅靠压差不可动"; }
+    let cls2, txt2;
+    if (ds <= 10) { cls2 = "v-ok"; txt2 = "剪切足以驱动"; }
+    else if (ds <= 35) { cls2 = "v-mid"; txt2 = "STDS 剪切可驱动"; }
+    else { cls2 = "v-bad"; txt2 = "剪切亦不足"; }
+    const el = document.createElement("div");
+    el.className = "vcard";
+    el.innerHTML = `<span class="vt" style="color:${MINE_COL[o.m]}">${MINE_CN[o.m]}</span>`
+      + `最小 dP/dz <b>${dp >= 10 ? Math.round(dp) : dp.toFixed(1)}</b> bar/km（l ≈ ${lmm.toFixed(2)} mm）`
+      + ` · 最小 Δσ <b>${ds >= 10 ? Math.round(ds) : ds.toFixed(1)}</b> MPa`
+      + ` · <span class="${cls}">${txt}</span>；<span class="${cls2}">${txt2}</span>`;
+    box.appendChild(el);
+  }
+}
+function drawBars(R) {
+  const eBox = $("enrichBars");
+  eBox.innerHTML = "";
+  let maxMag = 0.3;
+  for (const e of ELEMENTS) for (const m of MINERALS) {
+    if (!state.showMine[m]) continue;
+    maxMag = Math.max(maxMag, Math.abs(Math.log10(R.elements[e].enrich[m])));
+  }
+  for (const e of ELEMENTS) {
+    const vals = MINERALS.filter((m) => state.showMine[m]).map((m) => R.elements[e].enrich[m]);
+    const col = document.createElement("div");
+    col.className = "barcol";
+    let inner = '<div class="barwrap">';
+    vals.forEach((v) => {
+      const h = Math.min(97, Math.max(3, 50 + Math.log10(v) / maxMag * 45));
+      const up = v >= 1;
+      const bg = up ? COLORS[e]
+        : `repeating-linear-gradient(45deg,${COLORS[e]},${COLORS[e]} 3px,#ffffff 3px,#ffffff 6px)`;
+      inner += `<div class="bar" style="height:${h}%;background:${bg};opacity:${up ? 0.95 : 0.6}"></div>`;
+    });
+    const lab = vals.map((v) => fmt2(v)).join(" / ");
+    inner += `<span class="glabel">${lab}</span></div>`;
+    col.innerHTML = inner + `<div class="barlabel">${ELEM_CN[e]}</div>`;
+    eBox.appendChild(col);
+  }
+
+  const lBox = $("lambdaBars");
+  lBox.innerHTML = "";
+  const lams = ELEMENTS.map((e) => R.elements[e].lambda);
+  const lmax = Math.max(...lams), lmin = Math.min(...lams);
+  ELEMENTS.forEach((e) => {
+    const lam = R.elements[e].lambda;
+    const col = document.createElement("div");
+    col.className = "barcol";
+    const h = Math.max(4, (Math.log10(lam) - (Math.log10(lmin) - 0.7)) /
+      ((Math.log10(lmax) + 0.5) - (Math.log10(lmin) - 0.7)) * 100);
+    const txt = lam >= 1e-3 ? (lam * 1e3).toFixed(1) + " mm" : (lam * 1e6).toFixed(1) + " µm";
+    col.innerHTML = `<div class="bar" style="width:22px;height:${Math.min(h, 100)}%;background:${COLORS[e]}">
+        <span style="position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:10px;
+        white-space:nowrap;color:#3c4a59">${txt}</span></div>`;
+    col.insertAdjacentHTML("beforeend", `<div class="barlabel">${ELEM_CN[e]}</div>`);
+    lBox.appendChild(col);
+  });
+}
+
+/* ---------------- 结果表 ---------------- */
+function drawTable(R) {
+  const vis = MINERALS.filter((m) => state.showMine[m]);
+  const tbl = $("resultTable");
+  tbl.querySelector("thead").innerHTML =
+    `<tr><th>元素</th><th>D (m²/s)</th><th>C₀</th>` +
+    vis.map((m) => `<th>Kd ${MINE_CN[m]}</th>`).join("") +
+    vis.map((m) => `<th>富集 ${MINE_CN[m]}</th>`).join("") +
+    `<th>λ</th><th>D 置信度</th></tr>`;
+  const tb = tbl.querySelector("tbody");
+  tb.innerHTML = "";
+  const qCN = { measured: ["实测", "b-measured"], inferred: ["外推", "b-inferred"] };
+  for (const e of ELEMENTS) {
+    const r = R.elements[e];
+    const [q, cls] = qCN[r.quality];
+    const tr = document.createElement("tr");
+    const lamTxt = r.lambda >= 1e-3 ? (r.lambda * 1e3).toFixed(1) + " mm" : (r.lambda * 1e6).toFixed(1) + " µm";
+    tr.innerHTML = `
+      <td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${COLORS[e]};margin-right:4px"></span>${ELEM_CN[e]}</td>
+      <td>${fmtE(r.D, 2)}</td>
+      <td>${r.C0 >= 10 ? r.C0.toFixed(0) : r.C0.toFixed(2)} ${r.unit}</td>
+      ${vis.map((m) => `<td>${r.kd[m].toFixed(2)}</td>`).join("")}
+      ${vis.map((m) => `<td>${fmt2(r.enrich[m])}</td>`).join("")}
+      <td>${lamTxt}</td>
+      <td><span class="badge ${cls}">${q}</span></td>`;
+    tb.appendChild(tr);
+  }
+}
+
+/* ---------------- 控件 ---------------- */
+function buildChips() {
+  const mc = $("mineChips");
+  mc.innerHTML = "";
+  MINERALS.forEach((m) => {
+    const d = document.createElement("div");
+    d.className = "chip" + (state.showMine[m] ? " on" : "");
+    d.innerHTML = `<span class="dot" style="background:${MINE_COL[m]}"></span>${MINE_CN[m]}`;
+    d.onclick = () => { state.showMine[m] = !state.showMine[m]; d.classList.toggle("on"); render(); };
+    mc.appendChild(d);
+  });
+}
+
+function buildParamTable() {
+  const tb = $("paramTable").querySelector("tbody");
+  tb.innerHTML = "";
+  for (const e of ELEMENTS) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${COLORS[e]};margin-right:4px"></span>${ELEM_CN[e]}</td>
+      <td><input class="num" data-k="init" data-e="${e}" value="${state.init[e]}"></td>
+      <td><input class="num" data-k="bulk" data-e="${e}" value="${state.bulkKd[e]}"></td>
+      ${EDITABLE_MINE.map((m) => `<td><input class="num" data-k="kd" data-m="${m}" data-e="${e}" value="${state.kd[e + "|" + m]}"></td>`).join("")}`;
+    tb.appendChild(tr);
+  }
+  tb.querySelectorAll("input").forEach((inp) => {
+    inp.addEventListener("change", () => {
+      const e = inp.dataset.e, k = inp.dataset.k, m = inp.dataset.m;
+      const v = parseFloat(inp.value);
+      if (!isFinite(v)) { inp.value = ""; return; }
+      if (k === "init") state.init[e] = v;
+      else if (k === "bulk") state.bulkKd[e] = v;
+      else if (k === "kd") state.kd[e + "|" + m] = v;
+      render();
+    });
+  });
+}
+
+function render() {
+  const R = computeAll(state);
+  $("vT").textContent = state.T + " °C";
+  $("vv").textContent = fmtE(state.v, 1) + " m/s";
+  $("vhint").textContent = "≈ " + (state.v * 86400 * 1000).toFixed(2) + " mm/day";
+  $("vf").textContent = state.f.toFixed(2);
+  $("vOr").textContent = state.or + " mol%";
+  $("selElem").value = state.selElem;
+
+  drawTriple(R);
+  drawBars(R);
+  drawTable(R);
+}
+
+$("sT").addEventListener("input", (e) => { state.T = parseFloat(e.target.value); render(); });
+$("sv").addEventListener("input", (e) => {
+  state.v = Math.pow(10, -10 + (parseFloat(e.target.value) / 100) * 4);
+  render();
+});
+$("sf").addEventListener("input", (e) => { state.f = parseFloat(e.target.value); render(); });
+$("sOr").addEventListener("input", (e) => { state.or = parseFloat(e.target.value); render(); });
+$("selElem").addEventListener("change", (e) => { state.selElem = e.target.value; render(); });
+$("cmpFast").addEventListener("click", () => {
+  state.cmpFast = !state.cmpFast;
+  $("cmpFast").classList.toggle("on", state.cmpFast);
+  render();
+});
+$("cmpSlow").addEventListener("click", () => {
+  state.cmpSlow = !state.cmpSlow;
+  $("cmpSlow").classList.toggle("on", state.cmpSlow);
+  render();
+});
+$("dChip").addEventListener("click", () => {
+  state.dLiFactor = state.dLiFactor === 1 ? 0.5 : 1;
+  $("dChip").classList.toggle("on", state.dLiFactor !== 1);
+  render();
+});
+
+document.querySelectorAll("[data-preset]").forEach((el) => {
+  el.onclick = () => {
+    const p = el.dataset.preset;
+    if (p === "paper") { state.T = 700; state.v = 1e-8; state.f = 0.25; state.or = 90; }
+    if (p === "fast")  { state.v = 1e-7; }
+    if (p === "slow")  { state.v = 1e-9; }
+    if (p === "cold")  { state.T = 500; }
+    $("sT").value = state.T;
+    $("sv").value = Math.round((Math.log10(state.v) + 10) / 4 * 100);
+    $("sf").value = state.f;
+    $("sOr").value = state.or;
+    render();
+  };
+});
+
+$("btnCsv").onclick = () => {
+  const R = computeAll(state);
+  const head = ["element", "D_m2_s", "C0", "unit",
+    ...MINERALS.map((m) => "Kd_" + m),
+    ...MINERALS.map((m) => "enrich_" + m),
+    "lambda_um", "D_quality"];
+  const rows = [head.join(",")];
+  for (const e of ELEMENTS) {
+    const r = R.elements[e];
+    rows.push([e, r.D.toExponential(3), r.C0.toPrecision(4), r.unit,
+      ...MINERALS.map((m) => r.kd[m]),
+      ...MINERALS.map((m) => r.enrich[m].toFixed(2)),
+      (r.lambda * 1e6).toFixed(2), r.quality].join(","));
+  }
+  const blob = new Blob(["\ufeff" + rows.join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `blm_${state.T}C_${fmtE(state.v, 0)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+$("btnPrint").onclick = () => window.print();
+
+document.addEventListener("mousedown", (e) => {
+  if (AXEDIT && AXEDIT.classList.contains("open")
+      && !AXEDIT.contains(e.target) && !(e.target.classList && e.target.classList.contains("axhit"))) {
+    AXEDIT.classList.remove("open");
+  }
+});
+buildChips();
+buildParamTable();
+render();
+</script>
+</body>
+</html>
