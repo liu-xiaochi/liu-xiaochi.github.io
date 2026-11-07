@@ -13,8 +13,9 @@
     --card:#ffffff;
     --ink:#18221f;
     --ink-2:#2c3934;
-    --muted:#68756f;
-    --muted-2:#8a958f;
+    --muted:#5b6861;
+    --muted-2:#66736c;
+    --placeholder:#6b7770;
     --line:#dfe4dc;
     --line-soft:#edf0ea;
     --teal:#0f6b5f;
@@ -47,9 +48,19 @@
     color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;
     -webkit-font-smoothing:antialiased;
   }
-  ::selection{background:rgba(18,133,119,.18)}
-  a{color:var(--teal);text-decoration:none}
+  ::selection{background:rgba(18,133,119,.18);color:var(--ink)}
+  a{color:var(--teal);text-decoration:none;text-underline-offset:3px}
   a:hover{text-decoration:underline}
+  button:focus-visible,.chip:focus-visible,.tab-btn:focus-visible,.row-del:focus-visible,select:focus-visible{
+    outline:2px solid var(--teal-2);outline-offset:2px;
+  }
+  input::placeholder,textarea::placeholder{color:var(--placeholder);opacity:1}
+  .table-wrap,.all-table-wrap,.modal-card{scrollbar-width:thin;scrollbar-color:#b9c6bc transparent}
+  .table-wrap::-webkit-scrollbar,.all-table-wrap::-webkit-scrollbar,.modal-card::-webkit-scrollbar{width:10px;height:10px}
+  .table-wrap::-webkit-scrollbar-thumb,.all-table-wrap::-webkit-scrollbar-thumb,.modal-card::-webkit-scrollbar-thumb{
+    background:#c3cec4;border-radius:8px;border:2px solid transparent;background-clip:padding-box;
+  }
+  .table-wrap::-webkit-scrollbar-track,.all-table-wrap::-webkit-scrollbar-track,.modal-card::-webkit-scrollbar-track{background:transparent}
   .app-header{
     background:
       radial-gradient(700px 260px at 82% -30%,rgba(255,255,255,.16),transparent 60%),
@@ -84,7 +95,7 @@
     appearance:none;border:0;background:transparent;cursor:pointer;
     font-family:inherit;font-size:13.5px;font-weight:600;color:var(--muted);
     padding:14px 16px 12px;position:relative;letter-spacing:.01em;
-    display:flex;align-items:center;gap:7px;
+    display:flex;align-items:center;gap:7px;white-space:nowrap;flex:0 0 auto;
   }
   .tab-btn svg{width:15px;height:15px;opacity:.8}
   .tab-btn:hover{color:var(--ink)}
@@ -94,7 +105,7 @@
     border-radius:3px 3px 0 0;background:linear-gradient(90deg,var(--teal),var(--teal-2));
   }
   .tab-btn .count{
-    font-size:10.5px;background:var(--teal-soft);color:var(--teal-deep);
+    font-size:11px;background:var(--teal-soft);color:var(--teal-deep);
     border-radius:999px;padding:1px 6px;font-weight:700;
   }
   main{max-width:1480px;margin:0 auto;padding:22px 30px 60px}
@@ -112,16 +123,13 @@
   }
   .card-head h2{margin:0;font-size:15px;font-weight:650;letter-spacing:.01em}
   .card-head .sub{font-size:12px;color:var(--muted);font-weight:400;margin-top:2px}
-  .eyebrow{
-    font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
-    color:var(--teal);margin:0 0 7px;
-  }
+  .card-title-sm{margin:0 0 12px;font-size:13px;font-weight:680;letter-spacing:.01em;color:var(--ink-2)}
   .data-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
   .right-stack{display:flex;flex-direction:column;gap:18px;min-width:0}
   .settings-stack{display:flex;flex-direction:column;gap:14px;position:sticky;top:64px}
   .preview-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
   .preview-item{background:#f8faf6;border:1px solid var(--line-soft);border-radius:10px;padding:10px 12px}
-  .preview-item .k{font-size:10.5px;color:var(--muted);font-weight:650;letter-spacing:.02em}
+  .preview-item .k{font-size:11px;color:var(--muted);font-weight:650;letter-spacing:.02em}
   .preview-item .v{font-family:var(--mono);font-size:18px;font-weight:680;margin-top:2px;font-variant-numeric:tabular-nums}
   .preview-item .v small{font-size:10px;color:var(--muted);font-family:var(--sans);font-weight:500;margin-left:2px}
   .preview-note{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.6}
@@ -148,6 +156,12 @@
     font-size:11.8px;color:var(--muted);line-height:1.6;
   }
   .note-box b{color:var(--ink-2)}
+  .info-details{padding:15px 18px}
+  .info-details summary{cursor:pointer;font-size:13px;font-weight:680;color:var(--ink-2);list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .info-details summary::-webkit-details-marker{display:none}
+  .info-details summary::after{content:"+";font-family:var(--mono);color:var(--muted);font-size:16px;line-height:1}
+  .info-details[open] summary::after{content:"−"}
+  .info-details .note-box{margin-top:10px}
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .btn{
     appearance:none;font-family:inherit;font-size:12.5px;font-weight:650;
@@ -156,6 +170,7 @@
     transition:transform .08s,background .15s,border-color .15s,box-shadow .15s;
   }
   .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
   .btn svg{width:14px;height:14px}
   .btn-primary{background:var(--teal);color:#fff;box-shadow:0 4px 12px rgba(15,107,95,.18)}
   .btn-primary:hover{background:var(--teal-deep)}
@@ -170,7 +185,7 @@
   table.data-table{border-collapse:separate;border-spacing:0;width:100%;min-width:1080px}
   .data-table thead th{
     position:sticky;top:0;z-index:3;background:#f8f9f6;color:var(--muted);
-    font-size:10.4px;font-weight:700;letter-spacing:.03em;text-align:center;
+    font-size:11px;font-weight:700;letter-spacing:.02em;text-align:center;
     padding:9px 4px;border-bottom:1px solid var(--line);white-space:nowrap;
   }
   .data-table thead th.title-col{text-align:left;padding-left:14px}
@@ -180,10 +195,11 @@
   .data-table tbody tr:last-child td{border-bottom:0}
   .data-table tbody tr:hover{background:#fbfcf9}
   .data-table td.title-cell{padding-left:10px;padding-right:2px}
+  .data-table th:last-child,.data-table td:last-child{padding-right:10px}
   .data-table input.cell{
     width:56px;border:1px solid transparent;background:transparent;border-radius:6px;
-    padding:6px 3px;text-align:right;font-family:var(--mono);font-size:11.5px;
-    font-variant-numeric:tabular-nums;color:var(--ink);
+    padding:6px 3px;text-align:right;font-family:var(--mono);font-size:12px;
+    font-variant-numeric:tabular-nums;color:var(--ink);caret-color:var(--teal-2);
   }
   .data-table input.cell:hover{background:#f7f8f5;border-color:var(--line-soft)}
   .data-table input.cell:focus{background:#fff;border-color:var(--teal-2);box-shadow:0 0 0 2px rgba(18,133,119,.10)}
@@ -191,7 +207,12 @@
     width:100px;text-align:left;font-family:var(--sans);font-weight:600;font-size:12px;padding-left:8px;
   }
   .data-table input.optional{color:var(--muted)}
-  .row-no{width:34px;color:var(--muted-2);font-family:var(--mono);font-size:10.5px;text-align:right;padding-right:6px!important}
+  .row-no{width:34px;color:var(--muted-2);font-family:var(--mono);font-size:11px;text-align:right;padding-right:6px!important}
+  .row-total{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;white-space:nowrap}
+  .row-total.bad{color:var(--red)}
+  .row-status{width:30px;text-align:center}
+  .row-status .status-dot{margin:0}
+  .data-table tr.is-invalid td{background:#fdf7f6}
   .row-del{
     appearance:none;border:0;background:transparent;color:#b9c2bb;cursor:pointer;
     width:26px;height:26px;border-radius:6px;display:grid;place-items:center;margin:0 auto;
@@ -216,26 +237,51 @@
   .chip.active{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 4px 12px rgba(15,107,95,.16)}
   .chip .dot{width:7px;height:7px;border-radius:50%;background:#d29a2e}
   .chip.active .dot{background:#fff}
-  .summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
-  .stat{
-    background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 15px;box-shadow:var(--shadow-sm);
+  .synthesis{
+    display:grid;grid-template-columns:1.15fr 1fr .9fr;background:#fff;border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 22px;margin-bottom:12px;gap:0;
   }
-  .stat .k{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
-  .stat .v{font-size:22px;font-weight:680;letter-spacing:-.02em;margin-top:2px;font-variant-numeric:tabular-nums}
-  .stat .u{font-size:11px;color:var(--muted);font-weight:500;margin-left:3px}
-  .stat .s{font-size:11px;color:var(--muted-2);margin-top:1px}
+  .synthesis-main{padding-right:22px;border-right:1px solid var(--line-soft)}
+  .synthesis-block{padding-left:22px;border-right:1px solid var(--line-soft)}
+  .synthesis-block:last-child{border-right:0}
+  .synthesis-label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .synthesis-value{font-family:var(--mono);font-size:30px;line-height:1.15;font-weight:680;letter-spacing:-.03em;margin-top:4px;font-variant-numeric:tabular-nums}
+  .synthesis-value .unit{font-family:var(--sans);font-size:12px;color:var(--muted);font-weight:600;margin-left:4px;letter-spacing:0}
+  .synthesis-sub{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:3px}
+  .range-fams{display:block;font-size:11px;color:var(--muted-2);margin-top:3px}
+  .synthesis-range{font-family:var(--mono);font-size:18px;font-weight:650;margin-top:8px;font-variant-numeric:tabular-nums}
+  .synthesis-range.bad{color:var(--red)}
+  .synthesis-select{
+    margin-top:9px;width:100%;padding:6px 9px;font-size:12px;border-radius:8px;border:1px solid var(--line);
+    background:#fbfcf9;color:var(--ink-2);
+  }
+  .caveat{font-size:11.5px;color:var(--muted);line-height:1.6;margin:0 2px 16px;display:flex;gap:8px;align-items:flex-start}
+  .caveat::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--teal);flex:0 0 auto;margin-top:7px}
+  .caveat span{flex:1}
+  .sample-nav{display:flex;align-items:center;gap:7px;margin-bottom:9px;flex-wrap:wrap}
+  .sample-nav select{
+    max-width:260px;min-width:160px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);
+    background:#fff;font-size:12px;color:var(--ink-2);
+  }
+  .sample-nav .icon-btn{
+    appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink-2);border-radius:8px;
+    width:30px;height:30px;display:grid;place-items:center;cursor:pointer;
+  }
+  .sample-nav .icon-btn:hover{border-color:#c8d2c7;background:#fbfcf9}
+  .sample-nav .icon-btn:disabled{opacity:.4;cursor:not-allowed}
+  .sample-nav .sample-count{font-size:11.5px;color:var(--muted);margin-left:2px}
   .result-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;align-items:start}
   .kv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 14px}
   .kv{padding:8px 0;border-bottom:1px dashed var(--line-soft)}
 
-  .kv .k{font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+  .kv .k{font-size:11px;color:var(--muted);letter-spacing:.02em}
   .kv .v{font-family:var(--mono);font-size:14px;font-weight:650;font-variant-numeric:tabular-nums}
   .kv .v small{font-family:var(--sans);font-size:10px;color:var(--muted);font-weight:500;margin-left:2px}
   .name-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:15px}
   .name-line h3{margin:0;font-size:18px;font-weight:680;letter-spacing:-.01em}
   .badge{
     display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 8px;
-    font-size:10.5px;font-weight:700;letter-spacing:.02em;border:1px solid transparent;
+    font-size:11px;font-weight:700;letter-spacing:.02em;border:1px solid transparent;
   }
   .badge.ok{background:var(--teal-soft);color:var(--teal-deep);border-color:#cbe7df}
   .badge.warn{background:var(--amber-soft);color:#87560e;border-color:#f0dcb4}
@@ -243,16 +289,18 @@
   .badge.neutral{background:#f2f4ef;color:var(--muted);border-color:var(--line)}
   .method-list{display:flex;flex-direction:column}
   .method-row{
-    display:grid;grid-template-columns:4px minmax(0,1fr) 104px 58px;gap:12px;align-items:center;
+    display:grid;grid-template-columns:4px minmax(0,1fr) 104px 66px;gap:12px;align-items:center;
     padding:11px 0;border-bottom:1px solid var(--line-soft);
   }
   .method-row:last-child{border-bottom:0}
+  .method-row.preferred{background:#f5faf8;border-radius:8px;padding-left:8px;padding-right:8px;margin-left:-8px;margin-right:-8px}
   .method-bar{width:4px;height:30px;border-radius:4px;background:var(--teal)}
   .method-name{font-size:12.8px;font-weight:650;line-height:1.25}
-  .method-name .ref{display:block;font-size:10.5px;color:var(--muted);font-weight:500;margin-top:1px}
+  .method-name .ref{display:block;font-size:11px;color:var(--muted);font-weight:500;margin-top:1px}
+  .method-name .pref{display:inline-block;margin-left:6px;font-size:10px;letter-spacing:.04em;color:var(--teal-deep);background:var(--teal-soft);border-radius:4px;padding:1px 5px;vertical-align:1px}
   .method-val{text-align:right;font-family:var(--mono);font-size:16px;font-weight:680;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .method-val small{font-size:10px;color:var(--muted);font-family:var(--sans);font-weight:500;margin-left:2px}
-  .method-status{text-align:right;font-size:10.5px;color:var(--muted);white-space:nowrap}
+  .method-val small{font-size:11px;color:var(--muted);font-family:var(--sans);font-weight:500;margin-left:2px}
+  .method-status{text-align:right;font-size:11px;color:var(--muted);white-space:nowrap}
   .method-status.ok{color:#217a62}.method-status.warn{color:#9a6717}.method-status.bad{color:#a33a36}
   .empty{
     padding:48px 24px;text-align:center;color:var(--muted);
@@ -263,14 +311,16 @@
   .all-table-wrap{overflow:auto;border-radius:0 0 var(--radius) var(--radius)}
   table.all-table{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px;font-size:12px}
   .all-table thead th{
-    position:sticky;top:0;background:#f8f9f6;color:var(--muted);font-size:10.5px;font-weight:700;
-    letter-spacing:.03em;text-align:right;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;
+    position:sticky;top:0;background:#f8f9f6;color:var(--muted);font-size:11px;font-weight:700;
+    letter-spacing:.02em;text-align:right;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;
   }
   .all-table thead th:first-child,.all-table tbody td:first-child{text-align:left;padding-left:14px}
   .all-table tbody td{padding:8px 10px;border-bottom:1px solid var(--line-soft);text-align:right;font-family:var(--mono);font-size:11.8px;font-variant-numeric:tabular-nums;white-space:nowrap}
   .all-table tbody td:first-child{font-family:var(--sans);font-weight:650;font-size:12px}
   .all-table tbody tr:last-child td{border-bottom:0}
+  .all-table tbody tr{cursor:pointer}
   .all-table tbody tr:hover{background:#fbfcf9}
+  .all-table tbody tr:focus-visible{outline:2px solid var(--teal-2);outline-offset:-2px}
   .all-table td.hero{font-weight:750;color:var(--teal-deep);background:#f5faf8}
   .all-table th.group{text-align:center;background:#f1f4ef;border-left:1px solid var(--line)}
   .all-table th.group:first-child{background:#f8f9f6}
@@ -294,23 +344,24 @@
   .methods-intro p{margin:0 0 10px;font-size:13px;color:var(--ink-2);line-height:1.75}
   .methods-intro p:last-child{margin-bottom:0}
   .method-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
-  .method-card{padding:17px 18px;border-left:3px solid var(--teal)}
-  .method-card.mutch{border-left-color:var(--blue)}
-  .method-card.xu{border-left-color:var(--purple)}
-  .method-card.schmidt{border-left-color:#b98a2e}
-  .method-card.jr{border-left-color:#c47a2b}
-  .method-card.hz{border-left-color:#b85c4c}
-  .method-card.hollister{border-left-color:#8a5a2b}
-  .method-card.as{border-left-color:#3f8a68}
+  .method-card{padding:17px 18px;--mc:var(--teal)}
+  .method-card.mutch{--mc:var(--blue)}
+  .method-card.xu{--mc:var(--purple)}
+  .method-card.schmidt{--mc:#b98a2e}
+  .method-card.jr{--mc:#c47a2b}
+  .method-card.hz{--mc:#b85c4c}
+  .method-card.hollister{--mc:#8a5a2b}
+  .method-card.as{--mc:#3f8a68}
   .method-card h3{margin:0;font-size:13.5px;font-weight:680;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .method-card h3::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--mc);flex:0 0 auto;transform:translateY(-1px)}
   .method-card h3 .tag{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;background:#f3f5f1;padding:2px 6px;border-radius:5px}
   .method-card .eq{
     margin:10px 0 9px;padding:9px 11px;background:#f8faf6;border:1px solid var(--line-soft);
     border-radius:8px;font-family:var(--mono);font-size:12px;color:var(--ink-2);overflow-x:auto;white-space:nowrap;
   }
   .method-card .eq i{font-family:Georgia,"Times New Roman",serif;color:var(--teal-deep)}
-  .method-card .desc{font-size:11.8px;color:var(--muted);line-height:1.65}
-  .method-card .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:10.5px;color:var(--muted-2)}
+  .method-card .desc{font-size:12px;color:var(--muted);line-height:1.65}
+  .method-card .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--muted-2)}
   .method-card .meta b{color:var(--ink-2);font-weight:650}
   .refs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 22px}
   .ref{padding:9px 0;border-bottom:1px dashed var(--line-soft);font-size:11.8px;color:var(--muted);line-height:1.55}
@@ -324,7 +375,32 @@
   .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 22px 0}
   .modal-head h2{margin:0;font-size:17px}
   .modal-head p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+  .modal-close{
+    appearance:none;border:1px solid var(--line);background:#fff;color:var(--muted);
+    width:30px;height:30px;border-radius:8px;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;
+  }
+  .modal-close:hover{color:var(--ink);border-color:#c8d2c7;background:#fbfcf9}
+  .modal-close svg{width:14px;height:14px}
   .modal-body{padding:16px 22px 6px}
+  .paste-preview{
+    margin-top:12px;border:1px solid var(--line-soft);background:#fbfcf9;border-radius:10px;
+    padding:10px 12px;font-size:11.5px;color:var(--muted);line-height:1.6;max-height:150px;overflow:auto;
+  }
+  .paste-preview b{color:var(--ink-2)}
+  .paste-preview table{border-collapse:collapse;width:100%;margin-top:6px;font-family:var(--mono);font-size:10.5px}
+  .paste-preview th,.paste-preview td{padding:3px 5px;border-bottom:1px solid var(--line-soft);text-align:right;white-space:nowrap}
+  .paste-preview th:first-child,.paste-preview td:first-child{text-align:left}
+  .example-banner{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    margin:0 auto;max-width:1480px;padding:10px 30px;background:#fdf9f0;border-bottom:1px solid #f0dcb4;
+    font-size:12px;color:#6f5218;
+  }
+  .example-banner[hidden]{display:none}
+  .example-banner b{color:#5c4310}
+  .example-banner .toolbar{gap:6px}
+  .batch-strip{display:flex;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line-soft);padding-top:11px;margin-top:11px;font-size:11.5px;color:var(--muted)}
+  .batch-strip b{color:var(--ink-2);font-family:var(--mono);font-weight:650}
+  .sample-nav .icon-btn svg{width:14px;height:14px}
   .modal textarea{
     width:100%;min-height:240px;resize:vertical;border:1px solid var(--line);border-radius:10px;
     background:#fbfcf9;padding:12px;font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--ink);
@@ -335,40 +411,77 @@
   .modal-foot .hint{font-size:11.5px;color:var(--muted)}
   #toast{
     position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);z-index:200;
-    background:#18221f;color:#fff;font-size:12.5px;padding:9px 15px;border-radius:9px;
+    background:#18221f;color:#fff;font-size:12.5px;padding:9px 12px 9px 15px;border-radius:9px;
     opacity:0;pointer-events:none;transition:all .22s;box-shadow:0 8px 30px rgba(0,0,0,.2);
+    display:flex;align-items:center;gap:12px;max-width:calc(100vw - 28px);
   }
   #toast.show{opacity:1;transform:translate(-50%,0)}
-  .footer{margin-top:26px;padding:0 2px;font-size:11px;color:var(--muted-2);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;max-width:1480px;margin-left:auto;margin-right:auto}
+  #toast.show.has-action{pointer-events:auto}
+  #toast .toast-action{
+    appearance:none;border:1px solid rgba(255,255,255,.32);background:transparent;color:#fff;
+    font-family:inherit;font-size:11.5px;font-weight:650;padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;
+  }
+  #toast .toast-action:hover{background:rgba(255,255,255,.12)}
+  .footer{margin-top:26px;padding:0 2px;font-size:11.5px;color:var(--muted-2);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;max-width:1480px;margin-left:auto;margin-right:auto}
+  .footer a{color:var(--muted-2);text-decoration:underline;text-underline-offset:2px}
+  .footer a:hover{color:var(--ink-2)}
   @media (max-width:1100px){
     .data-layout{grid-template-columns:1fr}
     .settings-stack{position:static}
     .result-layout{grid-template-columns:1fr}
     .methods-intro{grid-template-columns:1fr}
     .method-cards{grid-template-columns:1fr}
-    .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .synthesis{grid-template-columns:1fr 1fr}
+    .synthesis-main{grid-column:1 / -1;padding-right:0;border-right:0;border-bottom:1px solid var(--line-soft);padding-bottom:14px;margin-bottom:14px}
+    .synthesis-block{padding-left:0;border-right:0}
+    .synthesis-block + .synthesis-block{padding-left:18px;border-left:1px solid var(--line-soft)}
   }
   @media (max-width:760px){
-    .app-header{padding:20px 18px}
-    .brand h1{font-size:22px}
-    .tabs{padding:0 12px;overflow-x:auto}
-    main{padding:16px 14px 50px}
+    .app-header{padding:16px 16px 14px;gap:10px}
+    .brand{gap:11px;min-width:0}
+    .brand-icon{width:38px;height:38px;border-radius:11px}
+    .brand-icon svg{width:22px;height:22px}
+    .brand h1{font-size:21px}
+    .brand p{font-size:11.5px;max-width:31ch}
+    .header-meta{flex-wrap:nowrap;overflow-x:auto;padding:2px 0 1px;max-width:100%;scrollbar-width:none}
+    .header-meta::-webkit-scrollbar{display:none}
+    .header-pill{flex:0 0 auto;font-size:10.5px;padding:4px 8px}
+    .tabs{padding:0 10px;overflow-x:auto;scrollbar-width:none}
+    .tabs::-webkit-scrollbar{display:none}
+    .tab-btn{padding:12px 9px 10px;font-size:12.5px}
+    .tab-btn svg{display:none}
+    main{padding:14px 12px 44px}
+    .example-banner{padding:9px 14px;font-size:11.5px}
     .card-head{padding:14px 16px}
     .card-pad{padding:16px}
-    .summary-grid{grid-template-columns:1fr 1fr}
+    .synthesis{grid-template-columns:1fr;padding:16px}
+    .synthesis-main{padding-bottom:12px;margin-bottom:12px}
+    .synthesis-block{padding-left:0;padding-top:10px;border-left:0;border-top:1px solid var(--line-soft)}
+    .synthesis-block + .synthesis-block{padding-left:0;border-left:0}
+    .synthesis-value{font-size:26px}
     .preview-grid{grid-template-columns:1fr 1fr}
     .kv-grid{grid-template-columns:1fr 1fr}
-    .method-row{grid-template-columns:4px minmax(0,1fr) 92px 50px;gap:8px}
+    .method-row{grid-template-columns:4px minmax(0,1fr) 88px 58px;gap:7px}
     .method-name{font-size:12px}
     .method-val{font-size:14px}
     .refs{grid-template-columns:1fr}
     .results-head{flex-direction:column}
+    .sample-nav{width:100%}
+    .sample-nav select{flex:1;min-width:0;max-width:none}
     .toolbar{gap:6px}
     .btn{padding:7px 10px;font-size:12px}
+    .data-table input.cell{padding:8px 4px;font-size:12px}
+    .row-del{width:32px;height:32px}
+    .row-status{width:26px}
+    #toast{font-size:11.5px;padding:8px 10px;gap:8px;bottom:16px}
+    #toast .toast-action{font-size:10.5px;padding:3px 6px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
   }
   @media print{
     body{background:#fff}
-    .app-header,.tabs,.toolbar,.settings-stack,.chips,.btn,.footer,#toast,.modal{display:none!important}
+    .app-header,.tabs,.toolbar,.settings-stack,.chips,.sample-nav,.example-banner,.btn,.footer,#toast,.modal{display:none!important}
     main{max-width:none;padding:0}
     .tab-panel{display:none!important}
     .tab-panel.active{display:block!important}
@@ -393,7 +506,6 @@
     </div>
   </div>
   <div class="header-meta">
-    <span class="header-pill">v1.0</span>
     <span class="header-pill">8 种压力标定</span>
     <span class="header-pill">Leake (1997) 重算</span>
     <span class="header-pill">离线单文件</span>
@@ -401,31 +513,39 @@
 </header>
 
 <nav class="tabs" role="tablist" aria-label="主导航">
-  <button class="tab-btn active" data-tab="data" role="tab" aria-selected="true">
+  <button class="tab-btn active" id="tabbtn-data" data-tab="data" role="tab" aria-selected="true" aria-controls="tab-data" tabindex="0">
     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 4.5h14M3 9.5h14M3 14.5h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
     数据输入 <span class="count" id="tab-count">0</span>
   </button>
-  <button class="tab-btn" data-tab="results" role="tab" aria-selected="false">
+  <button class="tab-btn" id="tabbtn-results" data-tab="results" role="tab" aria-selected="false" aria-controls="tab-results" tabindex="-1">
     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 15V9m4 6V5m4 10v-3m4 3V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
     计算结果
   </button>
-  <button class="tab-btn" data-tab="plots" role="tab" aria-selected="false">
+  <button class="tab-btn" id="tabbtn-plots" data-tab="plots" role="tab" aria-selected="false" aria-controls="tab-plots" tabindex="-1">
     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 16h14M4 13l3.5-4 3 2.2L15 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
     图解
   </button>
-  <button class="tab-btn" data-tab="methods" role="tab" aria-selected="false">
+  <button class="tab-btn" id="tabbtn-methods" data-tab="methods" role="tab" aria-selected="false" aria-controls="tab-methods" tabindex="-1">
     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 3.5h10v13H5z" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 7h5M7.5 10h5M7.5 13h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
     方法说明
   </button>
 </nav>
 
+<div class="example-banner" id="example-banner" hidden>
+  <div><b>示例数据。</b>当前显示 Mutch (2016) 示例，可直接替换成自己的分析；导出前请确认样品名与数据来源。</div>
+  <div class="toolbar">
+    <button class="btn btn-secondary btn-sm" id="example-clear">清空并开始</button>
+    <button class="btn btn-ghost btn-sm" id="example-dismiss">知道了</button>
+  </div>
+</div>
+
 <main>
   <!-- ============ DATA ============ -->
-  <section class="tab-panel active" id="tab-data" role="tabpanel">
+  <section class="tab-panel active" id="tab-data" role="tabpanel" aria-labelledby="tabbtn-data">
     <div class="data-layout">
       <aside class="settings-stack">
         <div class="card card-pad">
-          <p class="eyebrow">Calculation settings</p>
+          <h2 class="card-title-sm">计算设置</h2>
           <div class="field">
             <label for="fe-mode">Fe³⁺ 估算方案</label>
             <select id="fe-mode">
@@ -434,7 +554,7 @@
               <option value="ratio">固定 Fe³⁺/ΣFe</option>
               <option value="input">使用输入的 Fe₂O₃</option>
             </select>
-            <div class="hint" id="fe-hint">按 13/15-CNK 归一化并以电荷平衡求 Fe³⁺，适用于钙质角闪石。</div>
+            <div class="hint" id="fe-hint">按 13/15-CNK 归一化并以电荷平衡求 Fe³⁺。压力主要取决于 Al_tot，对 Fe³⁺ 拆分不敏感；该选项主要影响结构式显示与辅助温度。</div>
           </div>
           <div class="field" id="ratio-field" style="display:none">
             <label for="fe-ratio">Fe³⁺ / ΣFe</label>
@@ -459,19 +579,19 @@
         </div>
 
         <div class="card card-pad">
-          <p class="eyebrow">Input guide</p>
+          <h2 class="card-title-sm">输入说明</h2>
           <div class="note-box">
             <b>FeO(T)</b> 填全铁（以 FeO 计）。若同时有 <b>Fe₂O₃</b>，请把 FeO 填作亚铁、Fe₂O₃ 填作铁，程序会合并计算全铁。<br><br>
             单位均为 <b>wt.%</b>；T 列可留空。支持从 Excel 直接粘贴多行多列数据。
           </div>
         </div>
 
-        <div class="card card-pad">
-          <p class="eyebrow">Method note</p>
+        <details class="card card-pad info-details">
+          <summary>方法提示</summary>
           <div class="note-box">
-            Al-in-hornblende 压力主要取决于 Al<sub>tot</sub>，<b>对 Fe³⁺ 拆分不敏感</b>。上方 Fe³⁺ 选择主要影响结构式显示与辅助温度；Ridolfi (2010) 与 Xu (2021) 仍按其原始方案独立重算，以保证与标定表一致。
+            Al-in-hornblende 压力主要取决于 Al<sub>tot</sub>，<b>对 Fe³⁺ 拆分不敏感</b>。Fe³⁺ 选择主要影响结构式显示与辅助温度；Ridolfi (2010) 与 Xu (2021) 仍按其原始方案独立重算。程序只检查成分/温压范围，<b>不判断矿物组合是否平衡</b>。
           </div>
-        </div>
+        </details>
       </aside>
 
       <div class="right-stack">
@@ -502,6 +622,18 @@
                 <button class="btn btn-ghost" data-example="ridolfi" style="width:100%;justify-content:flex-start;padding:8px 10px">Ridolfi (2010) · 3 个火山角闪石</button>
               </div>
             </div>
+            <div style="position:relative">
+              <button class="btn btn-secondary" id="btn-project">
+                <svg viewBox="0 0 20 20" fill="none"><path d="M3.5 5.5h5l1.5 2h6.5v7h-13z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+                项目
+                <svg viewBox="0 0 20 20" fill="none" style="width:11px"><path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div id="project-menu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:20;background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 12px 36px rgba(20,32,28,.14);padding:5px;min-width:220px">
+                <button class="btn btn-ghost" data-project="export" style="width:100%;justify-content:flex-start;padding:8px 10px">导出项目 JSON</button>
+                <button class="btn btn-ghost" data-project="import" style="width:100%;justify-content:flex-start;padding:8px 10px">导入项目 JSON</button>
+              </div>
+            </div>
+            <input type="file" id="project-file" accept=".json,application/json" hidden>
             <button class="btn btn-danger" id="btn-clear">
               <svg viewBox="0 0 20 20" fill="none"><path d="M5 6h10M8 6V4.5h4V6m-6 0 .7 10h6.6L15 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
               清空
@@ -512,11 +644,12 @@
           <table class="data-table" id="data-table">
             <thead>
               <tr>
-                <th class="row-no">#</th>
-                <th class="title-col">样品</th>
-                <th>SiO₂</th><th>TiO₂</th><th>Al₂O₃</th><th>Cr₂O₃</th>
-                <th>FeO(T)</th><th>Fe₂O₃</th><th>MnO</th><th>MgO</th>
-                <th>CaO</th><th>Na₂O</th><th>K₂O</th><th>T (°C)</th><th></th>
+                <th scope="col" class="row-no">#</th>
+                <th scope="col" class="title-col">样品</th>
+                <th scope="col">SiO₂</th><th scope="col">TiO₂</th><th scope="col">Al₂O₃</th><th scope="col">Cr₂O₃</th>
+                <th scope="col">FeO(T)</th><th scope="col">Fe₂O₃</th><th scope="col">MnO</th><th scope="col">MgO</th>
+                <th scope="col">CaO</th><th scope="col">Na₂O</th><th scope="col">K₂O</th><th scope="col">T (°C)</th>
+                <th scope="col" title="氧化物总量 wt.%">Σ</th><th scope="col" title="绿=范围内；黄=有提示；红=无效">状态</th><th scope="col"></th>
               </tr>
             </thead>
             <tbody id="data-body"></tbody>
@@ -524,14 +657,16 @@
         </div>
         <div class="table-foot">
           <div><span class="status-dot" id="table-status-dot"></span><span id="table-status-text">等待输入样品</span></div>
-          <div>粘贴支持 Tab / 逗号 / 分号分隔；表头可含 SiO₂、Al2O3、FeO 等中英文名。</div>
+          <div>粘贴支持 Tab / 逗号 / 分号分隔；表头可含 SiO₂、Al2O3、FeO 等中英文名。草稿自动保存在本浏览器。</div>
         </div>
       </div>
 
       <div class="card" id="preview-card">
         <div class="card-head">
           <div><h2>结果预览</h2><div class="sub" id="preview-sub">当前选中样品</div></div>
-          <button class="btn btn-ghost btn-sm" id="btn-goto-results">查看完整结果 →</button>
+          <button class="btn btn-ghost btn-sm" id="btn-goto-results">查看完整结果
+            <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h11m-4-4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
         </div>
         <div class="card-pad">
           <div id="preview-body"></div>
@@ -542,7 +677,7 @@
   </section>
 
   <!-- ============ RESULTS ============ -->
-  <section class="tab-panel" id="tab-results" role="tabpanel">
+  <section class="tab-panel" id="tab-results" role="tabpanel" aria-labelledby="tabbtn-results">
     <div id="results-empty" class="card empty">
       <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M10 38V20l14-9 14 9v18H10Z" stroke="currentColor" stroke-width="1.5"/><path d="M20 38V27h8v11" stroke="currentColor" stroke-width="1.5"/></svg>
       <h3>还没有可计算的样品</h3>
@@ -551,7 +686,17 @@
     <div id="results-content" style="display:none">
       <div class="results-head">
         <div>
-          <p class="segment-title">选择样品查看结构式与压力结果</p>
+          <p class="segment-title">选择样品</p>
+          <div class="sample-nav">
+            <button class="icon-btn" id="sample-prev" aria-label="上一个样品" title="上一个样品">
+              <svg viewBox="0 0 20 20" fill="none"><path d="m12 5-5 5 5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <select id="sample-select" aria-label="选择样品"></select>
+            <button class="icon-btn" id="sample-next" aria-label="下一个样品" title="下一个样品">
+              <svg viewBox="0 0 20 20" fill="none"><path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <span class="sample-count" id="sample-count"></span>
+          </div>
           <div class="chips" id="sample-chips"></div>
         </div>
         <div class="toolbar">
@@ -561,12 +706,30 @@
         </div>
       </div>
 
-      <div class="summary-grid" id="summary-grid"></div>
+      <div class="synthesis" id="synthesis">
+        <div class="synthesis-main">
+          <div class="synthesis-label">首选压力</div>
+          <div class="synthesis-value"><span id="pref-value">—</span><span class="unit" id="pref-unit">kbar</span></div>
+          <div class="synthesis-sub" id="pref-sub">—</div>
+          <select class="synthesis-select" id="preferred-method" aria-label="首选压力方法"></select>
+        </div>
+        <div class="synthesis-block">
+          <div class="synthesis-label">跨方法范围</div>
+          <div class="synthesis-range" id="range-value">—</div>
+          <div class="synthesis-sub" id="range-sub">不是分析不确定度</div>
+        </div>
+        <div class="synthesis-block">
+          <div class="synthesis-label">温度</div>
+          <div class="synthesis-value"><span id="temp-value">—</span><span class="unit">°C</span></div>
+          <div class="synthesis-sub" id="temp-sub">—</div>
+        </div>
+      </div>
+      <p class="caveat" id="results-caveat"><span>压力取决于角闪石成分与矿物共生组合。程序只检查成分/温压范围，<b>不判断矿物是否平衡</b>；跨方法范围不是分析不确定度。</span></p>
 
       <div class="result-layout">
         <div class="card" style="overflow:hidden">
           <div class="card-head">
-            <div><h2>结构式与适用性</h2><div class="sub" id="formula-sub">23 O · Leake (1997)</div></div>
+            <div><h2>结构式与范围检查</h2><div class="sub" id="formula-sub">23 O · Leake (1997)</div></div>
             <span class="badge ok" id="formula-badge">钙质角闪石</span>
           </div>
           <div class="card-pad">
@@ -582,7 +745,7 @@
         <div class="card">
           <div class="card-head">
             <div><h2>压力结果</h2><div class="sub" id="method-unit-sub">kbar · 按方法排序</div></div>
-            <span class="badge neutral" id="p-count">8 methods</span>
+            <span class="badge neutral" id="p-count">8 种方法</span>
           </div>
           <div class="card-pad" style="padding-top:8px;padding-bottom:10px">
             <div class="method-list" id="method-list"></div>
@@ -596,7 +759,7 @@
             <div><h3>方法对比</h3><p id="chart-sub">同一角闪石成分下不同压力标定的结果</p></div>
             <span class="badge neutral" id="chart-unit">kbar</span>
           </div>
-          <div class="chart-wrap"><canvas id="bar-chart"></canvas></div>
+          <div class="chart-wrap"><canvas id="bar-chart" role="img" aria-label="当前样品各压力方法对比条形图"></canvas></div>
         </div>
       </div>
 
@@ -609,13 +772,13 @@
           <table class="all-table" id="all-table">
             <thead>
               <tr>
-                <th rowspan="2">样品</th><th rowspan="2">Al<sub>tot</sub></th><th rowspan="2">Al<sup>VI</sup></th><th rowspan="2">T<sub>Rid</sub></th>
-                <th rowspan="2">Ridolfi</th><th rowspan="2">Mutch</th><th rowspan="2">Xu</th>
-                <th colspan="5" class="group">Al-in-hornblende 经典标定</th>
-                <th rowspan="2">均值</th><th rowspan="2">1σ</th>
+                <th scope="col" rowspan="2">样品</th><th scope="col" rowspan="2">Al<sub>tot</sub></th><th scope="col" rowspan="2">Al<sup>VI</sup></th><th scope="col" rowspan="2">T<sub>Rid</sub></th>
+                <th scope="col" rowspan="2">Ridolfi</th><th scope="col" rowspan="2">Mutch</th><th scope="col" rowspan="2">Xu</th>
+                <th scope="colgroup" colspan="5" class="group">Al-in-hornblende 经典标定</th>
+                <th scope="col" rowspan="2" title="跨方法中位数，不是分析不确定度">方法中位数</th><th scope="col" rowspan="2" title="跨方法极差（最大−最小），不是分析不确定度">极差</th>
               </tr>
               <tr>
-                <th>Schmidt</th><th>J&amp;R</th><th>H&amp;Z</th><th>Hollister</th><th>A&amp;S</th>
+                <th scope="col">Schmidt</th><th scope="col">J&amp;R</th><th scope="col">H&amp;Z</th><th scope="col">Hollister</th><th scope="col">A&amp;S</th>
               </tr>
             </thead>
             <tbody id="all-body"></tbody>
@@ -626,7 +789,7 @@
   </section>
 
   <!-- ============ PLOTS ============ -->
-  <section class="tab-panel" id="tab-plots" role="tabpanel">
+  <section class="tab-panel" id="tab-plots" role="tabpanel" aria-labelledby="tabbtn-plots">
     <div class="plots-grid">
       <div class="card">
         <div class="chart-card">
@@ -634,7 +797,7 @@
             <div><h3>Al<sub>tot</sub> – P 关系</h3><p>全部样品与经典 Al-in-hornblende 标定线；Ridolfi (2010) 为非线性 Al–P 关系</p></div>
             <span class="badge neutral">P / kbar</span>
           </div>
-          <div class="chart-wrap"><canvas id="scatter-al"></canvas></div>
+          <div class="chart-wrap"><canvas id="scatter-al" role="img" aria-label="Al_tot 与压力关系散点图"></canvas></div>
           <div class="legend" id="legend-al"></div>
           <div class="plot-note">Ridolfi (2010) 使用 13-CNK 重算的 Al_tot，其余经典标定使用 23 O 重算的 Al_tot，因此同一成分的横坐标可能略有差异。</div>
         </div>
@@ -645,7 +808,7 @@
             <div><h3>T – P 关系</h3><p>Ridolfi (2010) 温度与压力；不同颜色代表不同样品</p></div>
             <span class="badge neutral">T / °C</span>
           </div>
-          <div class="chart-wrap"><canvas id="scatter-tp"></canvas></div>
+          <div class="chart-wrap"><canvas id="scatter-tp" role="img" aria-label="温度与压力关系散点图"></canvas></div>
           <div class="legend" id="legend-tp"></div>
           <div class="plot-note">温度来自 Ridolfi (2010) 角闪石温度计（±22 °C）。若在数据表中输入了 T，可切换温度来源后用于 Anderson &amp; Smith (1995)。</div>
         </div>
@@ -654,23 +817,21 @@
   </section>
 
   <!-- ============ METHODS ============ -->
-  <section class="tab-panel" id="tab-methods" role="tabpanel">
+  <section class="tab-panel" id="tab-methods" role="tabpanel" aria-labelledby="tabbtn-methods">
     <div class="methods-intro">
       <div class="card card-pad">
-        <p class="eyebrow">Why amphibole</p>
         <h2>Al-in-hornblende 压力计</h2>
         <p>钙质角闪石中的铝含量随结晶压力升高而增加，这一经验关系是花岗岩、闪长岩和火山岩侵位/存储压力估算中最常用的工具之一。经典标定（Hammarstrom &amp; Zen, 1986；Hollister et al., 1987；Johnson &amp; Rutherford, 1989；Schmidt, 1992；Anderson &amp; Smith, 1995）通常要求角闪石与石英、斜长石、钾长石、黑云母、钛铁氧化物和熔体共生。</p>
         <p>本程序把同一份电子探针成分同时送入 8 种标定，便于检查方法间的一致性与离散度。Ridolfi (2010) 与 Xu (2021) 使用各自的重算方案，其余方法使用 23 O 重算的 Al<sub>tot</sub>。</p>
       </div>
       <div class="card card-pad">
-        <p class="eyebrow">Workflow</p>
         <h2 style="font-size:15px;margin-bottom:10px">计算流程</h2>
         <div class="note-box" style="border-style:solid;background:#fff">
           <b>1.</b> 输入氧化物 wt.%（FeO(T) 为全铁）<br>
           <b>2.</b> 按 23 O 或 13/15-CNK 重算阳离子<br>
           <b>3.</b> 以电荷平衡或指定 Fe³⁺/ΣFe 拆分铁<br>
           <b>4.</b> 分配 T / C / B / A 位，得到 Al<sub>tot</sub>、Al<sup>VI</sup><br>
-          <b>5.</b> 代入 8 种压力标定并检查适用性
+          <b>5.</b> 代入 8 种压力标定并检查成分/温压范围
         </div>
       </div>
     </div>
@@ -681,19 +842,19 @@
         <div class="eq"><i>P</i> (MPa) = 19.209 · exp(1.438 · Al<sub>tot</sub>)</div>
         <div class="desc">基于 13-CNK 重算（Si+Ti+Al+Cr+Fe+Mn+Mg = 13），Fe³⁺ 由电荷平衡求得。温度由同一套重算的 Si* 参数给出：<span class="mono">T = 2041 − 151.487 Si*</span>，其中<br>
           <span class="mono" style="font-size:10.5px;line-height:1.7">Si* = Si + Al<sub>IV</sub>/15 − 2Ti<sub>T</sub> − Al<sub>VI</sub>/2 − Ti<sub>C</sub>/1.8 + Fe³⁺/9 + Fe²⁺/3.3 + Mg/26 + Ca<sub>B</sub>/5 + Na<sub>B</sub>/1.3 − Na<sub>A</sub>/15 + (1−A)/2.3</span>。</div>
-        <div class="meta"><span>适用：<b>钙质角闪石</b></span><span>温度误差：<b>±22 °C</b></span><span>压力：<b>非线性，约 1–8 kbar</b></span></div>
+        <div class="meta"><span>对象：<b>钙质角闪石</b></span><span>温度误差：<b>±22 °C</b></span><span>压力：<b>非线性，约 1–8 kbar</b></span></div>
       </div>
       <div class="card method-card mutch">
         <h3>Mutch et al. (2016) <span class="tag">Al<sub>tot</sub></span></h3>
         <div class="eq"><i>P</i> (kbar) = 0.5 + 0.331 Al<sub>tot</sub> + 0.995 Al<sub>tot</sub><sup>2</sup></div>
         <div class="desc">对 Al-in-hornblende 实验数据集的二次重新标定，使用 23 O 重算的 Al<sub>tot</sub>。对高铝角闪石更敏感。</div>
-        <div class="meta"><span>适用：<b>钙质角闪石</b></span><span>标定：<b>实验数据</b></span></div>
+        <div class="meta"><span>对象：<b>钙质角闪石</b></span><span>标定：<b>实验数据</b></span></div>
       </div>
       <div class="card method-card xu">
         <h3>Xu et al. (2021) <span class="tag">Al<sup>VI</sup></span></h3>
         <div class="eq"><i>P</i> (kbar) = 16.75 · Al<sup>VI</sup> − 0.48</div>
         <div class="desc">使用 15-CNK 归一化（Si+Ti+Al+Cr+Fe+Mn+Mg+Ca = 15）并以电荷平衡求 Fe³⁺ 的 Al<sup>VI</sup> 标定，适合堆晶/镁铁质角闪石。</div>
-        <div class="meta"><span>适用：<b>钙质角闪石</b></span><span>输入：<b>Al<sup>VI</sup></b></span></div>
+        <div class="meta"><span>对象：<b>钙质角闪石</b></span><span>输入：<b>Al<sup>VI</sup></b></span></div>
       </div>
       <div class="card method-card schmidt">
         <h3>Schmidt (1992) <span class="tag">经典</span></h3>
@@ -705,19 +866,19 @@
         <h3>Johnson &amp; Rutherford (1989) <span class="tag">经典</span></h3>
         <div class="eq"><i>P</i> (kbar) = 4.23 Al<sub>tot</sub> − 3.46</div>
         <div class="desc">基于 Long Valley 火山岩的实验标定；斜率低于 Schmidt (1992)，常给出略低的压力。</div>
-        <div class="meta"><span>范围：<b>约 1–8 kbar</b></span><span>适用：<b>钙质角闪石</b></span></div>
+        <div class="meta"><span>范围：<b>约 1–8 kbar</b></span><span>对象：<b>钙质角闪石</b></span></div>
       </div>
       <div class="card method-card hz">
         <h3>Hammarstrom &amp; Zen (1986) <span class="tag">经典</span></h3>
         <div class="eq"><i>P</i> (kbar) = 5.03 Al<sub>tot</sub> − 3.92</div>
         <div class="desc">最早的 Al-in-hornblende 经验标定之一；斜率最陡，对 Al<sub>tot</sub> 的重算方案较敏感。</div>
-        <div class="meta"><span>范围：<b>约 1–8 kbar</b></span><span>适用：<b>钙质角闪石</b></span></div>
+        <div class="meta"><span>范围：<b>约 1–8 kbar</b></span><span>对象：<b>钙质角闪石</b></span></div>
       </div>
       <div class="card method-card hollister">
         <h3>Hollister et al. (1987) <span class="tag">经典</span></h3>
         <div class="eq"><i>P</i> (kbar) = 5.03 Al<sub>tot</sub> − 3.53</div>
         <div class="desc">与 H&amp;Z 使用相同斜率，但截距不同；常用于钙碱性侵入体。</div>
-        <div class="meta"><span>范围：<b>约 1–8 kbar</b></span><span>适用：<b>钙质角闪石</b></span></div>
+        <div class="meta"><span>范围：<b>约 1–8 kbar</b></span><span>对象：<b>钙质角闪石</b></span></div>
       </div>
       <div class="card method-card as">
         <h3>Anderson &amp; Smith (1995) <span class="tag">T 校正</span></h3>
@@ -765,35 +926,38 @@
 </main>
 
 <footer class="footer">
-  <div>AmphBaro · 角闪石压力计 · Amphibole Barometry · 单文件离线工具</div>
-  <div>公式来源见“方法说明”；数值结果保留 2 位小数。</div>
+  <div>AmphBaro v1.1 · 角闪石压力计 · Amphibole Barometry · 单文件离线工具 · <a href="AmphBaro_workflow.html">使用流程图</a> · <a href="README.md">使用说明 / README</a></div>
+  <div>公式与适用范围见“方法说明”；压力显示保留 1 位小数（kbar）或整数（MPa）。</div>
 </footer>
 
-<div class="modal" id="paste-modal" role="dialog" aria-modal="true" aria-labelledby="paste-title">
+<div class="modal" id="paste-modal" role="dialog" aria-modal="true" aria-labelledby="paste-title" aria-describedby="paste-desc">
   <div class="modal-card">
     <div class="modal-head">
       <div>
         <h2 id="paste-title">粘贴数据</h2>
-        <p>从 Excel 复制整块区域，或粘贴 CSV。第一行可含表头。</p>
+        <p id="paste-desc">从 Excel 复制整块区域，或粘贴 CSV。第一行可含表头；导入前可先检查列映射。</p>
       </div>
-      <button class="btn btn-ghost" id="paste-close" aria-label="关闭">✕</button>
+      <button class="modal-close" id="paste-close" aria-label="关闭">
+        <svg viewBox="0 0 20 20" fill="none"><path d="m6 6 8 8M14 6l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
     </div>
     <div class="modal-body">
       <textarea id="paste-area" spellcheck="false" placeholder="样品	SiO2	TiO2	Al2O3	Cr2O3	FeO	MnO	MgO	CaO	Na2O	K2O
 MUT-01	48.05	1.16	6.16	0.06	15.97	0.34	12.02	10.77	0.97	0.44
 MUT-02	48.19	1.11	6.59	0.11	15.56	0.36	12.09	10.53	0.89	0.53"></textarea>
+      <div class="paste-preview" id="paste-preview">粘贴后在这里显示识别到的行数、列映射和前几行预览。</div>
     </div>
     <div class="modal-foot">
       <div class="hint">列顺序：样品, SiO₂, TiO₂, Al₂O₃, Cr₂O₃, FeO(T), MnO, MgO, CaO, Na₂O, K₂O, [Fe₂O₃], [T]</div>
       <div class="toolbar">
         <button class="btn btn-secondary" id="paste-cancel">取消</button>
-        <button class="btn btn-primary" id="paste-import">导入并计算</button>
+        <button class="btn btn-primary" id="paste-import" disabled>确认导入</button>
       </div>
     </div>
   </div>
 </div>
 
-<div id="toast" role="status" aria-live="polite"></div>
+<div id="toast" role="region" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 'use strict';
@@ -806,6 +970,28 @@ const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const fmt = (v, d = 2) => (Number.isFinite(v) ? v.toFixed(d) : '—');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+
+function median(values) {
+  const a = values.filter(v => Number.isFinite(v)).sort((x, y) => x - y);
+  if (!a.length) return NaN;
+  const m = Math.floor(a.length / 2);
+  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+}
+function rangeOf(values) {
+  const a = values.filter(v => Number.isFinite(v));
+  return a.length ? Math.max(...a) - Math.min(...a) : NaN;
+}
+function oxideSum(sample) {
+  return OX.reduce((sum, ox) => sum + Math.max(0, num(sample[ox.key])), 0);
+}
+function formatPressure(kbar) {
+  if (!Number.isFinite(kbar)) return '—';
+  const v = displayP(kbar);
+  const digits = state.settings.unit === 'kbar' ? 1 : 0;
+  if (Math.abs(v) < (state.settings.unit === 'kbar' ? 0.05 : 0.5)) return (0).toFixed(digits);
+  return v.toFixed(digits);
+}
+function formatPressureUnit() { return state.settings.unit === 'kbar' ? 'kbar' : 'MPa'; }
 
 function num(v) {
   if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
@@ -846,42 +1032,42 @@ const OX_BY_KEY = Object.fromEntries(OX.map(o => [o.key, o]));
 const METHODS = [
   {
     id: 'ridolfi', name: 'Ridolfi et al. (2010)', ref: '13-CNK · Al_tot · 非线性',
-    color: '#0f6b5f', short: 'Ridolfi 2010',
+    color: '#0f6b5f', short: 'Ridolfi 2010', family: 'Ridolfi',
     calc: (c) => 19.209 * Math.exp(1.438 * c.rid.AlTot) / 100,
   },
   {
     id: 'mutch', name: 'Mutch et al. (2016)', ref: '23 O · Al_tot · 二次式',
-    color: '#2d5f9e', short: 'Mutch 2016',
+    color: '#2d5f9e', short: 'Mutch 2016', family: 'Mutch',
     calc: (c) => 0.5 + 0.331 * c.f23.AlTot + 0.995 * c.f23.AlTot * c.f23.AlTot,
   },
   {
     id: 'xu', name: 'Xu et al. (2021)', ref: '15-CNK · Al_VI · 线性',
-    color: '#6a4c9c', short: 'Xu 2021',
+    color: '#6a4c9c', short: 'Xu 2021', family: 'Xu',
     calc: (c) => 16.75 * c.xu.AlVI - 0.48,
   },
   {
     id: 'schmidt', name: 'Schmidt (1992)', ref: '23 O · Al_tot',
-    color: '#a96c12', short: 'Schmidt 1992',
+    color: '#a96c12', short: 'Schmidt 1992', family: '经典',
     calc: (c) => 4.76 * c.f23.AlTot - 3.01,
   },
   {
     id: 'jr', name: 'Johnson & Rutherford (1989)', ref: '23 O · Al_tot',
-    color: '#c47a2b', short: 'J & R 1989',
+    color: '#c47a2b', short: 'J & R 1989', family: '经典',
     calc: (c) => 4.23 * c.f23.AlTot - 3.46,
   },
   {
     id: 'hz', name: 'Hammarstrom & Zen (1986)', ref: '23 O · Al_tot',
-    color: '#b85c4c', short: 'H & Z 1986',
+    color: '#b85c4c', short: 'H & Z 1986', family: '经典',
     calc: (c) => 5.03 * c.f23.AlTot - 3.92,
   },
   {
     id: 'hollister', name: 'Hollister et al. (1987)', ref: '23 O · Al_tot',
-    color: '#8a5a2b', short: 'Hollister 1987',
+    color: '#8a5a2b', short: 'Hollister 1987', family: '经典',
     calc: (c) => 5.03 * c.f23.AlTot - 3.53,
   },
   {
     id: 'as', name: 'Anderson & Smith (1995)', ref: '23 O · Al_tot · T 校正',
-    color: '#3f8a68', short: 'A & S 1995',
+    color: '#3f8a68', short: 'A & S 1995', family: '经典',
     calc: (c) => -3.01 + 4.76 * c.f23.AlTot -
       ((c.Tuse - 675) / 85) * (0.53 * c.f23.AlTot + 0.005294 * (c.Tuse - 675)),
   },
@@ -890,12 +1076,17 @@ const METHOD_BY_ID = Object.fromEntries(METHODS.map(m => [m.id, m]));
 
 const PALETTE = ['#0f6b5f', '#2d5f9e', '#a96c12', '#6a4c9c', '#b03b38', '#3f8a68', '#8a5a2b', '#c47a2b', '#557a95', '#7a5c9e'];
 
+const DRAFT_KEY = 'amphbaro.draft.v1';
 const state = {
   samples: [],
   calcs: [],
   selectedId: null,
+  preferredMethod: 'ridolfi',
   settings: { feMode: 'leake', feRatio: 0.2, tSource: 'ridolfi', unit: 'kbar' },
   activeTab: 'data',
+  isExample: false,
+  exampleDismissed: false,
+  lastDeleted: null,
 };
 
 function makeSample(partial = {}) {
@@ -1156,6 +1347,7 @@ function calculateSample(sample, settings) {
         r.msg = 'Al_tot 超出常见标定范围（0.7–2.4 apfu）';
       }
     }
+    if (!r.msg && r.status === 'ok') r.msg = '成分/温压范围通过；程序未判断矿物组合与平衡。';
   }
 
   const warnings = [];
@@ -1172,20 +1364,16 @@ function calculateSample(sample, settings) {
   if (rid.AlTot > 2.6) warnings.push({ level: 'warn', text: 'Ridolfi 13-CNK Al_tot 偏高，压力可能明显外推。' });
 
   const validVals = METHODS.map(m => results[m.id]).filter(r => r.value !== null && Number.isFinite(r.value) && r.status !== 'bad').map(r => r.value);
-  const mean = validVals.length ? validVals.reduce((a, b) => a + b, 0) / validVals.length : NaN;
-  const sd = validVals.length > 1
-    ? Math.sqrt(validVals.reduce((a, b) => a + (b - mean) ** 2, 0) / (validVals.length - 1))
-    : NaN;
-  if (Number.isFinite(sd) && sd > 2) {
-    warnings.push({ level: 'warn', text: `8 种方法的 1σ 离散度 = ${fmt(sd, 2)} kbar，方法间差异较大；可能反映标定体系差异、样品不在某些方法的适用范围内，或 Fe³⁺ 重算不一致。` });
+  const medianP = median(validVals);
+  const rangeP = rangeOf(validVals);
+  if (Number.isFinite(rangeP) && rangeP > 2) {
+    warnings.push({ level: 'warn', text: `跨方法极差 = ${fmt(rangeP, 2)} kbar，方法间差异较大；这不等于分析不确定度，可能反映标定体系差异或样品不在某些方法的适用范围内。` });
   }
-  const classic = ['schmidt', 'jr', 'hz', 'hollister'].map(id => results[id].value).filter(v => Number.isFinite(v) && v > 0);
-  const classicMean = classic.length ? classic.reduce((a, b) => a + b, 0) / classic.length : NaN;
 
   return {
     valid: true, sample, raw, main, f23, rid, xu,
     Trid, Tuse, Tinput, Tput, Prid,
-    results, warnings, mean, sd, classicMean,
+    results, warnings, median: medianP, range: rangeP,
     species: classify(main),
     status: main.B.Ca >= 1.5 ? 'ok' : 'bad',
   };
@@ -1231,18 +1419,127 @@ function loadExample(key, quiet = false) {
   if (!ex) return;
   state.samples = ex.rows.map(r => makeSample(r));
   state.selectedId = state.samples[0]?.id || null;
-  renderTable();
+  state.isExample = true;
+  state.exampleDismissed = false;
+  renderTable({ resetScroll: true });
   recalcAll();
   if (!quiet) toast(`已载入 ${ex.label} 示例（${ex.rows.length} 个样品）`);
+}
+
+function serializeProject() {
+  return {
+    app: 'AmphBaro',
+    version: '1.1',
+    savedAt: new Date().toISOString(),
+    settings: { ...state.settings },
+    preferredMethod: state.preferredMethod,
+    isExample: state.isExample,
+    exampleDismissed: state.exampleDismissed,
+    selectedId: state.selectedId,
+    samples: state.samples,
+  };
+}
+
+function saveDraft() {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(serializeProject())); } catch (e) { /* file:// or quota */ }
+}
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    if (!d || !Array.isArray(d.samples) || !d.samples.length) return null;
+    return d;
+  } catch (e) { return null; }
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* noop */ }
+}
+
+function restoreDraft(d) {
+  state.samples = d.samples.map(s => makeSample(s));
+  state.settings = { ...state.settings, ...(d.settings || {}) };
+  state.preferredMethod = d.preferredMethod || 'ridolfi';
+  state.isExample = !!d.isExample;
+  state.exampleDismissed = !!d.exampleDismissed;
+  const ids = new Set(state.samples.map(s => s.id));
+  state.selectedId = d.selectedId && ids.has(d.selectedId) ? d.selectedId : (state.samples[0]?.id || null);
+  syncSettingsUI();
+  renderTable({ resetScroll: true });
+  recalcAll();
+}
+
+function updateExampleBanner() {
+  const banner = $('#example-banner');
+  if (!banner) return;
+  banner.hidden = !(state.isExample && !state.exampleDismissed);
+}
+
+function markManual() {
+  state.isExample = false;
+  state.exampleDismissed = true;
+  updateExampleBanner();
+}
+
+function startBlank() {
+  state.samples = [makeSample()];
+  state.selectedId = state.samples[0].id;
+  state.isExample = false;
+  state.exampleDismissed = true;
+  clearDraft();
+  renderTable({ focusId: state.selectedId, resetScroll: true });
+  recalcAll();
+}
+
+function downloadProject() {
+  const blob = new Blob([JSON.stringify(serializeProject(), null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `AmphBaro_project_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('项目 JSON 已导出');
+}
+
+function importProjectFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const d = JSON.parse(reader.result);
+      if (!d || !Array.isArray(d.samples) || !d.samples.length) throw new Error('No samples');
+      restoreDraft(d);
+      state.isExample = !!d.isExample;
+      updateExampleBanner();
+      toast(`已导入项目（${d.samples.length} 个样品）`);
+    } catch (e) {
+      toast('项目文件无法读取：请选择 AmphBaro 导出的 JSON');
+    }
+  };
+  reader.readAsText(file);
 }
 
 /* ============================================================
    5. 表格渲染与状态
    ============================================================ */
-function renderTable() {
+function renderTable(opts = {}) {
   const body = $('#data-body');
+  const wrap = $('.table-wrap');
+  const scrollTop = opts.resetScroll ? 0 : (wrap ? wrap.scrollTop : 0);
+  const scrollLeft = opts.resetScroll ? 0 : (wrap ? wrap.scrollLeft : 0);
+  const active = document.activeElement;
+  let focusState = null;
+  if (!opts.focusId && active && active.matches && active.matches('#data-body input.cell')) {
+    focusState = { id: active.dataset.id, key: active.dataset.key, start: active.selectionStart, end: active.selectionEnd };
+  }
+
   if (!state.samples.length) {
-    body.innerHTML = `<tr><td colspan="15" style="padding:28px;color:var(--muted)">暂无样品。点击“添加样品”或“载入示例”开始。</td></tr>`;
+    body.innerHTML = `<tr><td colspan="17" style="padding:28px;color:var(--muted)">暂无样品。点击“添加样品”或“载入示例”开始。</td></tr>`;
     return;
   }
   body.innerHTML = state.samples.map((s, i) => {
@@ -1250,14 +1547,62 @@ function renderTable() {
       const optional = ox.key === 'Fe2O3';
       return `<td><input class="cell${optional ? ' optional' : ''}" data-id="${s.id}" data-key="${ox.key}" type="text" inputmode="decimal" value="${esc(s[ox.key])}" aria-label="${ox.label}" placeholder="${optional ? '可选' : ''}"></td>`;
     }).join('');
-    return `<tr>
+    return `<tr data-row-id="${s.id}">
       <td class="row-no">${i + 1}</td>
       <td class="title-cell"><input class="cell name" data-id="${s.id}" data-key="name" type="text" value="${esc(s.name)}" aria-label="样品名称" placeholder="样品 ${i + 1}"></td>
       ${cells}
       <td><input class="cell optional" data-id="${s.id}" data-key="T" type="text" inputmode="decimal" value="${esc(s.T)}" aria-label="温度" placeholder="可选"></td>
+      <td class="row-total" title="氧化物总量 wt.%">${fmt(oxideSum(s), 2)}</td>
+      <td class="row-status"><span class="status-dot" role="img" title="等待计算" aria-label="等待计算"></span></td>
       <td><button class="row-del" data-del="${s.id}" title="删除样品" aria-label="删除样品"><svg viewBox="0 0 20 20" fill="none"><path d="M5 6h10M8 6V4.5h4V6m-6 0 .7 10h6.6L15 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td>
     </tr>`;
   }).join('');
+
+  if (wrap) {
+    wrap.scrollTop = scrollTop;
+    wrap.scrollLeft = scrollLeft;
+  }
+  requestAnimationFrame(() => {
+    if (opts.focusId) {
+      const el = $(`#data-body input.name[data-id="${opts.focusId}"]`);
+      if (el) el.focus();
+    } else if (focusState) {
+      const el = $(`#data-body input.cell[data-id="${focusState.id}"][data-key="${focusState.key}"]`);
+      if (el) {
+        el.focus();
+        try { el.setSelectionRange(focusState.start, focusState.end); } catch (e) { /* noop */ }
+      }
+    }
+    updateRowStatuses();
+  });
+}
+
+function updateRowStatuses() {
+  const byId = new Map(state.calcs.map(c => [c.sample.id, c]));
+  $$('#data-body tr[data-row-id]').forEach(tr => {
+    const id = tr.dataset.rowId;
+    const c = byId.get(id);
+    const dot = tr.querySelector('.row-status .status-dot');
+    const totalCell = tr.querySelector('.row-total');
+    const sample = state.samples.find(s => s.id === id);
+    if (totalCell && sample) {
+      const total = oxideSum(sample);
+      totalCell.textContent = fmt(total, 2);
+      totalCell.classList.toggle('bad', total > 0 && (total < 80 || total > 105));
+    }
+    if (!dot) return;
+    if (!c || !c.valid) {
+      dot.className = 'status-dot bad';
+      dot.title = c?.reason || '缺少有效数据';
+      dot.setAttribute('aria-label', dot.title);
+      return;
+    }
+    const hasBad = c.warnings.some(w => w.level === 'bad');
+    const hasWarn = c.warnings.length > 0;
+    dot.className = 'status-dot ' + (hasBad ? 'bad' : hasWarn ? 'warn' : 'ok');
+    dot.title = hasBad ? c.warnings.find(w => w.level === 'bad').text : hasWarn ? c.warnings[0].text : '成分/温压范围通过；未判断矿物平衡。';
+    dot.setAttribute('aria-label', dot.title);
+  });
 }
 
 function updateTableStatus() {
@@ -1271,7 +1616,7 @@ function updateTableStatus() {
     return;
   }
   dot.className = 'status-dot ' + (valid === 0 ? 'bad' : valid < total ? 'warn' : 'ok');
-  text.textContent = `${valid} / ${total} 个样品可计算 · 已更新`;
+  text.textContent = `${valid} / ${total} 个样品可计算 · 已更新 · 草稿已自动保存`;
 }
 
 function updateTabCount() {
@@ -1286,9 +1631,12 @@ function recalcAll() {
   state.calcs = state.samples.map(s => calculateSample(s, state.settings));
   updateTabCount();
   updateTableStatus();
+  updateRowStatuses();
   const c = selectedCalc(false);
   if (c) state.selectedId = c.sample.id;
   renderResults();
+  updateExampleBanner();
+  saveDraft();
   if (state.activeTab === 'results') requestAnimationFrame(drawBarChart);
   if (state.activeTab === 'plots') requestAnimationFrame(() => { drawScatterAl(); drawScatterTP(); });
 }
@@ -1322,9 +1670,10 @@ function renderResults() {
   content.style.display = '';
 
   renderChips();
+  renderSampleNav();
   const calc = selectedCalc();
   if (!calc) return;
-  renderSummary(calc);
+  renderSynthesis(calc);
   renderFormula(calc);
   renderMethodList(calc);
   renderAllTable();
@@ -1334,6 +1683,87 @@ function renderResults() {
   if (state.activeTab === 'results') requestAnimationFrame(drawBarChart);
 }
 
+function renderSampleNav() {
+  const select = $('#sample-select');
+  if (!select) return;
+  const valid = state.calcs.filter(c => c.valid);
+  select.innerHTML = state.calcs.map(c => `<option value="${c.sample.id}" ${c.valid ? '' : 'disabled'}>${esc(c.sample.name || '未命名')}${c.valid ? '' : ' · 无效'}</option>`).join('');
+  if (state.selectedId) select.value = state.selectedId;
+  const i = valid.findIndex(c => c.sample.id === state.selectedId);
+  $('#sample-count').textContent = valid.length ? `${Math.max(0, i) + 1} / ${valid.length} 有效` : '0 有效';
+  const prev = $('#sample-prev'), next = $('#sample-next');
+  if (prev) prev.disabled = valid.length < 2;
+  if (next) next.disabled = valid.length < 2;
+  const nav = $('.sample-nav');
+  if (nav) nav.style.display = state.calcs.length > 8 ? 'flex' : 'none';
+}
+
+function moveSample(dir) {
+  const valid = state.calcs.filter(c => c.valid);
+  if (!valid.length) return;
+  let i = valid.findIndex(c => c.sample.id === state.selectedId);
+  if (i < 0) i = 0;
+  i = (i + dir + valid.length) % valid.length;
+  state.selectedId = valid[i].sample.id;
+  renderResults();
+  saveDraft();
+  if (state.activeTab === 'results') requestAnimationFrame(drawBarChart);
+}
+
+function preferredResult(calc) {
+  const m = METHOD_BY_ID[state.preferredMethod] || METHOD_BY_ID.ridolfi;
+  return { method: m, result: calc.results[m.id] };
+}
+
+function familyRange(calc, family) {
+  const vals = METHODS.filter(m => m.family === family).map(m => calc.results[m.id]).filter(r => Number.isFinite(r.value) && r.value > 0 && r.status !== 'bad').map(r => r.value);
+  if (!vals.length) return null;
+  return { min: Math.min(...vals), max: Math.max(...vals), median: median(vals) };
+}
+
+function renderSynthesis(calc) {
+  if (!METHOD_BY_ID[state.preferredMethod]) state.preferredMethod = 'ridolfi';
+  const select = $('#preferred-method');
+  if (select) {
+    if (!select.options.length) {
+      select.innerHTML = METHODS.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+    }
+    select.value = state.preferredMethod;
+  }
+  const { method, result } = preferredResult(calc);
+  const bad = result.status === 'bad' || !Number.isFinite(result.value);
+  $('#pref-value').textContent = bad ? '—' : formatPressure(result.value);
+  $('#pref-unit').textContent = formatPressureUnit();
+  $('#pref-sub').textContent = bad
+    ? `${method.short}：不适用于当前样品`
+    : `${method.short} · ${statusText(result.status)} · ≈ ${fmt(depthKm(result.value), 1)} km 深度`;
+
+  const vals = METHODS.map(m => calc.results[m.id]).filter(r => Number.isFinite(r.value) && r.value > 0 && r.status !== 'bad').map(r => r.value);
+  const min = vals.length ? Math.min(...vals) : NaN;
+  const max = vals.length ? Math.max(...vals) : NaN;
+  const med = median(vals);
+  const range = rangeOf(vals);
+  const rangeEl = $('#range-value');
+  rangeEl.textContent = vals.length
+    ? `${min === max ? formatPressure(min) : `${formatPressure(min)}–${formatPressure(max)}`} ${formatPressureUnit()}`
+    : '—';
+  rangeEl.classList.toggle('bad', Number.isFinite(range) && range > 2);
+  const fams = ['Ridolfi', 'Mutch', 'Xu', '经典'].map(f => {
+    const r = familyRange(calc, f);
+    if (!r) return '';
+    const span = r.min === r.max ? formatPressure(r.min) : `${formatPressure(r.min)}–${formatPressure(r.max)}`;
+    return `${f} ${span}`;
+  }).filter(Boolean);
+  $('#range-sub').innerHTML = vals.length
+    ? `中位数 ${formatPressure(med)} ${formatPressureUnit()}${Number.isFinite(range) && range > 2 ? ' · 方法间不一致' : ' · 方法间较一致'}<span class="range-fams">${fams.join(' · ')}</span>`
+    : '没有可用的压力结果';
+
+  $('#temp-value').textContent = fmt(calc.Tuse, 0);
+  $('#temp-sub').textContent = calc.Tuse === calc.Trid
+    ? 'Ridolfi 2010 · ±22 °C · 用于 A&S'
+    : `样品输入 T · A&S 使用；Ridolfi T = ${fmt(calc.Trid, 0)} °C`;
+}
+
 function renderPreview() {
   const card = $('#preview-card');
   if (!card) return;
@@ -1341,52 +1771,40 @@ function renderPreview() {
   if (!c) { card.style.display = 'none'; return; }
   card.style.display = '';
   $('#preview-sub').textContent = `${c.sample.name || '未命名'} · Al_tot ${fmt(c.f23.AlTot, 3)} · T ${fmt(c.Trid, 0)} °C`;
-  const u = unitLabel();
   const entries = [
     ['ridolfi', 'Ridolfi 2010'],
     ['mutch', 'Mutch 2016'],
     ['xu', 'Xu 2021'],
     ['as', 'Anderson & Smith'],
   ];
+  const validCount = state.calcs.filter(x => x.valid).length;
+  const ridVals = state.calcs.filter(x => x.valid).map(x => x.results.ridolfi.value).filter(v => Number.isFinite(v) && v > 0);
+  const pRange = ridVals.length ? `${formatPressure(Math.min(...ridVals))}–${formatPressure(Math.max(...ridVals))} ${formatPressureUnit()}` : '—';
   $('#preview-body').innerHTML = `<div class="preview-grid">` +
-    entries.map(([id, label]) => `<div class="preview-item">
+    entries.map(([id, label]) => {
+      const res = c.results[id];
+      return `<div class="preview-item">
       <div class="k">${label}</div>
-      <div class="v">${fmt(displayP(c.results[id].value), 2)}<small>${u}</small></div>
-    </div>`).join('') +
-    `</div><div class="preview-note">当前选中 <b>${esc(c.sample.name || '未命名')}</b>。在“计算结果”页可查看结构式、8 种方法的完整对比、图解与 CSV 导出。</div>`;
+      <div class="v">${res.status === 'bad' ? '—' : formatPressure(res.value)}<small>${res.status === 'bad' ? '不适用' : formatPressureUnit()}</small></div>
+    </div>`;
+    }).join('') +
+    `</div><div class="batch-strip"><span><b>${state.samples.length}</b> 个样品</span><span><b>${validCount}</b> 个可计算</span><span>Ridolfi P：<b>${pRange}</b></span></div>
+    <div class="preview-note">当前选中 <b>${esc(c.sample.name || '未命名')}</b>。在“计算结果”页可切换首选方法、查看 8 种方法对比、结构式、图解与 CSV 导出。</div>`;
 }
 
 function renderChips() {
   const wrap = $('#sample-chips');
   const calc = selectedCalc();
   if (calc) state.selectedId = calc.sample.id;
+  wrap.style.display = state.calcs.length > 8 ? 'none' : 'flex';
   wrap.innerHTML = state.calcs.map(c => {
     const name = c.sample.name || '未命名';
     const active = c.sample.id === state.selectedId;
-    const dotClass = c.valid ? (c.status === 'ok' ? 'ok' : 'warn') : 'bad';
+    const dotClass = !c.valid ? 'bad' : c.warnings.some(w => w.level === 'bad') ? 'bad' : c.warnings.length ? 'warn' : 'ok';
     return `<button class="chip${active ? ' active' : ''}" data-chip="${c.sample.id}" ${c.valid ? '' : 'disabled title="该样品缺少有效数据"'}>
       <span class="dot" style="background:${active ? '#fff' : dotClass === 'ok' ? '#2f9e7f' : dotClass === 'warn' ? '#d29a2e' : '#c95a52'}"></span>${esc(name)}
     </button>`;
   }).join('');
-}
-
-function renderSummary(calc) {
-  const u = unitLabel();
-  const Prid = displayP(calc.results.ridolfi.value);
-  const mean = displayP(calc.mean);
-  const sd = displayP(calc.sd);
-  const classic = displayP(calc.classicMean);
-  const stats = [
-    { k: 'Ridolfi (2010)', v: fmt(Prid, 2), u, s: `≈ ${fmt(depthKm(calc.results.ridolfi.value), 1)} km 深度` },
-    { k: '经典方法均值', v: fmt(classic, 2), u, s: 'Schmidt / J&R / H&Z / Hollister' },
-    { k: '8 方法离散度', v: fmt(sd, 2), u, s: `均值 ${fmt(mean, 2)} ${u} · 1σ` },
-    { k: 'T (Ridolfi)', v: fmt(calc.Trid, 0), u: '°C', s: calc.Tuse !== calc.Trid ? `A&S 使用输入 T = ${fmt(calc.Tuse, 0)} °C` : '用于 Anderson & Smith (1995)' },
-  ];
-  $('#summary-grid').innerHTML = stats.map(x => `<div class="stat">
-    <div class="k">${x.k}</div>
-    <div class="v">${x.v}<span class="u">${x.u}</span></div>
-    <div class="s">${x.s}</div>
-  </div>`).join('');
 }
 
 function renderFormula(calc) {
@@ -1435,7 +1853,7 @@ function renderFormula(calc) {
     <b>方法内部重算：</b>Ridolfi 使用 13-CNK 的 Al<sub>tot</sub> = <b>${fmt(calc.rid.AlTot, 3)}</b>、Fe³⁺ = <b>${fmt(calc.rid.c.Fe3, 3)}</b>、T = <b>${fmt(calc.Trid, 0)} °C</b>；Xu 使用 15-CNK 的 Al<sup>VI</sup> = <b>${fmt(calc.xu.AlVI, 3)}</b>；Putirka (2016) Eq. 6 的 P 依赖温度 = <b>${fmt(calc.Tput, 0)} °C</b>。
   </div>`;
   if (!calc.warnings.length) {
-    warnWrap.innerHTML = ridNote + `<div class="note-box" style="border-style:solid;border-color:#cbe7df;background:#f3fbf8;color:#2b6b5a"><b>适用性检查：</b>未发现明显的成分或范围警告。仍需结合矿物共生组合与平衡结构判断。</div>`;
+    warnWrap.innerHTML = ridNote + `<div class="note-box" style="border-style:solid;border-color:#cbe7df;background:#f3fbf8;color:#2b6b5a"><b>成分/范围检查：</b>未发现明显的成分或范围警告。仍需结合矿物共生组合与平衡结构判断。</div>`;
   } else {
     warnWrap.innerHTML = ridNote + calc.warnings.map(w => `<div class="note-box" style="margin-bottom:7px;border-style:solid;border-color:${w.level === 'bad' ? '#f0cfcb' : '#f0dcb4'};background:${w.level === 'bad' ? '#fdf3f2' : '#fdf9f0'};color:${w.level === 'bad' ? '#8d2f2c' : '#7c5a19'}">
       <b>${w.level === 'bad' ? '不适用' : '提示'}：</b>${w.text}
@@ -1444,20 +1862,20 @@ function renderFormula(calc) {
 }
 
 function statusText(s) {
-  return s === 'ok' ? '适用' : s === 'warn' ? '谨慎' : s === 'bad' ? '不适用' : '—';
+  return s === 'ok' ? '范围内' : s === 'warn' ? '需谨慎' : s === 'bad' ? '不适用' : '—';
 }
 
 function renderMethodList(calc) {
-  $('#p-count').textContent = `${METHODS.length} methods`;
-  $('#method-unit-sub').textContent = `${unitLabel()} · 按方法排序`;
+  $('#p-count').textContent = `${METHODS.length} 种方法`;
+  $('#method-unit-sub').textContent = `${unitLabel()} · 按方法顺序 · 状态仅指成分/温压范围`;
   $('#method-list').innerHTML = METHODS.map(m => {
     const r = calc.results[m.id];
-    const v = Number.isFinite(r.value) ? displayP(r.value) : NaN;
     const st = r.status;
-    return `<div class="method-row" title="${esc(r.msg || '')}">
+    const preferred = m.id === state.preferredMethod;
+    return `<div class="method-row${preferred ? ' preferred' : ''}" title="${esc(r.msg || '成分/温压范围通过；未判断矿物平衡。')}">
       <div class="method-bar" style="background:${m.color}"></div>
-      <div class="method-name">${m.name}<span class="ref">${m.ref}</span></div>
-      <div class="method-val"${st === 'bad' ? ' style="color:var(--red)"' : ''}>${fmt(v, 2)}<small>${unitLabel()}</small></div>
+      <div class="method-name">${m.name}${preferred ? '<span class="pref">首选</span>' : ''}<span class="ref">${m.ref}</span></div>
+      <div class="method-val"${st === 'bad' ? ' style="color:var(--red)"' : ''}>${st === 'bad' ? '—' : formatPressure(r.value)}<small>${st === 'bad' ? '不适用' : formatPressureUnit()}</small></div>
       <div class="method-status ${st}">${statusText(st)}</div>
     </div>`;
   }).join('');
@@ -1466,20 +1884,20 @@ function renderMethodList(calc) {
 function renderAllTable() {
   const body = $('#all-body');
   const calcs = state.calcs.filter(c => c.valid);
-  $('#all-unit-sub').textContent = `Al_tot（23 O）与各压力计结果（P / ${unitLabel()}）；Ridolfi 使用其 13-CNK 独立重算`;
+  $('#all-unit-sub').textContent = `Al_tot（23 O）与各压力计结果（P / ${unitLabel()}）；中位数/极差为跨方法统计，不是不确定度`;
   if (!calcs.length) {
     body.innerHTML = `<tr><td colspan="14" style="text-align:center;color:var(--muted);padding:25px">暂无有效样品</td></tr>`;
     return;
   }
   body.innerHTML = calcs.map(c => {
     const vals = METHODS.map(m => c.results[m.id].value).filter(v => Number.isFinite(v) && v > 0);
-    const mean = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : NaN;
-    const sd = vals.length > 1 ? Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / (vals.length - 1)) : NaN;
     const p = (id) => {
       const v = c.results[id].value;
-      return Number.isFinite(v) && v > 0 ? fmt(displayP(v), 2) : '—';
+      return Number.isFinite(v) && v > 0 ? formatPressure(v) : '—';
     };
-    return `<tr>
+    const mid = c.median ?? median(vals);
+    const rng = c.range ?? rangeOf(vals);
+    return `<tr data-sample-id="${c.sample.id}" tabindex="0" aria-label="查看 ${esc(c.sample.name || '未命名')} 的详细结果">
       <td>${esc(c.sample.name || '未命名')}</td>
       <td>${fmt(c.f23.AlTot, 3)}</td>
       <td>${fmt(c.xu.AlVI, 3)}</td>
@@ -1492,8 +1910,8 @@ function renderAllTable() {
       <td>${p('hz')}</td>
       <td>${p('hollister')}</td>
       <td>${p('as')}</td>
-      <td>${fmt(Number.isFinite(mean) ? displayP(mean) : NaN, 2)}</td>
-      <td>${fmt(Number.isFinite(sd) ? displayP(sd) : NaN, 2)}</td>
+      <td>${formatPressure(mid)}</td>
+      <td>${formatPressure(rng)}</td>
     </tr>`;
   }).join('');
 }
@@ -1549,7 +1967,7 @@ function roundRect(ctx, x, y, w, h, r) {
 }
 
 function drawNoData(ctx, w, h, msg = '暂无可绘制的数据') {
-  ctx.fillStyle = '#8a958f';
+  ctx.fillStyle = '#66736c';
   ctx.font = '13px "Segoe UI","Microsoft YaHei",sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -1564,9 +1982,15 @@ function drawBarChart() {
   const items = METHODS.map(m => ({
     id: m.id, label: m.short, color: m.color,
     value: calc.results[m.id].value, status: calc.results[m.id].status,
-  })).filter(x => Number.isFinite(x.value));
-  if (!items.length) return;
+  })).filter(x => Number.isFinite(x.value) && x.status !== 'bad');
+  if (!items.length) {
+    const { ctx, w, h } = setupCanvas(canvas, 240);
+    drawNoData(ctx, w, h, '没有适用的压力结果');
+    canvas.setAttribute('aria-label', '没有适用的压力结果');
+    return;
+  }
   items.sort((a, b) => b.value - a.value);
+  canvas.setAttribute('aria-label', `${calc.sample.name || '未命名'} 各方法压力：` + items.map(i => `${i.label} ${formatPressure(i.value)} ${formatPressureUnit()}`).join('；'));
 
   const height = Math.max(250, 36 + items.length * 36);
   const { ctx, w, h } = setupCanvas(canvas, height);
@@ -1595,7 +2019,7 @@ function drawBarChart() {
     ctx.moveTo(x, top);
     ctx.lineTo(x, top + plotH);
     ctx.stroke();
-    ctx.fillStyle = '#8a958f';
+    ctx.fillStyle = '#66736c';
     ctx.textAlign = 'center';
     ctx.fillText(tickLabel(v, scale.step), x, h - bottom + 14);
   }
@@ -1631,11 +2055,11 @@ function drawBarChart() {
     ctx.font = '600 11.5px "Segoe UI","Microsoft YaHei",sans-serif';
     ctx.textAlign = 'left';
     const tx = v >= 0 ? Math.min(w - right + 4, x0 + bw + 8) : x0 + 42;
-    ctx.fillText(v.toFixed(2), tx, y);
+    ctx.fillText(state.settings.unit === 'kbar' ? v.toFixed(1) : v.toFixed(0), tx, y);
   });
 
   // axis title
-  ctx.fillStyle = '#8a958f';
+  ctx.fillStyle = '#66736c';
   ctx.font = '11px "Segoe UI","Microsoft YaHei",sans-serif';
   ctx.textAlign = 'right';
   ctx.fillText(`P (${unitLabel()})`, w - 10, h - 6);
@@ -1652,10 +2076,12 @@ function drawScatterAl() {
   const plotW = w - pad.l - pad.r;
   const plotH = h - pad.t - pad.b;
 
-  const ptsS = calcs.map((c, i) => ({ x: c.f23.AlTot, y: c.results.schmidt.value, label: c.sample.name, color: PALETTE[i % PALETTE.length] }))
-    .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
-  const ptsR = calcs.map((c, i) => ({ x: c.rid.AlTot, y: c.results.ridolfi.value, label: c.sample.name, color: PALETTE[i % PALETTE.length] }))
-    .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+  const ptsS = calcs.map((c, i) => ({ x: c.f23.AlTot, y: c.results.schmidt.value, status: c.results.schmidt.status, label: c.sample.name, color: PALETTE[i % PALETTE.length] }))
+    .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y) && p.y > 0 && p.status !== 'bad');
+  const ptsR = calcs.map((c, i) => ({ x: c.rid.AlTot, y: c.results.ridolfi.value, status: c.results.ridolfi.status, label: c.sample.name, color: PALETTE[i % PALETTE.length] }))
+    .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y) && p.y > 0 && p.status !== 'bad');
+  const kf = v => Number.isFinite(v) ? v.toFixed(1) : '—';
+  canvas.setAttribute('aria-label', `Al_tot 与压力关系：${calcs.length} 个样品；Schmidt 压力 ${ptsS.length ? kf(Math.min(...ptsS.map(p => p.y))) : '—'}–${ptsS.length ? kf(Math.max(...ptsS.map(p => p.y))) : '—'} kbar；Ridolfi 压力 ${ptsR.length ? kf(Math.min(...ptsR.map(p => p.y))) : '—'}–${ptsR.length ? kf(Math.max(...ptsR.map(p => p.y))) : '—'} kbar`);
 
   let xmin = 0.5, xmax = 2.5;
   for (const p of [...ptsS, ...ptsR]) { xmin = Math.min(xmin, p.x); xmax = Math.max(xmax, p.x); }
@@ -1678,7 +2104,7 @@ function drawScatterAl() {
     const y = Y(v);
     ctx.strokeStyle = i === 0 ? '#cfd8cf' : '#edf0ea';
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + plotW, y); ctx.stroke();
-    ctx.fillStyle = '#8a958f'; ctx.textAlign = 'right';
+    ctx.fillStyle = '#66736c'; ctx.textAlign = 'right';
     ctx.fillText(tickLabel(v, yscale.step), pad.l - 8, y);
   }
   const xt = 5;
@@ -1687,17 +2113,17 @@ function drawScatterAl() {
     const x = X(v);
     ctx.strokeStyle = '#f0f2ed';
     ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
-    ctx.fillStyle = '#8a958f'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#66736c'; ctx.textAlign = 'center';
     ctx.fillText(v.toFixed(1), x, pad.t + plotH + 16);
   }
 
   // calibration lines
   const lines = [
     { label: 'H&Z 1986', color: '#b85c4c', fn: (x) => 5.03 * x - 3.92, dash: [] },
-    { label: 'J&R 1989', color: '#c47a2b', fn: (x) => 4.23 * x - 3.46, dash: [5, 4] },
-    { label: 'Schmidt 1992', color: '#a96c12', fn: (x) => 4.76 * x - 3.01, dash: [] },
+    { label: 'J&R 1989', color: '#c47a2b', fn: (x) => 4.23 * x - 3.46, dash: [2, 3] },
+    { label: 'Schmidt 1992', color: '#a96c12', fn: (x) => 4.76 * x - 3.01, dash: [6, 3] },
     { label: 'Mutch 2016', color: '#2d5f9e', fn: (x) => 0.5 + 0.331 * x + 0.995 * x * x, dash: [3, 3] },
-    { label: 'Ridolfi 2010', color: '#0f6b5f', fn: (x) => 19.209 * Math.exp(1.438 * x) / 100, dash: [7, 4] },
+    { label: 'Ridolfi 2010', color: '#0f6b5f', fn: (x) => 19.209 * Math.exp(1.438 * x) / 100, dash: [8, 4] },
   ];
   ctx.save();
   ctx.beginPath(); ctx.rect(pad.l, pad.t, plotW, plotH); ctx.clip();
@@ -1785,8 +2211,11 @@ function drawScatterTP() {
   const plotW = w - pad.l - pad.r;
   const plotH = h - pad.t - pad.b;
   const pts = calcs.map((c, i) => ({
-    x: c.Trid, y: c.results.ridolfi.value, label: c.sample.name, color: PALETTE[i % PALETTE.length],
-  })).filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+    x: c.Trid, y: c.results.ridolfi.value, status: c.results.ridolfi.status, label: c.sample.name, color: PALETTE[i % PALETTE.length],
+  })).filter(p => Number.isFinite(p.x) && Number.isFinite(p.y) && p.y > 0 && p.status !== 'bad');
+  if (!pts.length) { drawNoData(ctx, w, h, '没有适用的 Ridolfi 压力结果'); canvas.setAttribute('aria-label', '没有适用的 Ridolfi 压力结果'); if (legend) legend.innerHTML = ''; return; }
+  const kf = v => Number.isFinite(v) ? v.toFixed(1) : '—';
+  canvas.setAttribute('aria-label', `温度与压力关系：${pts.length} 个样品；T ${pts.length ? Math.min(...pts.map(p => p.x)).toFixed(0) : '—'}–${pts.length ? Math.max(...pts.map(p => p.x)).toFixed(0) : '—'} °C；Ridolfi P ${pts.length ? kf(Math.min(...pts.map(p => p.y))) : '—'}–${pts.length ? kf(Math.max(...pts.map(p => p.y))) : '—'} kbar`);
 
   let xmin = Infinity, xmax = -Infinity, ymaxData = 0;
   for (const p of pts) {
@@ -1810,7 +2239,7 @@ function drawScatterTP() {
     const y = Y(v);
     ctx.strokeStyle = i === 0 ? '#cfd8cf' : '#edf0ea';
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + plotW, y); ctx.stroke();
-    ctx.fillStyle = '#8a958f'; ctx.textAlign = 'right';
+    ctx.fillStyle = '#66736c'; ctx.textAlign = 'right';
     ctx.fillText(tickLabel(v, yscale.step), pad.l - 8, y);
   }
   const xstep = (xmax - xmin) > 400 ? 100 : 50;
@@ -1820,7 +2249,7 @@ function drawScatterTP() {
     const x = X(v);
     ctx.strokeStyle = '#f0f2ed';
     ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
-    ctx.fillStyle = '#8a958f'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#66736c'; ctx.textAlign = 'center';
     ctx.fillText(v.toFixed(0), x, pad.t + plotH + 16);
   }
 
@@ -1862,7 +2291,7 @@ function drawScatterTP() {
 
   if (legend) {
     legend.innerHTML = pts.map(p => `<span><i style="background:${p.color};height:8px;width:8px;border-radius:50%"></i>${esc(p.label)}</span>`).join('') +
-      '<span style="color:#8a958f">误差棒：T ±22 °C，P ±11%</span>';
+      '<span style="color:#66736c">误差棒：T ±22 °C，P ±11%</span>';
   }
 }
 
@@ -1870,13 +2299,13 @@ function renderLegends() {
   const el = $('#legend-al');
   if (!el) return;
   const lines = [
-    ['#b85c4c', 'H&Z 1986'],
-    ['#c47a2b', 'J&R 1989'],
-    ['#a96c12', 'Schmidt 1992'],
-    ['#2d5f9e', 'Mutch 2016'],
-    ['#0f6b5f', 'Ridolfi 2010'],
+    ['#b85c4c', 'H&Z 1986', 'solid'],
+    ['#c47a2b', 'J&R 1989', 'dotted'],
+    ['#a96c12', 'Schmidt 1992', 'dashed'],
+    ['#2d5f9e', 'Mutch 2016', 'dotted'],
+    ['#0f6b5f', 'Ridolfi 2010', 'dashed'],
   ];
-  el.innerHTML = lines.map(([c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join('') +
+  el.innerHTML = lines.map(([c, t, style]) => `<span><i style="background:none;border-top:2px ${style} ${c};height:0"></i>${t}</span>`).join('') +
     `<span><i style="background:#0f6b5f;height:8px;width:8px;border-radius:50%"></i>Schmidt P（23 O Al<sub>tot</sub>）</span>` +
     `<span><i style="background:#0f6b5f;height:8px;width:8px;transform:rotate(45deg)"></i>Ridolfi P（13-CNK Al<sub>tot</sub>）</span>`;
 }
@@ -1931,7 +2360,7 @@ function splitDelimiter(line) {
 
 function parsePaste(text) {
   const lines = String(text).replace(/\r/g, '').split('\n').map(l => l.trim()).filter(Boolean);
-  if (!lines.length) return { samples: [], ignored: 0 };
+  if (!lines.length) return { samples: [], ignored: 0, hasHeader: false, headerKeys: [], rowCount: 0 };
   const delim = splitDelimiter(lines[0]);
   const rows = lines.map(l => l.split(delim).map(c => c.trim().replace(/^"|"$/g, '')));
   const first = rows[0];
@@ -1966,7 +2395,36 @@ function parsePaste(text) {
     if (!s.name) s.name = `S-${String(i + 1).padStart(2, '0')}`;
     if (num(s.SiO2) > 0 || num(s.Al2O3) > 0) samples.push(s);
   }
-  return { samples, ignored: Math.max(0, dataRows.length - samples.length) };
+  return { samples, ignored: Math.max(0, dataRows.length - samples.length), hasHeader, headerKeys, rowCount: dataRows.length };
+}
+
+const KEY_LABEL = { name: '样品', SiO2: 'SiO₂', TiO2: 'TiO₂', Al2O3: 'Al₂O₃', Cr2O3: 'Cr₂O₃', FeO: 'FeO(T)', Fe2O3: 'Fe₂O₃', MnO: 'MnO', MgO: 'MgO', CaO: 'CaO', Na2O: 'Na₂O', K2O: 'K₂O', T: 'T' };
+let pendingPaste = null;
+
+function updatePastePreview() {
+  const text = $('#paste-area').value;
+  const preview = $('#paste-preview');
+  const btn = $('#paste-import');
+  if (!text.trim()) {
+    pendingPaste = null;
+    preview.textContent = '粘贴后在这里显示识别到的行数、列映射和前几行预览。';
+    btn.disabled = true;
+    btn.textContent = '确认导入';
+    return;
+  }
+  const parsed = parsePaste(text);
+  pendingPaste = parsed;
+  const mapping = parsed.headerKeys
+    .map((k, i) => k ? `${KEY_LABEL[k]} → 第 ${i + 1} 列` : '')
+    .filter(Boolean);
+  const rows = parsed.samples.slice(0, 3);
+  preview.innerHTML = `<b>识别到 ${parsed.samples.length} 个样品</b> · ${parsed.hasHeader ? '含表头' : '无表头（固定列顺序）'} · 忽略 ${parsed.ignored} 行
+    ${mapping.length ? `<div style="margin-top:4px">列映射：${mapping.join(' · ')}</div>` : ''}
+    ${rows.length ? `<table><thead><tr><th>样品</th><th>SiO₂</th><th>Al₂O₃</th><th>FeO(T)</th><th>MgO</th><th>CaO</th></tr></thead><tbody>
+      ${rows.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.SiO2)}</td><td>${esc(s.Al2O3)}</td><td>${esc(s.FeO)}</td><td>${esc(s.MgO)}</td><td>${esc(s.CaO)}</td></tr>`).join('')}
+    </tbody></table>` : '<div style="margin-top:4px;color:var(--red)">没有识别到含 SiO₂ 或 Al₂O₃ 的行。</div>'}`;
+  btn.disabled = !parsed.samples.length;
+  btn.textContent = parsed.samples.length ? `确认导入 ${parsed.samples.length} 个样品` : '确认导入';
 }
 
 /* ============================================================
@@ -1979,6 +2437,7 @@ function setTab(tab) {
     const on = b.dataset.tab === tab;
     b.classList.toggle('active', on);
     b.setAttribute('aria-selected', on ? 'true' : 'false');
+    b.tabIndex = on ? 0 : -1;
   });
   $$('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
   if (tab === 'results') {
@@ -1991,12 +2450,27 @@ function setTab(tab) {
   }
 }
 
-function toast(msg) {
+function toast(msg, actionLabel, actionFn) {
   const el = $('#toast');
-  el.textContent = msg;
+  el.innerHTML = '';
+  const span = document.createElement('span');
+  span.textContent = msg;
+  el.appendChild(span);
+  if (actionLabel) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'toast-action';
+    btn.textContent = actionLabel;
+    btn.addEventListener('click', () => {
+      el.classList.remove('show', 'has-action');
+      if (typeof actionFn === 'function') actionFn();
+    }, { once: true });
+    el.appendChild(btn);
+  }
+  el.classList.toggle('has-action', !!actionLabel);
   el.classList.add('show');
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => el.classList.remove('show'), 2300);
+  toast._t = setTimeout(() => el.classList.remove('show', 'has-action'), actionLabel ? 6500 : 2300);
 }
 
 function updateFeHint() {
@@ -2004,13 +2478,22 @@ function updateFeHint() {
   const hint = $('#fe-hint');
   const ratioField = $('#ratio-field');
   ratioField.style.display = mode === 'ratio' ? '' : 'none';
+  const note = '压力主要取决于 Al_tot，对 Fe³⁺ 拆分不敏感；该选项主要影响结构式与辅助温度。';
   hint.textContent = mode === 'leake'
-    ? '按 13/15-CNK 归一化并以电荷平衡求 Fe³⁺，适用于钙质角闪石。'
+    ? `按 13/15-CNK 归一化并以电荷平衡求 Fe³⁺。${note}`
     : mode === 'all2'
-      ? '全部铁按 Fe²⁺ 处理；用于检查 Fe³⁺ 估算对结果的影响。'
+      ? `全部铁按 Fe²⁺ 处理；用于敏感性检查。${note}`
       : mode === 'ratio'
-        ? '按摩尔比拆分全铁；适合已有 Fe³⁺/ΣFe 约束的样品。'
-        : '直接使用 Fe₂O₃ 列拆分铁；若 Fe₂O₃ 为空则全部按 Fe²⁺。';
+        ? `按摩尔比拆分全铁。${note}`
+        : `直接使用 Fe₂O₃ 列拆分铁；若 Fe₂O₃ 为空则全部按 Fe²⁺。${note}`;
+}
+
+function syncSettingsUI() {
+  $('#fe-mode').value = state.settings.feMode;
+  $('#fe-ratio').value = state.settings.feRatio;
+  $('#t-source').value = state.settings.tSource;
+  $$('#unit-toggle button').forEach(b => b.classList.toggle('active', b.dataset.unit === state.settings.unit));
+  updateFeHint();
 }
 
 function applySettingsFromUI() {
@@ -2028,7 +2511,7 @@ function exportCSV() {
     '样品', 'SiO2', 'TiO2', 'Al2O3', 'Cr2O3', 'FeO_T', 'Fe2O3', 'MnO', 'MgO', 'CaO', 'Na2O', 'K2O', 'T_input',
     'Al_tot_23O', 'Al_VI_Xu', 'T_Ridolfi_C', 'T_used_C',
     ...METHODS.map(m => `${m.short.replace(/\s+/g, '_')}_${u}`),
-    `mean_${u}`, `sd_${u}`,
+    `preferred_method`, `preferred_P_${u}`, `median_${u}`, `range_${u}`,
   ];
   const rows = state.calcs.filter(c => c.valid).map(c => {
     const s = c.sample;
@@ -2038,9 +2521,11 @@ function exportCSV() {
       const v = c.results[m.id].value;
       return Number.isFinite(v) && v > 0 ? fmt(displayP(v), 3) : '';
     });
-    const mean = Number.isFinite(c.mean) ? fmt(displayP(c.mean), 3) : '';
-    const sd = Number.isFinite(c.sd) ? fmt(displayP(c.sd), 3) : '';
-    return [...base, ...vals, mean, sd].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',');
+    const pref = preferredResult(c);
+    const prefVal = Number.isFinite(pref.result.value) && pref.result.value > 0 ? fmt(displayP(pref.result.value), 3) : '';
+    const mid = Number.isFinite(c.median) ? fmt(displayP(c.median), 3) : '';
+    const rng = Number.isFinite(c.range) ? fmt(displayP(c.range), 3) : '';
+    return [...base, ...vals, pref.method.short, prefVal, mid, rng].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',');
   });
   const csv = '\ufeff' + [head.join(','), ...rows].join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -2059,13 +2544,19 @@ function copyResults() {
   const c = selectedCalc();
   if (!c) { toast('没有可复制的结果'); return; }
   const u = unitLabel();
+  const pref = preferredResult(c);
+  const vals = METHODS.map(m => c.results[m.id].value).filter(v => Number.isFinite(v) && v > 0);
   const lines = [
     `样品: ${c.sample.name || '未命名'}`,
     `Al_tot = ${fmt(c.f23.AlTot, 3)} apfu; Al_VI = ${fmt(c.xu.AlVI, 3)} apfu; Mg# = ${fmt(c.main.MgNo, 3)}`,
     `T(Ridolfi 2010) = ${fmt(c.Trid, 0)} °C; T(used for A&S) = ${fmt(c.Tuse, 0)} °C`,
-    `Ridolfi 2010: ${fmt(displayP(c.results.ridolfi.value), 2)} ${u}`,
-    ...METHODS.filter(m => m.id !== 'ridolfi').map(m => `${m.name}: ${fmt(displayP(c.results[m.id].value), 2)} ${u}`),
-    `8 方法均值: ${fmt(displayP(c.mean), 2)} ${u} (1σ = ${fmt(displayP(c.sd), 2)})`,
+    `首选方法: ${pref.method.name} = ${formatPressure(pref.result.value)} ${u}${pref.result.status === 'bad' ? '（不适用）' : ''}`,
+    ...METHODS.filter(m => m.id !== pref.method.id).map(m => {
+      const r = c.results[m.id];
+      return `${m.name}: ${r.status === 'bad' ? '—' : formatPressure(r.value)} ${u} (${statusText(r.status)})`;
+    }),
+    `跨方法范围: ${formatPressure(Math.min(...vals))}–${formatPressure(Math.max(...vals))} ${u}; 中位数 ${formatPressure(median(vals))} ${u}`,
+    `注: 状态仅指成分/温压范围；跨方法范围不是分析不确定度，程序不判断矿物组合是否平衡。`,
   ];
   const text = lines.join('\n');
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2085,12 +2576,29 @@ function fallbackCopy(text) {
   ta.remove();
 }
 
+let pasteReturnFocus = null;
+
 function openPaste() {
+  pasteReturnFocus = document.activeElement;
   $('#paste-modal').classList.add('open');
+  updatePastePreview();
   setTimeout(() => $('#paste-area').focus(), 50);
 }
 function closePaste() {
-  $('#paste-modal').classList.remove('open');
+  const modal = $('#paste-modal');
+  if (!modal.classList.contains('open')) return;
+  modal.classList.remove('open');
+  if (pasteReturnFocus && document.contains(pasteReturnFocus)) pasteReturnFocus.focus();
+}
+function trapFocus(e) {
+  const modal = $('#paste-modal');
+  if (e.key !== 'Tab' || !modal.classList.contains('open')) return;
+  const focusables = [...modal.querySelectorAll('button, textarea, select, input, [href], [tabindex]:not([tabindex="-1"])')]
+    .filter(el => !el.disabled && el.offsetParent !== null);
+  if (!focusables.length) return;
+  const first = focusables[0], last = focusables[focusables.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 
 function importPaste() {
@@ -2102,7 +2610,9 @@ function importPaste() {
   }
   state.samples = parsed.samples;
   state.selectedId = state.samples[0]?.id || null;
-  renderTable();
+  state.isExample = false;
+  state.exampleDismissed = true;
+  renderTable({ focusId: state.selectedId, resetScroll: true });
   recalcAll();
   closePaste();
   toast(`已导入 ${parsed.samples.length} 个样品${parsed.ignored ? `，忽略 ${parsed.ignored} 行` : ''}`);
@@ -2110,17 +2620,24 @@ function importPaste() {
 
 function initEvents() {
   $$('.tab-btn').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+  $('.tabs').addEventListener('keydown', (e) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    const tabs = $$('.tab-btn');
+    const i = tabs.indexOf(document.activeElement);
+    if (i < 0) return;
+    e.preventDefault();
+    const next = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    tabs[next].focus();
+    setTab(tabs[next].dataset.tab);
+  });
 
   $('#btn-add').addEventListener('click', () => {
     const s = makeSample();
     state.samples.push(s);
     state.selectedId = s.id;
-    renderTable();
+    markManual();
+    renderTable({ focusId: s.id });
     recalcAll();
-    requestAnimationFrame(() => {
-      const inp = $(`input.name[data-id="${s.id}"]`);
-      if (inp) inp.focus();
-    });
   });
 
   $('#data-body').addEventListener('input', (e) => {
@@ -2129,6 +2646,14 @@ function initEvents() {
     const s = state.samples.find(x => x.id === inp.dataset.id);
     if (!s) return;
     s[inp.dataset.key] = inp.value;
+    markManual();
+    const tr = inp.closest('tr');
+    const totalCell = tr?.querySelector('.row-total');
+    if (totalCell && inp.dataset.key !== 'name') {
+      const total = oxideSum(s);
+      totalCell.textContent = fmt(total, 2);
+      totalCell.classList.toggle('bad', total > 0 && (total < 80 || total > 105));
+    }
     scheduleRecalc();
   });
 
@@ -2148,10 +2673,25 @@ function initEvents() {
     const btn = e.target.closest('[data-del]');
     if (!btn) return;
     const id = btn.dataset.del;
-    state.samples = state.samples.filter(s => s.id !== id);
-    if (state.selectedId === id) state.selectedId = state.samples[0]?.id || null;
-    renderTable();
+    const index = state.samples.findIndex(s => s.id === id);
+    if (index < 0) return;
+    const deleted = state.samples[index];
+    state.lastDeleted = { sample: deleted, index };
+    state.samples.splice(index, 1);
+    if (state.selectedId === id) state.selectedId = state.samples[Math.min(index, state.samples.length - 1)]?.id || null;
+    const focusId = state.samples[Math.min(index, state.samples.length - 1)]?.id || null;
+    renderTable({ focusId, resetScroll: true });
     recalcAll();
+    toast(`已删除 ${deleted.name || '未命名'}`, '撤销', () => {
+      if (!state.lastDeleted) return;
+      const { sample, index } = state.lastDeleted;
+      state.samples.splice(Math.min(index, state.samples.length), 0, sample);
+      state.selectedId = sample.id;
+      state.lastDeleted = null;
+      renderTable({ focusId: sample.id, resetScroll: true });
+      recalcAll();
+      toast('已恢复删除的样品');
+    });
   });
 
   $('#btn-clear').addEventListener('click', () => {
@@ -2159,7 +2699,10 @@ function initEvents() {
     if (!confirm('确定清空所有样品吗？')) return;
     state.samples = [];
     state.selectedId = null;
-    renderTable();
+    state.isExample = false;
+    state.exampleDismissed = true;
+    clearDraft();
+    renderTable({ resetScroll: true });
     recalcAll();
     toast('已清空');
   });
@@ -2181,6 +2724,36 @@ function initEvents() {
     });
   });
 
+  $('#example-clear').addEventListener('click', startBlank);
+  $('#example-dismiss').addEventListener('click', () => {
+    state.exampleDismissed = true;
+    updateExampleBanner();
+    saveDraft();
+  });
+
+  $('#btn-project').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const menu = $('#project-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#project-menu') && !e.target.closest('#btn-project')) {
+      $('#project-menu').style.display = 'none';
+    }
+  });
+  $$('#project-menu [data-project]').forEach(b => {
+    b.addEventListener('click', () => {
+      if (b.dataset.project === 'export') downloadProject();
+      else $('#project-file').click();
+      $('#project-menu').style.display = 'none';
+    });
+  });
+  $('#project-file').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    importProjectFile(f);
+    e.target.value = '';
+  });
+
   $('#fe-mode').addEventListener('change', applySettingsFromUI);
   $('#fe-ratio').addEventListener('input', debounce(applySettingsFromUI, 250));
   $('#t-source').addEventListener('change', applySettingsFromUI);
@@ -2199,6 +2772,35 @@ function initEvents() {
     renderResults();
     if (state.activeTab === 'results') requestAnimationFrame(drawBarChart);
   });
+  $('#sample-prev').addEventListener('click', () => moveSample(-1));
+  $('#sample-next').addEventListener('click', () => moveSample(1));
+  $('#sample-select').addEventListener('change', (e) => {
+    state.selectedId = e.target.value;
+    renderResults();
+    if (state.activeTab === 'results') requestAnimationFrame(drawBarChart);
+  });
+  $('#preferred-method').addEventListener('change', (e) => {
+    state.preferredMethod = e.target.value;
+    renderResults();
+    if (state.activeTab === 'results') requestAnimationFrame(drawBarChart);
+    saveDraft();
+  });
+
+  $('#all-body').addEventListener('click', (e) => {
+    const tr = e.target.closest('tr[data-sample-id]');
+    if (!tr) return;
+    state.selectedId = tr.dataset.sampleId;
+    renderResults();
+    if (state.activeTab === 'results') requestAnimationFrame(drawBarChart);
+  });
+  $('#all-body').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const tr = e.target.closest('tr[data-sample-id]');
+    if (!tr) return;
+    e.preventDefault();
+    state.selectedId = tr.dataset.sampleId;
+    renderResults();
+  });
 
   const gotoResults = $('#btn-goto-results');
   if (gotoResults) gotoResults.addEventListener('click', () => setTab('results'));
@@ -2207,8 +2809,12 @@ function initEvents() {
   $('#paste-close').addEventListener('click', closePaste);
   $('#paste-cancel').addEventListener('click', closePaste);
   $('#paste-import').addEventListener('click', importPaste);
+  $('#paste-area').addEventListener('input', debounce(updatePastePreview, 200));
   $('#paste-modal').addEventListener('click', (e) => { if (e.target.id === 'paste-modal') closePaste(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePaste(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePaste();
+    trapFocus(e);
+  });
 
   $('#btn-export').addEventListener('click', exportCSV);
   $('#btn-export-2').addEventListener('click', exportCSV);
@@ -2218,6 +2824,11 @@ function initEvents() {
     setTimeout(() => window.print(), 120);
   });
 
+  window.addEventListener('hashchange', () => {
+    const h = location.hash.replace('#', '');
+    if (['data', 'results', 'plots', 'methods'].includes(h) && h !== state.activeTab) setTab(h);
+  });
+
   const onResize = debounce(() => {
     if (state.activeTab === 'results') drawBarChart();
     if (state.activeTab === 'plots') { drawScatterAl(); drawScatterTP(); }
@@ -2225,20 +2836,45 @@ function initEvents() {
   window.addEventListener('resize', onResize);
 }
 
+function startDefaultExample() {
+  state.samples = EXAMPLES.mutch.rows.slice(0, 3).map(r => makeSample(r));
+  state.selectedId = state.samples[0]?.id || null;
+  state.isExample = true;
+  state.exampleDismissed = false;
+  renderTable({ resetScroll: true });
+  recalcAll();
+}
+
+function initPreferredSelect() {
+  const select = $('#preferred-method');
+  if (!select) return;
+  select.innerHTML = METHODS.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  select.value = state.preferredMethod;
+}
+
 function init() {
   initEvents();
-  // 默认载入 3 个 Mutch 示例，方便立即看到结果
-  loadExample('mutch', true);
-  state.samples = state.samples.slice(0, 3);
-  state.selectedId = state.samples[0]?.id || null;
+  initPreferredSelect();
   const q = new URLSearchParams(location.search);
-  if (q.get('unit') === 'MPa' || q.get('unit') === 'mpa') {
-    state.settings.unit = 'MPa';
-    $$('#unit-toggle button').forEach(b => b.classList.toggle('active', b.dataset.unit === 'MPa'));
+  const unitParam = (q.get('unit') || '').toLowerCase();
+  if (unitParam === 'mpa') state.settings.unit = 'MPa';
+
+  const draft = loadDraft();
+  if (draft) {
+    restoreDraft(draft);
+    toast(`已恢复草稿 · ${draft.samples.length} 个样品`, '从示例开始', () => {
+      startDefaultExample();
+      toast('已切换到示例数据');
+    });
+  } else {
+    startDefaultExample();
   }
-  renderTable();
-  recalcAll();
-  updateFeHint();
+  if (unitParam === 'mpa') {
+    state.settings.unit = 'MPa';
+    syncSettingsUI();
+    recalcAll();
+  }
+  updateExampleBanner();
   renderLegends();
   const hash = location.hash.replace('#', '');
   if (['data', 'results', 'plots', 'methods'].includes(hash)) setTab(hash);
