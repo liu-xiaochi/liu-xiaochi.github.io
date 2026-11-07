@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>AmphBaro 使用流程 · 角闪石压力计</title>
+<meta name="description" content="AmphBaro 角闪石压力计使用流程图：目的、前提、输入参数、结构式重算、8 种压力方程、压力综合与输出解释。">
+<style>
+  :root{
+    --bg:#f4f5f1;--card:#ffffff;--ink:#18221f;--ink-2:#2c3934;
+    --muted:#5b6861;--muted-2:#66736c;--line:#dfe4dc;--line-soft:#edf0ea;
+    --teal:#0f6b5f;--teal-2:#128577;--teal-deep:#0b4b43;--teal-soft:#e3f2ee;
+    --amber:#a96c12;--amber-soft:#fbf1de;--red:#b03b38;--red-soft:#fbe9e7;
+    --blue:#2d5f9e;--purple:#6a4c9c;--brown:#8a5a2b;--green:#3f8a68;
+    --shadow:0 1px 2px rgba(20,32,28,.04),0 12px 34px rgba(20,32,28,.06);
+    --mono:"Cascadia Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    --sans:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans SC",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:#e8ece5;color:var(--ink);font-family:var(--sans);
+    font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:rgba(18,133,119,.18)}
+  .poster{
+    width:min(1600px,100%);margin:20px auto;background:var(--bg);
+    border:1px solid #d4dbd3;border-radius:16px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(20,32,28,.12);
+  }
+  .hero{
+    background:
+      radial-gradient(620px 240px at 86% -20%,rgba(255,255,255,.16),transparent 60%),
+      linear-gradient(135deg,#0a3c35 0%,#0e5a50 52%,#0f6b5f 100%);
+    color:#fff;padding:22px 28px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  }
+  .brand{display:flex;gap:14px;align-items:flex-start}
+  .brand-mark{
+    width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.10);
+    border:1px solid rgba(255,255,255,.22);display:grid;place-items:center;flex:0 0 auto;
+  }
+  .brand-mark svg{width:26px;height:26px;display:block}
+  h1{margin:0;font-size:26px;line-height:1.15;font-weight:650;letter-spacing:.02em}
+  .hero p{margin:4px 0 0;font-size:12.5px;color:rgba(255,255,255,.80);letter-spacing:.02em}
+  .hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:9px}
+  .hero-pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .pill{
+    font-size:10.5px;letter-spacing:.04em;color:rgba(255,255,255,.88);
+    border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);
+    padding:4px 9px;border-radius:999px;white-space:nowrap;
+  }
+  .hero-actions{display:flex;gap:7px;align-items:center}
+  .btn{
+    appearance:none;font-family:inherit;font-size:11.5px;font-weight:650;border-radius:8px;
+    padding:7px 10px;cursor:pointer;border:1px solid transparent;display:inline-flex;gap:6px;align-items:center;
+    text-decoration:none;white-space:nowrap;
+  }
+  .btn svg{width:13px;height:13px}
+  .btn-light{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.24);color:#fff}
+  .btn-light:hover{background:rgba(255,255,255,.18)}
+  .btn-primary{background:#fff;color:var(--teal-deep);border-color:#fff}
+  .btn-primary:hover{background:#f1f8f5}
+  .intro{
+    display:grid;grid-template-columns:1.08fr 1fr 1fr;gap:12px;
+    padding:16px 22px 0;align-items:stretch;
+  }
+  .intro-card{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;box-shadow:0 1px 2px rgba(20,32,28,.04);
+  }
+  .intro-card h2{margin:0 0 6px;font-size:13px;font-weight:680;letter-spacing:.01em}
+  .intro-card p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.55}
+  .intro-card b{color:var(--ink-2)}
+  .main{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);
+    gap:16px;padding:14px 22px 0;align-items:start;
+  }
+  .col-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 9px}
+  .col-title h2{margin:0;font-size:14px;font-weight:680;letter-spacing:.01em}
+  .col-title span{font-size:10.5px;color:var(--muted-2)}
+  .flow{display:flex;flex-direction:column}
+  .step{
+    display:grid;grid-template-columns:38px minmax(0,1fr);gap:11px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:10px 12px;box-shadow:0 1px 2px rgba(20,32,28,.04);
+  }
+  .step-no{
+    width:30px;height:30px;border-radius:50%;background:var(--teal-soft);color:var(--teal-deep);
+    font-family:var(--mono);font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:1px;
+  }
+  .step h3{margin:0;font-size:12.8px;font-weight:680;line-height:1.25;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+  .step p{margin:3px 0 0;font-size:11.3px;color:var(--muted);line-height:1.5}
+  .step .tag{
+    font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--teal-deep);background:var(--teal-soft);border-radius:4px;padding:1px 5px;
+  }
+  .step-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+  .mini{
+    font-family:var(--mono);font-size:10px;background:#f6f8f3;border:1px solid var(--line-soft);
+    color:var(--ink-2);border-radius:5px;padding:1px 5px;white-space:nowrap;
+  }
+  .arrow{height:12px;margin-left:26px;border-left:2px solid #c4cec5;position:relative}
+  .arrow::after{
+    content:"";position:absolute;left:-5px;bottom:-1px;
+    border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid #c4cec5;
+  }
+  .decision{
+    margin-top:7px;border-top:1px dashed var(--line);padding-top:7px;
+  }
+  .decision-q{font-size:10.8px;font-weight:650;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+  .diamond{width:7px;height:7px;background:var(--amber);transform:rotate(45deg);border-radius:1px;flex:0 0 auto}
+  .branches{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px}
+  .branch{font-size:10.2px;line-height:1.4;border-radius:6px;padding:4px 6px;border:1px solid transparent}
+  .branch b{font-weight:750}
+  .branch.yes,.branch.good{background:#f3fbf8;color:#2b6b5a;border-color:#cbe7df}
+  .branch.no,.branch.bad{background:#fdf7f6;color:#8d2f2c;border-color:#f0cfcb}
+  .subgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:7px}
+  .substep{background:#f8faf6;border:1px solid var(--line-soft);border-radius:7px;padding:6px 7px}
+  .substep b{display:block;font-size:10.2px;color:var(--ink-2)}
+  .substep span{display:block;font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+  .eq-panel{
+    background:var(--card);border:1px solid var(--line);border-radius:13px;
+    padding:13px 14px;box-shadow:0 1px 2px rgba(20,32,28,.04);
+  }
+  .eq-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
+  .eq-title h2{margin:0;font-size:14px;font-weight:680}
+  .eq-title span{font-size:10.5px;color:var(--muted-2)}
+  .eq-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .eq-card{
+    background:#fbfcf9;border:1px solid var(--line-soft);border-radius:9px;padding:8px 9px;
+    break-inside:avoid;
+  }
+  .eq-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .eq-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+  .eq-head h3{margin:0;font-size:11.2px;font-weight:680;line-height:1.25}
+  .basis{margin-left:auto;font-family:var(--mono);font-size:8.8px;color:var(--muted);background:#f1f4ee;border-radius:4px;padding:1px 4px;white-space:nowrap}
+  .formula{
+    margin:5px 0 0;background:#fff;border:1px solid var(--line-soft);border-radius:5px;
+    padding:5px 6px;font-family:var(--mono);font-size:10.2px;line-height:1.45;color:var(--ink-2);
+    overflow-wrap:anywhere;
+  }
+  .formula.small{font-size:9.6px}
+  .eq-note{margin-top:4px;font-size:9.6px;color:var(--muted);line-height:1.4}
+  .param-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:10px}
+  .param-table caption{text-align:left;font-size:11.5px;font-weight:680;color:var(--ink-2);padding:0 0 5px}
+  .param-table th,.param-table td{padding:3.5px 5px;border-bottom:1px solid var(--line-soft);text-align:left;vertical-align:top}
+  .param-table th{font-size:9.5px;letter-spacing:.03em;color:var(--muted);font-weight:700;background:#f8f9f6}
+  .param-table td:first-child{font-family:var(--mono);color:var(--ink-2);white-space:nowrap}
+  .param-table td:nth-child(3){text-align:right;white-space:nowrap;color:var(--muted)}
+  .param-note{
+    margin-top:6px;font-size:9.2px;color:var(--muted);line-height:1.5;
+    background:#f8faf6;border:1px solid var(--line-soft);border-radius:6px;padding:6px 7px;
+  }
+  .param-note code{font-family:var(--mono);font-size:9.2px;color:var(--ink-2)}
+  .footer{
+    margin-top:14px;padding:11px 22px 14px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;
+  }
+  .notes{display:flex;gap:7px;flex-wrap:wrap}
+  .note{
+    font-size:10.2px;color:#6f5218;background:#fdf9f0;border:1px solid #f0dcb4;
+    border-radius:999px;padding:4px 9px;white-space:nowrap;
+  }
+  .footer-links{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--muted)}
+  .footer-links a{color:var(--teal);text-decoration:none;border-bottom:1px solid #b7d5cc}
+  .footer-links a:hover{border-bottom-color:var(--teal)}
+  .footer-version{font-family:var(--mono);font-size:9.5px;color:var(--muted-2)}
+  @media (max-width:1150px){
+    .poster{margin:0;border-radius:0}
+    .intro{grid-template-columns:1fr}
+    .main{grid-template-columns:1fr}
+    .eq-panel{order:2}
+  }
+  @media (max-width:760px){
+    .hero{padding:18px 16px}
+    h1{font-size:22px}
+    .intro,.main{padding-left:12px;padding-right:12px}
+    .subgrid{grid-template-columns:1fr}
+    .branches{grid-template-columns:1fr}
+    .eq-grid{grid-template-columns:1fr}
+    .footer{padding:10px 12px 12px}
+    .hero-right{align-items:flex-start}
+    .hero-pills{justify-content:flex-start}
+  }
+  @media print{
+    @page{size:A3 landscape;margin:5mm}
+    body{background:#fff;zoom:.7;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .poster{width:100%;max-width:none;margin:0;border:0;border-radius:0;box-shadow:none}
+    .hero{padding:14px 18px}
+    .hero-actions{display:none}
+    .intro{padding:10px 14px 0;gap:8px}
+    .main{padding:10px 14px 0;gap:10px}
+    .footer{padding:8px 14px 0;margin-top:8px}
+    .step,.intro-card,.eq-panel,.eq-card{box-shadow:none}
+    .eq-card,.step,.intro-card{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="poster">
+  <header class="hero">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none">
+          <path d="M16 3.2 27.2 10v12L16 28.8 4.8 22V10L16 3.2Z" stroke="#dff3ec" stroke-width="1.3"/>
+          <path d="M16 3.2v25.6M4.8 10 16 16.8 27.2 10M4.8 22 16 16.8 27.2 22" stroke="#9ed3c6" stroke-width="1"/>
+          <circle cx="16" cy="16.8" r="1.6" fill="#f2c177"/>
+        </svg>
+      </div>
+      <div>
+        <h1>AmphBaro 使用流程</h1>
+        <p>角闪石压力计 · 从 EMPA 成分到压力综合 · Amphibole Barometry Workflow</p>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-pills">
+        <span class="pill">v1.1</span>
+        <span class="pill">8 种标定</span>
+        <span class="pill">离线单文件</span>
+      </div>
+      <div class="hero-actions">
+        <a class="btn btn-light" href="AmphBaro.html">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M12 4H4v12h8M9 10h7m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          返回 AmphBaro
+        </a>
+        <button class="btn btn-primary" type="button" onclick="window.print()">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M5 7V3.5h10V7M5 14H3.5V8h13v6H15M5 11h10v5.5H5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          打印 / PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <section class="intro" aria-label="目的、前提与输入">
+    <div class="intro-card">
+      <h2>目的</h2>
+      <p>从角闪石电子探针成分出发，重算结构式，判断成分/温压范围，比较 <b>8 种 Al-in-hornblende 压力标定</b>，给出首选压力、跨方法范围与可追溯的输出。</p>
+    </div>
+    <div class="intro-card">
+      <h2>使用前提</h2>
+      <p><b>钙质角闪石</b>（Ca<sub>B</sub> ≥ 1.5）；与 <b>Qtz + Pl + Kfs + Bt + 钛铁氧化物 + 熔体</b> 共生；矿物平衡、未蚀变；成分在标定范围内。程序不判断平衡。</p>
+    </div>
+    <div class="intro-card">
+      <h2>输入参数</h2>
+      <p>11 种氧化物 <b>wt.%</b>（SiO₂…K₂O）；<b>FeO(T)</b> 全铁或 FeO + Fe₂O₃ 分别给出；可选 <b>T</b>；Fe³⁺ 方案；压力单位 kbar / MPa。</p>
+    </div>
+  </section>
+
+  <main class="main">
+    <section aria-label="操作流程">
+      <div class="col-title"><h2>操作流程</h2><span>从左到右、从上到下</span></div>
+      <div class="flow">
+        <div class="step">
+          <div class="step-no">1</div>
+          <div>
+            <h3>输入 EMPA 成分 <span class="tag">Input</span></h3>
+            <p>从 Excel 粘贴或手动编辑；先确认样品名与数据来源。</p>
+            <div class="step-tags">
+              <span class="mini">SiO₂</span><span class="mini">TiO₂</span><span class="mini">Al₂O₃</span><span class="mini">Cr₂O₃</span><span class="mini">FeO(T)</span><span class="mini">Fe₂O₃</span><span class="mini">MnO</span><span class="mini">MgO</span><span class="mini">CaO</span><span class="mini">Na₂O</span><span class="mini">K₂O</span>
+            </div>
+          </div>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+
+        <div class="step">
+          <div class="step-no">2</div>
+          <div>
+            <h3>检查数据与前提 <span class="tag">Check</span></h3>
+            <p>氧化物总量 95–101 wt.%；关键氧化物非空；角闪石为钙质；共生组合满足。示例数据需替换。</p>
+            <div class="decision">
+              <div class="decision-q"><span class="diamond"></span>Ca<sub>B</sub> ≥ 1.5 且数据完整？</div>
+              <div class="branches">
+                <div class="branch yes"><b>是</b> → 进入重算</div>
+                <div class="branch no"><b>否</b> → 非钙质/缺数据：停止或仅作参考</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+
+        <div class="step">
+          <div class="step-no">3</div>
+          <div>
+            <h3>重算结构式 <span class="tag">Recalculate</span></h3>
+            <p>23 O 归一化；Leake (1997) 13/15-CNK；Fe³⁺ 由电荷平衡（或全部 Fe²⁺、固定 Fe³⁺/ΣFe、输入 Fe₂O₃）；分配 T / C / B / A 位。</p>
+            <div class="step-tags">
+              <span class="mini">Al_tot</span><span class="mini">Al_IV</span><span class="mini">Al_VI</span><span class="mini">Ca_B</span><span class="mini">Na_B</span><span class="mini">Na_A</span><span class="mini">K_A</span><span class="mini">Mg#</span><span class="mini">Fe³⁺</span>
+            </div>
+          </div>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+
+        <div class="step">
+          <div class="step-no">4</div>
+          <div>
+            <h3>按方法切换基准 <span class="tag">Basis</span></h3>
+            <p>同一份成分，不同标定使用不同重算基准。</p>
+            <div class="subgrid">
+              <div class="substep"><b>Ridolfi 2010</b><span>13-CNK → Al_tot<br>Si* → T</span></div>
+              <div class="substep"><b>Xu 2021</b><span>15-CNK → Al_VI</span></div>
+              <div class="substep"><b>Mutch / 经典</b><span>23 O → Al_tot</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+
+        <div class="step">
+          <div class="step-no">5</div>
+          <div>
+            <h3>代入 8 种压力方程 <span class="tag">Equations</span></h3>
+            <p>使用右侧方程区；P 统一换算为 kbar（MPa / 100）；Ridolfi T 由 Si* 计算。</p>
+          </div>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+
+        <div class="step">
+          <div class="step-no">6</div>
+          <div>
+            <h3>压力综合 <span class="tag">Synthesis</span></h3>
+            <p>选择首选方法；同时查看跨方法范围、中位数与方法家族范围。<b>跨方法范围不是分析不确定度。</b></p>
+            <div class="decision">
+              <div class="decision-q"><span class="diamond"></span>跨方法极差 &gt; 2 kbar？</div>
+              <div class="branches">
+                <div class="branch good"><b>否</b> → 方法间较一致</div>
+                <div class="branch bad"><b>是</b> → 方法间不一致：检查标定/组合</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="arrow" aria-hidden="true"></div>
+
+        <div class="step">
+          <div class="step-no">7</div>
+          <div>
+            <h3>输出与解释 <span class="tag">Output</span></h3>
+            <p>首选 P、跨方法范围、T、结构式；导出 CSV / 项目 JSON / 打印。状态“范围内”只指成分/温压范围，<b>不判断矿物平衡</b>。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="eq-panel" aria-label="8 种压力方程">
+      <div class="eq-title"><h2>8 种压力方程</h2><span>P 统一显示为 kbar；MPa / 100</span></div>
+      <div class="eq-grid">
+        <article class="eq-card">
+          <div class="eq-head"><span class="eq-dot" style="background:#0f6b5f"></span><h3>Ridolfi et al. (2010)</h3><span class="basis">13-CNK</span></div>
+          <div class="formula">P(MPa) = 19.209 · exp(1.438 · Al_tot)</div>
+          <div class="formula small">T(°C) = 2041 − 151.487 · Si*</div>
+          <div class="eq-note">P/100 = kbar；T ±22 °C；约 1–8 kbar。</div>
+        </article>
+        <article class="eq-card">
+          <div class="eq-head"><span class="eq-dot" style="background:#2d5f9e"></span><h3>Mutch et al. (2016)</h3><span class="basis">23 O</span></div>
+          <div class="formula">P(kbar) = 0.5 + 0.331 · Al_tot + 0.995 · Al_tot²</div>
+          <div class="eq-note">对高铝角闪石更敏感。</div>
+        </article>
+        <article class="eq-card">
+          <div class="eq-head"><span class="eq-dot" style="background:#6a4c9c"></span><h3>Xu et al. (2021)</h3><span class="basis">15-CNK</span></div>
+          <div class="formula">P(kbar) = 16.75 · Al_VI − 0.48</div>
+          <div class="eq-note">Al_VI 为 C 位 Al。</div>
+        </article>
+        <article class="eq-card">
+          <div class="eq-head"><span class="eq-dot" style="background:#a96c12"></span><h3>Schmidt (1992)</h3><span class="basis">23 O</span></div>
+          <div class="formula">P(kbar) = 4.76 · Al_tot − 3.01</div>
+          <div class="eq-note">约 2–13 kbar；700–1000 °C。</div>
+        </article>
+        <article class="eq-card">
+          <div class="eq-head"><span class="eq-dot" style="background:#c47a2b"></span><h3>Johnson &amp; Rutherford (1989)</h3><span class="basis">23 O</span></div>
+          <div class="formula">P(kbar) = 4.23 · Al_tot − 3.46</div>
+          <div class="eq-note">约 1–8 kbar。</div>
+        </article>
+        <article class="eq-card">
+          <div class="eq-head"><span class="eq-dot" style="background:#b85c4c"></span><h3>Hammarstrom &amp; Zen (1986)</h3><span class="basis">23 O</span></div>
+          <div class="formula">P(kbar) = 5.03 · Al_tot − 3.92</div>
+          <div class="eq-note">约 1–8 kbar。</div>
+        </article>
+        <article class="eq-card">
+          <div class="eq-head"><span class="eq-dot" style="background:#8a5a2b"></span><h3>Hollister et al. (1987)</h3><span class="basis">23 O</span></div>
+          <div class="formula">P(kbar) = 5.03 · Al_tot − 3.53</div>
+          <div class="eq-note">约 1–8 kbar。</div>
+        </article>
+        <article class="eq-card">
+          <div class="eq-head"><span class="eq-dot" style="background:#3f8a68"></span><h3>Anderson &amp; Smith (1995)</h3><span class="basis">23 O + T</span></div>
+          <div class="formula small">P = −3.01 + 4.76·Al_tot − [(T−675)/85] · [0.53·Al_tot + 0.005294·(T−675)]</div>
+          <div class="eq-note">±0.6 kbar；T 675–1000 °C；负值 → 不适用。</div>
+        </article>
+      </div>
+
+      <table class="param-table">
+        <caption>参数定义</caption>
+        <thead><tr><th scope="col">参数</th><th scope="col">含义 / 基准</th><th scope="col">单位</th></tr></thead>
+        <tbody>
+          <tr><td>Al_tot</td><td>总 Al；23 O 或 13-CNK，随方法</td><td>apfu</td></tr>
+          <tr><td>Al_IV</td><td>四次配位 Al</td><td>apfu</td></tr>
+          <tr><td>Al_VI</td><td>C 位 Al；Xu 输入</td><td>apfu</td></tr>
+          <tr><td>Ca_B / Na_B</td><td>B 位 Ca / Na</td><td>apfu</td></tr>
+          <tr><td>Na_A / K_A</td><td>A 位 Na / K</td><td>apfu</td></tr>
+          <tr><td>Fe³⁺ / Fe²⁺</td><td>电荷平衡或指定方案</td><td>apfu</td></tr>
+          <tr><td>Mg#</td><td>Mg / (Mg + Fe²⁺)</td><td>—</td></tr>
+          <tr><td>Si*</td><td>Ridolfi T 参数（见下）</td><td>apfu</td></tr>
+          <tr><td>T</td><td>Ridolfi T 或样品输入 T</td><td>°C</td></tr>
+          <tr><td>P</td><td>统一换算为 kbar</td><td>kbar / MPa</td></tr>
+        </tbody>
+      </table>
+      <div class="param-note">
+        <b>Si*：</b><code>Si + Al_IV/15 − 2·Ti_T − Al_VI/2 − Ti_C/1.8 + Fe³⁺/9 + Fe²⁺/3.3 + Mg/26 + Ca_B/5 + Na_B/1.3 − Na_A/15 + (1−A)/2.3</code>。其中 <code>Ti_T / Ti_C</code> 为 T 位 / C 位 Ti，<code>A = Na_A + K_A</code>。
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="notes">
+      <span class="note">状态 = 范围内 ≠ 矿物平衡</span>
+      <span class="note">跨方法范围 ≠ 分析不确定度</span>
+      <span class="note">先看共生组合，再定压力</span>
+    </div>
+    <div class="footer-links">
+      <a href="AmphBaro.html">AmphBaro</a>
+      <a href="README.md">使用说明 / README</a>
+      <span class="footer-version">打印建议：A3 横向，缩放以适合页面</span>
+      <span class="footer-version">AmphBaro v1.1</span>
+    </div>
+  </footer>
+</div>
+</body>
+</html>
+
